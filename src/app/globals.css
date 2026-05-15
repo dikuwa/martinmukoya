@@ -107,6 +107,58 @@ select {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.theme-logo-light {
+  display: none;
+}
+
+.light .theme-logo-dark {
+  display: none;
+}
+
+.light .theme-logo-light {
+  display: block;
+}
+
+.theme-icon-moon {
+  display: none;
+}
+
+.light .theme-icon-sun {
+  display: none;
+}
+
+.light .theme-icon-moon {
+  display: block;
+}
+
+.technical-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.technical-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(198, 97, 63, 0.09), transparent 28rem),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: auto, 72px 72px, 72px 72px;
+  mask-image: radial-gradient(circle at center, black, transparent 76%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.light .technical-bg::before {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(85, 49, 113, 0.08), transparent 28rem),
+    linear-gradient(rgba(48, 28, 64, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 28, 64, 0.07) 1px, transparent 1px);
+  opacity: 0.58;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

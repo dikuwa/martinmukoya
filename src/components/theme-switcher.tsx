@@ -15,7 +15,8 @@ export function ThemeSwitcher() {
       variant="ghost"
       onClick={() => setTheme(isLight ? "dark" : "light")}
     >
-      {isLight ? <Moon aria-hidden="true" size={18} /> : <Sun aria-hidden="true" size={18} />}
+      <Sun aria-hidden="true" className="theme-icon-sun" size={18} />
+      <Moon aria-hidden="true" className="theme-icon-moon" size={18} />
     </Button>
   );
 }

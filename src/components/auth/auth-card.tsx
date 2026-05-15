@@ -68,7 +68,7 @@ export function AuthCard({ mode }: AuthCardProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[400px] rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-xl">
+    <div className="mx-auto w-full max-w-[400px] rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
       <div>
         <p className="text-sm font-semibold text-[color:var(--accent)]">Admin access</p>
         <h1 className="mt-2 font-display text-3xl font-black text-[color:var(--text-strong)]">

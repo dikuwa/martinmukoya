@@ -1,0 +1,45 @@
+import { notFound, ok, parseJson, serverError, validationError } from "@/lib/api";
+import { invalidateTag, tags } from "@/lib/cache";
+import { db } from "@/lib/db";
+import { faqUpdateSchema } from "@/lib/validation/content";
+import { z } from "zod";
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const faq = await db.fAQ.findUnique({ where: { id } });
+
+    if (!faq) return notFound("FAQ not found");
+    return ok(faq);
+  } catch (error) {
+    return serverError(error);
+  }
+}
+
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const data = await parseJson(request, faqUpdateSchema);
+    const faq = await db.fAQ.update({ where: { id }, data });
+    await invalidateTag(tags.faqs);
+    await invalidateTag(tags.dashboard);
+    return ok(faq);
+  } catch (error) {
+    if (error instanceof z.ZodError) return validationError(error);
+    return serverError(error);
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    await db.fAQ.delete({ where: { id } });
+    await invalidateTag(tags.faqs);
+    await invalidateTag(tags.dashboard);
+    return ok({ deleted: true });
+  } catch (error) {
+    return serverError(error);
+  }
+}

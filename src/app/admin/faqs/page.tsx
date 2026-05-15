@@ -1,11 +1,50 @@
-import { EmptyState } from "@/components/ui/empty-state";
+import { AdminFilters, AdminTable, SelectFilter } from "@/components/admin/admin-table";
+import { AdminPagination } from "@/components/admin/pagination";
+import { StatusPill } from "@/components/admin/status-pill";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { db } from "@/lib/db";
+import Link from "next/link";
 
-export default function AdminFaqsPage() {
+type PageProps = { searchParams: Promise<{ search?: string; category?: string; published?: string; page?: string }> };
+const PAGE_SIZE = 10;
+
+export default async function AdminFaqsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page ?? "1"));
+  const where = {
+    ...(params.search ? { OR: [{ question: { contains: params.search, mode: "insensitive" as const } }, { answer: { contains: params.search, mode: "insensitive" as const } }] } : {}),
+    ...(params.category ? { category: params.category } : {}),
+    ...(params.published ? { published: params.published === "true" } : {})
+  };
+  const total = await db.fAQ.count({ where });
+  const items = await db.fAQ.findMany({
+    where,
+    orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE
+  });
+  const categories = await db.fAQ.findMany({ distinct: ["category"], select: { category: true }, where: { category: { not: null } } });
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   return (
     <div className="grid gap-8">
-      <PageHeader title="FAQs" description="Edit pricing, process, support, hosting, AI, and ecommerce answers." />
-      <EmptyState title="FAQ manager is ready" description="Phase 4 will add sorting, publishing, and edit controls." />
+      <PageHeader title="FAQs" description="Edit pricing, process, support, hosting, AI, and ecommerce answers." actions={<Button asChild><Link href="/admin/faqs/new">New FAQ</Link></Button>} />
+      <AdminFilters
+        search={params.search}
+        filters={
+          <>
+            <SelectFilter name="published" label="Published" value={params.published} options={[{ label: "Published", value: "true" }, { label: "Draft", value: "false" }]} />
+            <SelectFilter name="category" label="Category" value={params.category} options={categories.filter((item) => item.category).map((item) => ({ label: item.category!, value: item.category! }))} />
+          </>
+        }
+      />
+      <AdminTable items={items} empty="No FAQs found." editHref={(item) => `/admin/faqs/${item.id}/edit`} columns={[
+        { header: "Question", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.question}</p><p className="text-xs text-[color:var(--text-muted)]">{item.category}</p></div> },
+        { header: "Answer", cell: (item) => <span className="line-clamp-2 whitespace-normal">{item.answer}</span> },
+        { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> }
+      ]} />
+      <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/faqs" />
     </div>
   );
 }
