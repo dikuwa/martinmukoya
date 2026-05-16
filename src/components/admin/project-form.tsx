@@ -154,7 +154,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     <label className="grid gap-2 text-sm font-bold text-[color:var(--text-strong)]">
       {label}
       {children}
-      {error ? <span className="text-xs text-[#EF4444]">{error}</span> : null}
+      {error ? <span className="text-xs text-[color:var(--destructive)]">{error}</span> : null}
     </label>
   );
 }

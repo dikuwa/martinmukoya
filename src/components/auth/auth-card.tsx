@@ -85,33 +85,33 @@ export function AuthCard({ mode }: AuthCardProps) {
           <label className="grid gap-2 text-sm font-semibold text-[color:var(--text-strong)]">
             Name
             <input
-              className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
+              className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--primary)]"
               {...form.register("name")}
             />
             {"name" in form.formState.errors ? (
-              <span className="text-xs text-[#EF4444]">{form.formState.errors.name?.message}</span>
+              <span className="text-xs text-[color:var(--destructive)]">{form.formState.errors.name?.message}</span>
             ) : null}
           </label>
         ) : null}
         <label className="grid gap-2 text-sm font-semibold text-[color:var(--text-strong)]">
           Email
           <input
-            className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
+            className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--primary)]"
             type="email"
             autoComplete="email"
             {...form.register("email")}
           />
-          <span className="text-xs text-[#EF4444]">{form.formState.errors.email?.message}</span>
+          <span className="text-xs text-[color:var(--destructive)]">{form.formState.errors.email?.message}</span>
         </label>
         <label className="grid gap-2 text-sm font-semibold text-[color:var(--text-strong)]">
           Password
           <input
-            className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
+            className="h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-3 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--primary)]"
             type="password"
             autoComplete={isSignUp ? "new-password" : "current-password"}
             {...form.register("password")}
           />
-          <span className="text-xs text-[#EF4444]">{form.formState.errors.password?.message}</span>
+          <span className="text-xs text-[color:var(--destructive)]">{form.formState.errors.password?.message}</span>
         </label>
         <Button disabled={isLoading} type="submit">
           {isLoading ? <Loader2 className="animate-spin" size={16} /> : null}

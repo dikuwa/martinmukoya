@@ -154,7 +154,7 @@ function MobileBottomNav() {
                 href={item.href}
                 className={cn(
                   "grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--accent)]/12 hover:text-[color:var(--text-strong)]",
-                  index === 4 && "bg-[color:var(--accent)] !text-white hover:bg-[#D98263] hover:!text-white"
+                  index === 4 && "bg-[color:var(--primary)] !text-[color:var(--primary-foreground)] hover:bg-[color:var(--primary-light)] hover:!text-[color:var(--primary-foreground)]"
                 )}
               >
                 <Icon size={18} />
