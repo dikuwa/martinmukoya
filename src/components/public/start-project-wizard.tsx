@@ -2,11 +2,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { services } from "@/lib/site-data";
+import { trackEvent } from "@/lib/analytics-client";
+import { contact, services } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Bot, CalendarCheck, Check, MonitorCog, Rocket, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowLeft, Bot, CalendarCheck, Check, MessageCircle, MonitorCog, Rocket, ShoppingBag } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -21,9 +23,13 @@ const wizardSchema = z
     budgetRange: z.string().optional(),
     timeline: z.enum(timelines).optional(),
     timelineFlexible: z.boolean().default(false),
+    company: z.string().optional(),
     name: z.string().min(2, "Enter your name."),
     email: z.string().email("Enter a valid email."),
-    message: z.string().min(20, "Share a little more about the project.")
+    phone: z.string().optional(),
+    preferredContact: z.enum(["EMAIL", "PHONE", "WHATSAPP"]),
+    message: z.string().min(20, "Share a little more about the project."),
+    website: z.string().max(0).optional()
   })
   .superRefine((data, ctx) => {
     if (data.selectedServices.includes("other") && !data.otherDetails?.trim()) {
@@ -42,7 +48,7 @@ const wizardSchema = z
     }
   });
 
-type WizardValues = z.infer<typeof wizardSchema>;
+type WizardInput = z.input<typeof wizardSchema>;
 
 const serviceIcons = {
   "web-applications": MonitorCog,
@@ -54,7 +60,60 @@ const serviceIcons = {
 
 export function StartProjectWizard() {
   const [step, setStep] = useState(1);
-  const form = useForm<WizardValues>({
+  const [submitted, setSubmitted] = useState(false);
+  const formStarted = useRef(false);
+  const submitLead = useMutation({
+    mutationFn: async (values: WizardInput) => {
+      const parsed = wizardSchema.parse(values);
+      const selectedServiceItems = services.filter((service) => parsed.selectedServices.includes(service.id));
+      const selectedServiceTitles = [
+        ...selectedServiceItems.map((service) => service.title),
+        ...(parsed.selectedServices.includes("other") ? [`Other: ${parsed.otherDetails}`] : [])
+      ];
+      const primaryService = parsed.selectedServices[0];
+      const serviceType = mapServiceType(primaryService);
+      const timeline = parsed.timelineFlexible ? `${parsed.timeline || "Not specified"} (flexible)` : parsed.timeline;
+
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: parsed.name,
+          email: parsed.email,
+          phone: parsed.phone,
+          company: parsed.company,
+          serviceType,
+          budgetRange: parsed.budgetRange,
+          timeline,
+          source: "start-project",
+          preferredContact: parsed.preferredContact,
+          website: parsed.website,
+          projectGoal: `Project services requested: ${selectedServiceTitles.join(", ")}.`,
+          message: [
+            parsed.message,
+            "",
+            `Selected services: ${selectedServiceTitles.join(", ")}`,
+            `Budget: ${parsed.budgetRange || "Not specified"}`,
+            `Timeline: ${timeline || "Not specified"}`,
+            `Preferred contact: ${parsed.preferredContact}`
+          ].join("\n")
+        })
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error || "Could not submit the project request.");
+      }
+
+      return {
+        response: await response.json(),
+        parsed,
+        serviceType,
+        timeline
+      };
+    }
+  });
+  const form = useForm<WizardInput>({
     resolver: zodResolver(wizardSchema),
     defaultValues: {
       selectedServices: [],
@@ -62,16 +121,19 @@ export function StartProjectWizard() {
       budgetRange: "",
       timeline: undefined,
       timelineFlexible: false,
+      company: "",
       name: "",
       email: "",
-      message: ""
+      phone: "",
+      preferredContact: "EMAIL",
+      message: "",
+      website: ""
     }
   });
 
   const selectedServices = useWatch({ control: form.control, name: "selectedServices" });
   const selectedBudget = useWatch({ control: form.control, name: "budgetRange" });
   const selectedTimeline = useWatch({ control: form.control, name: "timeline" });
-  const timelineFlexible = useWatch({ control: form.control, name: "timelineFlexible" });
   const otherSelected = selectedServices.includes("other");
   const progress = step === 1 ? "33%" : step === 2 ? "66%" : "100%";
 
@@ -80,6 +142,12 @@ export function StartProjectWizard() {
       const valid = await form.trigger(["selectedServices", "otherDetails"]);
       if (!valid) return;
     }
+    trackEvent({
+      eventType: "step_completed",
+      page: "/start-project",
+      source: "start_project_form",
+      metadata: { form: "start_project", step }
+    });
     setStep((current) => Math.min(current + 1, 3));
   }
 
@@ -88,6 +156,16 @@ export function StartProjectWizard() {
   }
 
   function toggleService(id: string) {
+    if (!formStarted.current) {
+      formStarted.current = true;
+      trackEvent({
+        eventType: "form_started",
+        page: "/start-project",
+        source: "start_project_form",
+        metadata: { form: "start_project" }
+      });
+    }
+
     const current = form.getValues("selectedServices");
     const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
     form.setValue("selectedServices", next, { shouldDirty: true, shouldValidate: true });
@@ -97,10 +175,59 @@ export function StartProjectWizard() {
     form.setValue("budgetRange", value, { shouldDirty: true, shouldValidate: true });
   }
 
-  function onSubmit(values: WizardValues) {
-    toast.success("Request prepared", {
-      description: `${values.name}, your project details are ready for the next step.`
-    });
+  async function onSubmit(values: WizardInput) {
+    try {
+      const result = await submitLead.mutateAsync(values);
+
+      trackEvent({
+        eventType: "form_submitted",
+        page: "/start-project",
+        source: "start_project_form",
+        metadata: {
+          form: "start_project",
+          serviceType: result.serviceType,
+          selectedServices: result.parsed.selectedServices,
+          budgetRange: result.parsed.budgetRange,
+          timeline: result.timeline
+        }
+      });
+
+      toast.success("Project request sent", {
+        description: `${result.parsed.name}, I’ll review this and follow up with a practical next step.`
+      });
+      setSubmitted(true);
+      form.reset();
+    } catch (error) {
+      toast.error("Request not sent", {
+        description: error instanceof Error ? error.message : "Please try again in a moment."
+      });
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="mx-auto grid w-full max-w-5xl gap-6 overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 sm:p-8">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent)]">Request received</p>
+          <h2 className="mt-3 font-display text-[clamp(2rem,calc(1.45rem+2vw),3.2rem)] font-black leading-tight text-[color:var(--text-strong)]">
+            Thanks. Your brief is in good shape.
+          </h2>
+          <p className="mt-4 text-[clamp(1rem,calc(0.95rem+0.35vw),1.12rem)] leading-8 text-[color:var(--text-muted)]">
+            I’ll review the services, budget, timeline, and notes you shared, then come back with the clearest next step. If timing is urgent, WhatsApp is the quickest way to add context.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button asChild size="lg">
+            <a href={contact.whatsappHref} target="_blank" rel="noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", page: "/start-project", source: "start_project_success" })}>
+              WhatsApp Martin <MessageCircle size={18} />
+            </a>
+          </Button>
+          <Button type="button" variant="secondary" size="lg" onClick={() => setSubmitted(false)}>
+            Start another request
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -109,7 +236,11 @@ export function StartProjectWizard() {
       className="mx-auto w-full max-w-5xl overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]"
     >
       <div className="p-5 sm:p-6 lg:p-8">
+        <input {...form.register("website")} className="hidden" tabIndex={-1} autoComplete="off" />
         <div className="mb-6 rounded-full bg-[color:var(--surface-soft)] p-3 sm:p-4">
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="h-full rounded-full bg-[color:var(--accent)] transition-[width] duration-300" style={{ width: progress }} />
+          </div>
           <div className="grid grid-cols-3 items-center gap-3">
             {[
               { index: 1, label: "Services" },
@@ -282,6 +413,11 @@ export function StartProjectWizard() {
             <div className="mt-8 grid gap-4">
               <input
                 className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                placeholder="Company or organisation (optional)"
+                {...form.register("company")}
+              />
+              <input
+                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
                 placeholder="Your Name"
                 {...form.register("name")}
               />
@@ -293,6 +429,22 @@ export function StartProjectWizard() {
                 {...form.register("email")}
               />
               <FieldError message={form.formState.errors.email?.message} />
+              <div className="grid gap-4 sm:grid-cols-[1fr_0.8fr]">
+                <input
+                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                  placeholder="Phone or WhatsApp (optional)"
+                  autoComplete="tel"
+                  {...form.register("phone")}
+                />
+                <select
+                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
+                  {...form.register("preferredContact")}
+                >
+                  <option value="EMAIL">Email</option>
+                  <option value="PHONE">Phone</option>
+                  <option value="WHATSAPP">WhatsApp</option>
+                </select>
+              </div>
               <textarea
                 className="min-h-44 resize-y rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
                 placeholder="Tell me more about the project..."
@@ -305,8 +457,8 @@ export function StartProjectWizard() {
               <button type="button" onClick={back} className="inline-flex items-center gap-2 text-sm font-bold text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]">
                 <ArrowLeft size={16} /> Back
               </button>
-              <Button type="submit" size="lg" className="sm:min-w-64">
-                Submit Request <Rocket size={18} />
+              <Button type="submit" size="lg" className="sm:min-w-64" disabled={form.formState.isSubmitting || submitLead.isPending}>
+                {form.formState.isSubmitting || submitLead.isPending ? "Submitting..." : "Submit Request"} <Rocket size={18} />
               </Button>
             </div>
           </div>
@@ -314,6 +466,15 @@ export function StartProjectWizard() {
       </div>
     </form>
   );
+}
+
+function mapServiceType(serviceId: string) {
+  if (serviceId === "booking-systems") return "BOOKING_SYSTEM";
+  if (serviceId === "ecommerce") return "ECOMMERCE";
+  if (serviceId === "ai-automations") return "AI_AUTOMATION";
+  if (serviceId === "web-applications") return "WEB_APP";
+
+  return "OTHER";
 }
 
 function WizardTitle({ title, description }: { title: string; description: string }) {

@@ -1,15 +1,15 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowUpRight, Github } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { projects } from "@/lib/site-data";
+import { ArrowUpRight, Github } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 type Project = (typeof projects)[number];
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgba(198,97,63,0.35)]">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgba(198,97,63,0.35)]">
       <Link href={`/projects/${project.slug}`} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--surface-soft)]">
           <Image

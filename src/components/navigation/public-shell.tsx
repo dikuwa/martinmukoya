@@ -1,4 +1,5 @@
-import { AiChartWidget } from "@/components/public/ai-chart-widget";
+import { AIChatbot } from "@/components/public/ai-chatbot";
+import FinalCTA from "@/components/public/final-cta";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -28,8 +29,9 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
     <div className="relative min-h-screen pb-24 md:pb-0">
       <TopBar />
       <PrimaryNav />
-      <AiChartWidget />
+      <AIChatbot />
       <main>{children}</main>
+      <FinalCTA />
       <Footer />
       <MobileBottomNav />
     </div>
@@ -58,7 +60,7 @@ function TopBar() {
             href="https://wa.me/264818563005"
             target="_blank"
             rel="noreferrer"
-            className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-white/[0.03] text-[color:var(--text-muted)] transition hover:border-[rgba(198,97,63,0.35)] hover:text-[color:var(--text-strong)]"
+            className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-white/[0.03] text-[color:var(--text-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--text-strong)]"
           >
             <MessageCircle size={18} />
           </a>
@@ -84,7 +86,7 @@ function PrimaryNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-full px-4 py-2 text-sm font-semibold text-[color:var(--text-muted)] transition hover:bg-white/[0.05] hover:text-[color:var(--text-strong)]"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--accent)]/12 hover:text-[color:var(--text-strong)]"
             >
               {item.label}
             </Link>
@@ -134,26 +136,33 @@ function Footer() {
   );
 }
 
+// Final CTA moved to shared component `FinalCTA`
+
 function MobileBottomNav() {
   return (
-    <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 rounded-[24px] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/92 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
-      <div className="grid grid-cols-5 gap-1">
-        {mobileItems.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition hover:bg-white/[0.06] hover:text-[color:var(--text-strong)]",
-                index === 4 && "bg-[color:var(--accent)] !text-white hover:bg-[#D98263] hover:!text-white"
-              )}
-            >
-              <Icon size={18} />
-              {item.label}
-            </Link>
-          );
-        })}
+    <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 rounded-[24px] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/92 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl md:hidden">
+      <div className="grid gap-2">
+        <div className="flex justify-end">
+          <ThemeSwitcher />
+        </div>
+        <div className="grid grid-cols-5 gap-1">
+          {mobileItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--accent)]/12 hover:text-[color:var(--text-strong)]",
+                  index === 4 && "bg-[color:var(--accent)] !text-white hover:bg-[#D98263] hover:!text-white"
+                )}
+              >
+                <Icon size={18} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

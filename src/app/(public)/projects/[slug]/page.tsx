@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowUpRight, Github } from "lucide-react";
 import { Reveal } from "@/components/public/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { projects } from "@/lib/site-data";
+import { ArrowUpRight, Github } from "lucide-react";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 type ProjectPageProps = {
   params: Promise<{ slug: string }>;
@@ -75,7 +75,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
         </Container>
       </Section>
 
-      <Section className="bg-[color:var(--background-elevated)]">
+      <Section className="bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50">
         <Container className="grid gap-5 md:grid-cols-3">
           {[
             ["Problem", project.problem],
@@ -115,7 +115,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
         </Container>
       </Section>
 
-      <Section className="bg-[color:var(--background-elevated)]">
+      <Section className="bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50">
         <Container>
           <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 md:p-8">
             <h2 className="font-display text-3xl font-black text-[color:var(--text-strong)]">Need a system like this?</h2>

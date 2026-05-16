@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import { ProjectCard } from "@/components/public/project-card";
 import { Reveal } from "@/components/public/motion";
+import { ProjectsClient } from "@/components/public/projects-client";
 import { SectionHeading } from "@/components/public/section-heading";
-import { Badge } from "@/components/ui/badge";
 import { Container, Section } from "@/components/ui/container";
 import { projects } from "@/lib/site-data";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -12,8 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
-  const serviceFilters = ["All", "Booking Systems", "Web Applications", "E-commerce", "Automation"];
-
   return (
     <>
       <Section className="pb-10">
@@ -25,27 +22,11 @@ export default function ProjectsPage() {
               description="These examples show the kind of practical work Martin builds: clear customer journeys, useful admin flows, and dependable foundations for future improvements."
             />
           </Reveal>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {serviceFilters.map((filter, index) => (
-              <Badge
-                key={filter}
-                className={index === 0 ? "border-[color:var(--accent)] bg-[rgba(198,97,63,0.1)] text-[color:var(--text-strong)]" : ""}
-              >
-                {filter}
-              </Badge>
-            ))}
-          </div>
         </Container>
       </Section>
-      <Section className="pt-0">
+      <Section className="pt-0 bg-gradient-to-b from-[color:var(--background-elevated)]/90 to-[color:var(--background)]/50">
         <Container>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project, index) => (
-              <Reveal key={project.slug} delay={index * 0.05}>
-                <ProjectCard project={project} />
-              </Reveal>
-            ))}
-          </div>
+          <ProjectsClient projects={projects} />
         </Container>
       </Section>
     </>

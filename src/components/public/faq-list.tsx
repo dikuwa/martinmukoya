@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
 import { faqs } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 export function FAQList({ limit }: { limit?: number }) {
   const items = typeof limit === "number" ? faqs.slice(0, limit) : faqs;
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <div className="grid gap-3">
@@ -27,7 +27,7 @@ export function FAQList({ limit }: { limit?: number }) {
               type="button"
               aria-expanded={isOpen}
               aria-controls={contentId}
-              className="flex w-full cursor-pointer items-center justify-between gap-4 text-left font-display text-lg font-black text-[color:var(--text-strong)]"
+              className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-[18px] px-2 py-4 text-left font-display text-lg font-black text-[color:var(--text-strong)] transition hover:bg-white/[0.04]"
               onClick={() => setOpenIndex(isOpen ? null : index)}
             >
               <span>{faq.question}</span>
@@ -42,13 +42,14 @@ export function FAQList({ limit }: { limit?: number }) {
             </button>
             <div
               id={contentId}
+              aria-hidden={!isOpen}
               className={cn(
-                "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
-                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                "overflow-hidden transition-[max-height,opacity] duration-300 ease-out",
+                isOpen ? "max-h-[640px] opacity-100" : "max-h-0 opacity-0"
               )}
             >
-              <div className="overflow-hidden">
-                <p className="max-w-3xl pt-4 text-sm leading-6 text-[color:var(--text-muted)]">
+              <div className="pt-4">
+                <p className="max-w-3xl text-sm leading-6 text-[color:var(--text-muted)]">
                   {faq.answer}
                 </p>
               </div>

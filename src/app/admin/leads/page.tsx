@@ -16,7 +16,7 @@ const PAGE_SIZE = 10;
 async function LeadsTable({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? "1"));
-  const sourceOptions = await db.lead.findMany({ distinct: ["source"], select: { source: true }, where: { source: { not: null } } });
+  const sourceOptions = await db.lead.findMany({ distinct: ["source"], select: { source: true } });
   const where = {
     ...(params.search ? { OR: [{ name: { contains: params.search, mode: "insensitive" as const } }, { email: { contains: params.search, mode: "insensitive" as const } }, { company: { contains: params.search, mode: "insensitive" as const } }, { message: { contains: params.search, mode: "insensitive" as const } }] } : {}),
     ...(params.status && params.status in LeadStatus ? { status: params.status as LeadStatus } : {}),
@@ -40,7 +40,7 @@ async function LeadsTable({ searchParams }: PageProps) {
           <>
             <SelectFilter name="status" label="Status" value={params.status} options={Object.values(LeadStatus).map((status) => ({ label: status, value: status }))} />
             <SelectFilter name="serviceType" label="Service" value={params.serviceType} options={Object.values(ServiceType).map((type) => ({ label: type, value: type }))} />
-            <SelectFilter name="source" label="Source" value={params.source} options={sourceOptions.filter((item) => item.source).map((item) => ({ label: item.source!, value: item.source! }))} />
+            <SelectFilter name="source" label="Source" value={params.source} options={sourceOptions.map((item) => ({ label: item.source, value: item.source }))} />
           </>
         }
       />

@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { techStack } from "@/lib/site-data";
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About",
@@ -15,8 +15,13 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <Section className="pb-12">
-        <Container className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+      <Section className="relative pb-12 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-[color:var(--accent)]/12 blur-3xl" />
+          <div className="absolute left-1/2 top-24 h-56 w-56 -translate-x-1/2 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute right-1/4 bottom-8 h-44 w-44 rounded-full bg-[color:var(--accent)]/8 blur-3xl" />
+        </div>
+        <Container className="relative grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <Reveal>
             <SectionHeading
               eyebrow="About Martin"
@@ -39,7 +44,7 @@ export default function AboutPage() {
           </Reveal>
         </Container>
       </Section>
-      <Section className="bg-[color:var(--background-elevated)]">
+      <Section className="bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50">
         <Container className="grid gap-5 md:grid-cols-3">
           {[
             ["Teacher's clarity", "Lesson planning taught me to explain complex ideas without draining the life out of them."],
@@ -66,7 +71,7 @@ export default function AboutPage() {
           </Reveal>
           <div className="mt-8 flex flex-wrap gap-2">
             {techStack.map((tech) => (
-              <span key={tech} className="rounded-full border border-[color:var(--border-subtle)] bg-white/[0.04] px-4 py-2 text-sm font-bold text-[color:var(--text-muted)]">
+              <span key={tech} className="rounded-full border border-[color:var(--border-subtle)] bg-white/[0.04] px-4 py-2 text-[0.65rem] font-bold text-[color:var(--text-muted)]">
                 {tech}
               </span>
             ))}

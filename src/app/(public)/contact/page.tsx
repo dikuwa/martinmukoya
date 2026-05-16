@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ContactForm } from "@/components/public/contact-form";
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { contact } from "@/lib/site-data";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -34,7 +34,7 @@ export default function ContactPage() {
           </Button>
         </Reveal>
         <Reveal>
-          <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.1)] md:p-6">
+          <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] md:p-8">
             <ContactForm />
           </div>
         </Reveal>
@@ -45,7 +45,7 @@ export default function ContactPage() {
 
 function ContactLink({ icon, label, href }: { icon: React.ReactNode; label: string; href: string }) {
   return (
-    <a href={href} className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] p-4 text-sm font-bold text-[color:var(--text-strong)] transition hover:border-[rgba(198,97,63,0.35)]">
+    <a href={href} className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] p-4 text-sm font-bold text-[color:var(--text-strong)] transition hover:border-[color:var(--accent)]">
       <span className="text-[color:var(--accent)]">{icon}</span>
       {label}
     </a>

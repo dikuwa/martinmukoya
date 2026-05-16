@@ -1,9 +1,16 @@
 import { LeadStatus, Prisma, ServiceType } from "@/generated/prisma/client";
 import { cacheKey, created, getPagination, ok, paginated, parseJson, parseListQuery, serverError, sortOrder, validationError } from "@/lib/api";
+import { trackServerEvent } from "@/lib/analytics";
 import { getCachedOrFetch, invalidateTag, tags } from "@/lib/cache";
 import { db } from "@/lib/db";
+import { sendLeadNotification, sendVisitorConfirmation } from "@/lib/email";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { leadSchema } from "@/lib/validation/content";
 import { z } from "zod";
+
+const leadSubmissionSchema = leadSchema.extend({
+  website: z.string().max(0).optional()
+});
 
 export async function GET(request: Request) {
   try {
@@ -42,10 +49,39 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const data = await parseJson(request, leadSchema);
+    const ip = getClientIp(request);
+    const limit = await rateLimit(`rate:leads:${ip}`, { limit: 5, windowSeconds: 60 * 60 });
+
+    if (!limit.success) {
+      return ok({ error: "Too many project requests. Please try again later." }, { status: 429 });
+    }
+
+    const { website, ...data } = await parseJson(request, leadSubmissionSchema);
+
+    if (website) {
+      return created({ accepted: true });
+    }
+
     const lead = await db.lead.create({ data });
     await invalidateTag(tags.leads);
     await invalidateTag(tags.dashboard);
+    await Promise.allSettled([
+      trackServerEvent({
+        eventType: "form_submitted",
+        page: "/start-project",
+        source: data.source,
+        metadata: {
+          form: "start_project",
+          leadId: lead.id,
+          serviceType: lead.serviceType,
+          budgetRange: lead.budgetRange,
+          timeline: lead.timeline
+        }
+      }),
+      sendLeadNotification(lead),
+      sendVisitorConfirmation({ name: lead.name, email: lead.email, kind: "lead" })
+    ]);
+
     return created(lead);
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);

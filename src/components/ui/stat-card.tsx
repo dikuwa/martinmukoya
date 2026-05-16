@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 type StatCardProps = {
   label: string;
@@ -13,7 +13,7 @@ export function StatCard({ label, value, detail, visual, className }: StatCardPr
   return (
     <div
       className={cn(
-        "rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.1)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgba(198,97,63,0.35)]",
+        "rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.1)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--accent)]",
         className
       )}
     >

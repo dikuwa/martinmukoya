@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useRef } from "react";
 import type { testimonials } from "@/lib/site-data";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { useRef } from "react";
 
 type Testimonial = (typeof testimonials)[number];
 
@@ -22,8 +22,8 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
   return (
     <div>
       <div className="relative mt-10">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[color:var(--background)] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[color:var(--background)] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-[color:var(--background-elevated)] via-[color:var(--background-elevated)]/40 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-[color:var(--background-elevated)] via-[color:var(--background-elevated)]/40 to-transparent" />
         <div
           ref={scrollRef}
           className="flex gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -31,7 +31,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
           {items.map((item) => (
             <article
               key={item.clientName}
-              className="flex min-h-[25rem] w-[min(82vw,24rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
+              className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
             >
               <div className="relative h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
                 <Image src={item.image} alt={item.clientName} fill className="object-cover" sizes="64px" />

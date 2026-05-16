@@ -1,16 +1,16 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Container, Section } from "@/components/ui/container";
 import { FAQList } from "@/components/public/faq-list";
 import { Reveal } from "@/components/public/motion";
 import { ProjectCard } from "@/components/public/project-card";
 import { SectionHeading } from "@/components/public/section-heading";
 import { ServiceCard } from "@/components/public/service-card";
 import { TestimonialCarousel } from "@/components/public/testimonial-carousel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Container, Section } from "@/components/ui/container";
 import { contact, projects, services, techStack, testimonials } from "@/lib/site-data";
+import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function HomePage() {
   const featuredProjects = projects.filter((project) => project.featured);
@@ -39,8 +39,11 @@ export default function HomePage() {
                 sizes="(max-width: 640px) 48vw, 212px"
               />
             </div>
-            <div className="absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[rgba(34,197,94,0.35)] bg-[color:var(--surface)] px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] sm:text-sm">
-              <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#22C55E]" />
+            <div className="absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--accent)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] sm:text-sm">
+              <span className="relative mr-2 inline-flex h-2.5 w-2.5">
+                <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
+                <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#22C55E]" />
+              </span>
               Available now
             </div>
           </Reveal>
@@ -115,7 +118,7 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      <Section>
+      <Section className="relative bg-[color:var(--surface-soft)]/95">
         <Container>
           <Reveal>
             <SectionHeading
@@ -125,7 +128,7 @@ export default function HomePage() {
               align="center"
             />
           </Reveal>
-          <div className="mx-auto mt-12 grid max-w-5xl gap-10 text-center md:grid-cols-3">
+          <div className="mx-auto mt-10 grid max-w-5xl gap-10 text-center md:grid-cols-3">
             {[
               {
                 icon: Target,
@@ -157,7 +160,7 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      <Section className="technical-bg bg-[color:var(--background)]">
+      <Section className="relative bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50 overflow-hidden">
         <Container className="overflow-hidden">
           <Reveal>
             <SectionHeading eyebrow="Testimonials" title="Useful systems leave people with less to chase." align="center" />
@@ -166,9 +169,8 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      <Section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[color:var(--background)]" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(79,79,79,0.18)_1px,transparent_1px),linear-gradient(to_bottom,rgba(79,79,79,0.18)_1px,transparent_1px)] bg-[size:14px_24px] opacity-45 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+      <Section className="relative overflow-hidden bg-gradient-to-b from-[color:var(--background)]/50 to-[color:var(--background)]">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(79,79,79,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(79,79,79,0.1)_1px,transparent_1px)] bg-[size:14px_24px] opacity-50 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
         <Container className="grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
           <Reveal className="self-center">
             <SectionHeading
@@ -202,29 +204,7 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      <Section>
-        <Container>
-          <Reveal>
-            <div className="mx-auto max-w-4xl text-center">
-              <Badge>Ready to build?</Badge>
-              <h2 className="mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
-                  Let’s turn the next enquiry into a cleaner system.
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">
-                  Send the goal, the current friction, and the kind of customers you want to serve better.
-              </p>
-              <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/start-project">Start Your Project</Link>
-                </Button>
-                <Button asChild size="lg" variant="secondary">
-                  <a href={contact.whatsappHref} target="_blank" rel="noreferrer">WhatsApp Martin</a>
-                </Button>
-              </div>
-            </div>
-          </Reveal>
-        </Container>
-      </Section>
+      {/* Final CTA moved to shared component `FinalCTA` rendered in layout */}
     </>
   );
 }
