@@ -1,7 +1,10 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+import { ClearFiltersButton } from "@/components/admin/clear-filters-button";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+export { SelectFilter } from "@/components/admin/select-filter";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import type { ReactNode } from "react";
 
 type Column<T> = {
   header: string;
@@ -13,18 +16,20 @@ export function AdminTable<T>({
   items,
   columns,
   empty,
-  editHref
+  editHref,
+  actionLabel = "Edit"
 }: {
   items: T[];
   columns: Array<Column<T>>;
   empty: string;
   editHref?: (item: T) => string;
+  actionLabel?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)]">
+    <div className="admin-table-container overflow-hidden rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[var(--shadow-xs)]">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
+          <TableRow className="border-[color:var(--border-subtle)] bg-[color:var(--surface)] hover:bg-transparent">
             {columns.map((column) => (
               <TableHead key={column.header} className={column.className}>
                 {column.header}
@@ -36,13 +41,19 @@ export function AdminTable<T>({
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={columns.length + (editHref ? 1 : 0)} className="py-10 text-center text-[color:var(--text-muted)]">
-                {empty}
+              <TableCell colSpan={columns.length + (editHref ? 1 : 0)} className="py-12 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-[color:var(--text-faint)]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                  </svg>
+                  <p className="text-sm text-[color:var(--text-muted)]">{empty}</p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
             items.map((item, index) => (
-              <TableRow key={index} className="border-[color:var(--border-subtle)] hover:bg-white/[0.03]">
+              <TableRow key={index} className="border-[color:var(--border-subtle)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-soft)]">
                 {columns.map((column) => (
                   <TableCell key={column.header} className={column.className}>
                     {column.cell(item)}
@@ -51,7 +62,7 @@ export function AdminTable<T>({
                 {editHref ? (
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="secondary">
-                      <Link href={editHref(item)}>Edit</Link>
+                      <Link href={editHref(item)}>{actionLabel}</Link>
                     </Button>
                   </TableCell>
                 ) : null}
@@ -66,53 +77,29 @@ export function AdminTable<T>({
 
 export function AdminFilters({
   search,
-  filters
+  filters,
+  clearHref
 }: {
   search?: string;
   filters?: ReactNode;
+  clearHref?: string;
 }) {
   return (
-    <form className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 md:flex-row md:items-center">
-      <input
-        name="search"
-        defaultValue={search}
-        placeholder="Search records..."
-        className="h-11 flex-1 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-4 text-sm text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
-      />
+    <form className="flex flex-col gap-3 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)] md:flex-row md:items-end">
+      <div className="relative flex-1">
+        <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
+        <input
+          name="search"
+          defaultValue={search}
+          placeholder="Search records..."
+          className="h-11 w-full rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] pl-9 pr-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] focus:border-[color:var(--primary)] focus:bg-[color:var(--surface)]"
+        />
+      </div>
       {filters}
-      <Button type="submit" variant="secondary">
+      <Button type="submit" variant="secondary" className="md:self-end">
         Filter
       </Button>
+      {clearHref ? <ClearFiltersButton href={clearHref} /> : null}
     </form>
-  );
-}
-
-export function SelectFilter({
-  name,
-  value,
-  options,
-  label
-}: {
-  name: string;
-  value?: string;
-  options: Array<{ label: string; value: string }>;
-  label: string;
-}) {
-  return (
-    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--text-faint)]">
-      {label}
-      <select
-        name={name}
-        defaultValue={value ?? ""}
-        className="h-11 min-w-40 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 text-sm normal-case tracking-normal text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
-      >
-        <option value="">All</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

@@ -1,72 +1,60 @@
 import Link from "next/link";
-import { BarChart3, FileQuestion, FolderKanban, Home, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, Users } from "lucide-react";
+import { ExternalLink, LayoutDashboard } from "lucide-react";
+import { AdminMobileNav, AdminNav } from "@/components/navigation/admin-nav";
 import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { headers } from "next/headers";
-
-const adminNav = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban },
-  { href: "/admin/blog", label: "Blog", icon: Newspaper },
-  { href: "/admin/leads", label: "Leads", icon: Users },
-  { href: "/admin/messages", label: "Messages", icon: Inbox },
-  { href: "/admin/testimonials", label: "Testimonials", icon: Star },
-  { href: "/admin/faqs", label: "FAQs", icon: FileQuestion },
-  { href: "/admin/chat", label: "Chat", icon: MessageSquareText },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/settings", label: "Settings", icon: Settings }
-];
 
 export async function AdminShell({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--text-normal)]">
-      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/88 p-5 backdrop-blur-xl lg:block">
-        <Link href="/admin" className="font-display text-xl font-black text-[color:var(--text-strong)]">
-          Martin Admin
+      {/* ── Sidebar ── */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/90 p-5 backdrop-blur-xl lg:flex lg:flex-col">
+        <Link href="/admin" className="flex items-center gap-2 font-display text-lg font-black tracking-tight text-[color:var(--text-strong)]">
+          <LayoutDashboard size={20} className="text-[color:var(--primary)]" />
+          <span>Admin</span>
         </Link>
-        <nav className="mt-8 grid gap-1">
-          {adminNav.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-semibold text-[color:var(--text-muted)] transition hover:bg-white/[0.06] hover:text-[color:var(--text-strong)]"
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="absolute inset-x-5 bottom-5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
-          <p className="text-sm font-bold text-[color:var(--text-strong)]">{session?.user.name ?? "Admin"}</p>
-          <p className="mt-1 truncate text-xs text-[color:var(--text-muted)]">{session?.user.email}</p>
+        <AdminNav />
+        <div className="mt-auto rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3.5">
+          <div className="flex items-center gap-3">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-xs font-black text-white">
+              {session?.user.name?.charAt(0).toUpperCase() ?? "A"}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-[color:var(--text-strong)]">{session?.user.name ?? "Admin"}</p>
+              <p className="truncate text-xs text-[color:var(--text-faint)]">{session?.user.email}</p>
+            </div>
+          </div>
         </div>
       </aside>
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--background)]/86 backdrop-blur-xl">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-            <div>
+
+      {/* ── Main content ── */}
+      <div className="lg:pl-64">
+        {/* ── Top bar ── */}
+        <header className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--background)]/90 backdrop-blur-xl">
+          <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
                 Dashboard
               </p>
-              <p className="text-sm text-[color:var(--text-muted)]">Content, leads, analytics, and settings</p>
+              <p className="text-sm text-[color:var(--text-muted)] truncate">Content, leads, analytics, and settings</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <ThemeSwitcher />
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" size="sm">
                 <Link href="/">
-                  <Home size={16} /> Site
+                  <ExternalLink size={14} />
+                  <span className="hidden sm:inline">View Site</span>
                 </Link>
               </Button>
             </div>
           </div>
+          <AdminMobileNav />
         </header>
-        <main className="px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

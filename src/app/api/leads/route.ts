@@ -1,10 +1,12 @@
 import { LeadStatus, Prisma, ServiceType } from "@/generated/prisma/client";
 import { cacheKey, created, getPagination, ok, paginated, parseJson, parseListQuery, serverError, sortOrder, validationError } from "@/lib/api";
 import { trackServerEvent } from "@/lib/analytics";
+import { requireAdmin } from "@/lib/auth-guard";
 import { getCachedOrFetch, invalidateTag, tags } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { sendLeadNotification, sendVisitorConfirmation } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { getCurrentSite, getSiteBySlug } from "@/lib/sites";
 import { leadSchema } from "@/lib/validation/content";
 import { z } from "zod";
 
@@ -14,11 +16,16 @@ const leadSubmissionSchema = leadSchema.extend({
 
 export async function GET(request: Request) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const query = parseListQuery(request);
     const { skip, take } = getPagination(query);
     const where: Prisma.LeadWhereInput = {};
 
     if (query.status && query.status in LeadStatus) where.status = query.status as LeadStatus;
+    if (query.siteId) where.siteId = query.siteId;
+    if (query.site && query.site !== "all") where.site = { slug: query.site };
     if (query.serviceType && query.serviceType in ServiceType) where.serviceType = query.serviceType as ServiceType;
     if (query.source) where.source = query.source;
     if (query.search) {
@@ -34,7 +41,7 @@ export async function GET(request: Request) {
     const orderBy = sortOrder(query, ["createdAt", "updatedAt", "name", "status"], "createdAt") as Prisma.LeadOrderByWithRelationInput;
     const data = await getCachedOrFetch(cacheKey(tags.leads, request), async () => {
       const [items, total] = await Promise.all([
-        db.lead.findMany({ where, orderBy, skip, take }),
+        db.lead.findMany({ where, orderBy, skip, take, include: { site: true } }),
         db.lead.count({ where })
       ]);
       return paginated(items, total, query);
@@ -62,13 +69,19 @@ export async function POST(request: Request) {
       return created({ accepted: true });
     }
 
-    const lead = await db.lead.create({ data });
+    const site = data.siteId ? await db.site.findUnique({ where: { id: data.siteId } }) : data.siteSlug ? await getSiteBySlug(data.siteSlug) : await getCurrentSite();
+    const { siteId: _siteId, siteSlug: _siteSlug, ...leadData } = data;
+    void _siteId;
+    void _siteSlug;
+    const lead = await db.lead.create({ data: { ...leadData, siteId: site?.id } });
     await invalidateTag(tags.leads);
     await invalidateTag(tags.dashboard);
     await Promise.allSettled([
       trackServerEvent({
         eventType: "form_submitted",
         page: "/start-project",
+        siteId: site?.id,
+        siteSlug: site?.slug,
         source: data.source,
         metadata: {
           form: "start_project",

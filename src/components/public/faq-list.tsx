@@ -5,13 +5,15 @@ import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-export function FAQList({ limit }: { limit?: number }) {
-  const items = typeof limit === "number" ? faqs.slice(0, limit) : faqs;
+type FAQItem = (typeof faqs)[number];
+
+export function FAQList({ items = faqs, limit, variant = "default" }: { items?: FAQItem[]; limit?: number; variant?: "default" | "soft" }) {
+  const visibleItems = typeof limit === "number" ? items.slice(0, limit) : items;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <div className="grid gap-3">
-      {items.map((faq, index) => {
+      {visibleItems.map((faq, index) => {
         const isOpen = openIndex === index;
         const contentId = `faq-answer-${index}`;
 
@@ -19,25 +21,40 @@ export function FAQList({ limit }: { limit?: number }) {
           <div
             key={faq.question}
             className={cn(
-              "rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 transition-[border-color,background-color] duration-300",
-              isOpen && "border-[rgba(198,97,63,0.35)] bg-[rgba(198,97,63,0.06)]"
+              variant === "soft"
+                ? "rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/70 p-4 backdrop-blur-sm transition-[border-color,background-color] duration-300"
+                : "rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 transition-[border-color,background-color] duration-300",
+              isOpen && (variant === "soft"
+                ? "border-[color:var(--primary)]/40 bg-[color:var(--primary)]/[0.04]"
+                : "border-[color:var(--primary)] bg-[color:var(--primary)]/10")
             )}
           >
             <button
               type="button"
               aria-expanded={isOpen}
               aria-controls={contentId}
-              className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-[18px] px-2 py-4 text-left font-display text-lg font-black text-[color:var(--text-strong)] transition hover:bg-white/[0.04]"
+              className={cn(
+                "flex w-full cursor-pointer items-center justify-between gap-4 rounded-[18px] text-left font-display transition",
+                variant === "soft" ? "px-2 py-3 text-base font-black text-[color:var(--text-strong)]" : "px-2 py-4 text-lg font-black text-[color:var(--text-strong)] hover:bg-white/[0.04]"
+              )}
               onClick={() => setOpenIndex(isOpen ? null : index)}
             >
               <span>{faq.question}</span>
               <span
                 className={cn(
-                  "grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[color:var(--border-subtle)] text-[color:var(--accent)] transition duration-300",
-                  isOpen && "rotate-45 bg-[color:var(--accent)] text-white"
+                  "grid h-8 w-8 shrink-0 place-items-center rounded-full border transition duration-300",
+                  variant === "soft"
+                    ? cn(
+                        "border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--text-faint)]",
+                        isOpen && "rotate-45 border-[color:var(--primary)]/40 bg-[color:var(--primary)]/10 text-[color:var(--primary)]"
+                      )
+                    : cn(
+                        "border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]",
+                        isOpen && "rotate-45 border-[color:var(--primary)] bg-[color:var(--primary)] text-white"
+                      )
                 )}
               >
-                <Plus size={16} strokeWidth={3} />
+                <Plus size={variant === "soft" ? 14 : 16} strokeWidth={3} />
               </span>
             </button>
             <div

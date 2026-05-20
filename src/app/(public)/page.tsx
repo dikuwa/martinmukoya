@@ -1,78 +1,79 @@
 import { FAQList } from "@/components/public/faq-list";
 import { Reveal } from "@/components/public/motion";
-import { ProjectCard } from "@/components/public/project-card";
+import { FlexTechProjectCard, ProjectCard } from "@/components/public/project-card";
 import { SectionHeading } from "@/components/public/section-heading";
 import { ServiceCard } from "@/components/public/service-card";
 import { TestimonialCarousel } from "@/components/public/testimonial-carousel";
+import { TestimonialMarquee } from "@/components/public/testimonial-marquee";
+import { TrackedAnchor } from "@/components/public/tracked-anchor";
+import { TrackedLink } from "@/components/public/tracked-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { contact, projects, services, techStack, testimonials } from "@/lib/site-data";
-import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target } from "lucide-react";
+import { getPublicContent } from "@/lib/public-content";
+import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
+import { getCurrentSite } from "@/lib/sites";
+import { cn } from "@/lib/utils";
+import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Monitor, Smartphone, Target, Zap } from "lucide-react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function HomePage() {
-  const featuredProjects = projects.filter((project) => project.featured);
+export async function generateMetadata(): Promise<Metadata> {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+
+  return {
+    title: site.brandName,
+    description: site.home.heroDescription,
+    openGraph: {
+      title: site.brandName,
+      description: site.home.heroDescription,
+      images: [site.home.heroImage]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: site.brandName,
+      description: site.home.heroDescription,
+      images: [site.home.heroImage]
+    }
+  };
+}
+
+export default async function HomePage() {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const home = site.home;
+
+  const content = await getPublicContent(site, currentSite?.id);
+  const featuredProjects = content.featuredProjects;
+  const testimonials = content.testimonials;
 
   return (
     <>
-      <Section className="relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20">
-        <Image
-          src="/assets/backgrounds/SVG/map-03.svg"
-          alt=""
-          fill
-          priority
-          className="pointer-events-none -z-10 object-cover opacity-[0.055] dark:opacity-[0.075]"
-          sizes="100vw"
-        />
-        <Container className="flex flex-col items-center text-center">
-          <Reveal className="relative mx-auto aspect-square w-[min(48vw,11.5rem)] sm:w-[12.5rem] lg:w-[13.25rem]">
-            <div className="absolute inset-0 rounded-full bg-[rgba(85,49,113,0.15)] blur-2xl" />
-            <div className="relative h-full overflow-hidden rounded-full border-[3px] border-[rgba(198,97,63,0.46)] bg-[#F49724] shadow-[0_8px_24px_rgba(0,0,0,0.16)] ring-1 ring-[color:var(--border-subtle)]">
-              <Image
-                src="/assets/hero-images/webp/hero-image.webp"
-                alt="Martin Mukoya"
-                fill
-                priority
-                className="translate-y-2 scale-[1.1] object-cover object-center"
-                sizes="(max-width: 640px) 48vw, 212px"
-              />
-            </div>
-            <div className="absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--accent)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] sm:text-sm">
-              <span className="relative mr-2 inline-flex h-2.5 w-2.5">
-                <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
-                <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#22C55E]" />
-              </span>
-              Available now
-            </div>
-          </Reveal>
-
-          <Reveal className="mt-9 flex flex-col items-center" delay={0.08}>
-            <Badge>Business systems developer in Namibia</Badge>
-            <h1 className="mt-6 max-w-5xl font-display text-[clamp(2.45rem,calc(1.9rem+3.6vw),5.45rem)] font-black leading-[0.94] text-[color:var(--text-strong)]">
-              I build practical systems that turn visitors into clients.
-            </h1>
-            <p className="mt-6 max-w-2xl text-[clamp(1rem,calc(0.94rem+0.32vw),1.125rem)] leading-8 text-[color:var(--text-muted)]">
-              Websites, booking systems, ecommerce flows, and AI automations for businesses that need clearer leads, less manual work, and stronger follow-up.
-            </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <Link href="/start-project">
-                  Start Your Project <ArrowRight size={18} />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <Link href="/projects">View Case Studies</Link>
-              </Button>
-            </div>
-            <SocialLinks />
-          </Reveal>
-        </Container>
+      <Section className={cn("relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20", site.slug === "flextech-media" ? "bg-[color:var(--background)]" : "") }>
+        {site.slug !== "flextech-media" && (
+          <Image
+            src="/assets/backgrounds/SVG/map-03.svg"
+            alt=""
+            fill
+            priority
+            className="pointer-events-none -z-10 object-cover opacity-[0.055] dark:opacity-[0.075]"
+            sizes="100vw"
+          />
+        )}
+        {site.slug === "flextech-media" ? (
+          <FlexTechHero site={site} />
+        ) : (
+          <Container className="flex flex-col items-center text-center">
+            <MartinHeroVisual site={site} />
+            <HeroCopy site={site} className="mt-9" />
+          </Container>
+        )}
         <Container className="mt-12">
           <div className="flex flex-wrap items-center justify-center gap-2 border-y border-[color:var(--border-subtle)] py-5">
-            {techStack.map((tech) => (
-              <span key={tech} className="rounded-full bg-white/[0.04] px-4 py-2 text-xs font-bold text-[color:var(--text-faint)]">
+            {home.techStack.map((tech, index) => (
+              <span key={`${site.slug}-home-tech-${tech}-${index}`} className="rounded-full bg-white/[0.04] px-4 py-2 text-xs font-bold text-[color:var(--text-faint)]">
                 {tech}
               </span>
             ))}
@@ -85,12 +86,12 @@ export default function HomePage() {
           <Reveal>
             <SectionHeading
               eyebrow="Services"
-              title="Business-first systems for the work that matters."
-              description="Each service is shaped around a practical outcome: more qualified enquiries, fewer repeated tasks, clearer operations, and smoother customer journeys."
+              title={home.servicesTitle}
+              description={home.servicesDescription}
             />
           </Reveal>
           <div className="mt-10 grid gap-x-12 gap-y-2 md:grid-cols-2 lg:grid-cols-4">
-            {services.map((service, index) => (
+            {site.services.map((service, index) => (
               <Reveal key={service.id} delay={index * 0.05}>
                 <ServiceCard service={service} />
               </Reveal>
@@ -103,15 +104,19 @@ export default function HomePage() {
         <Container>
           <Reveal>
             <SectionHeading
-              eyebrow="Featured work"
-              title="Case studies built around real business problems."
-              description="The strongest work is not just attractive. It captures the right information, supports the team behind the scenes, and makes the next action obvious."
+              eyebrow={home.workEyebrow}
+              title={home.workTitle}
+              description={home.workDescription}
             />
           </Reveal>
           <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
             {featuredProjects.map((project, index) => (
               <Reveal key={project.slug} delay={index * 0.05}>
-                <ProjectCard project={project} />
+                {site.slug === "flextech-media" ? (
+                  <FlexTechProjectCard project={project} siteSlug={site.slug} />
+                ) : (
+                  <ProjectCard project={project} siteSlug={site.slug} />
+                )}
               </Reveal>
             ))}
           </div>
@@ -122,69 +127,110 @@ export default function HomePage() {
         <Container>
           <Reveal>
             <SectionHeading
-              eyebrow="Why work with me"
-              title="Why choose a practical build?"
-              description="A good build gives the business owner clarity. What came in? What needs a response? What should be automated? What should stay human?"
+              eyebrow={site.slug === "flextech-media" ? "Working approach" : "Why work with me"}
+              title={home.reasonsTitle}
+              description={home.reasonsDescription}
               align="center"
             />
           </Reveal>
-          <div className="mx-auto mt-10 grid max-w-5xl gap-10 text-center md:grid-cols-3">
-            {[
-              {
-                icon: Target,
-                title: "Conversion focus",
-                description: "CTAs, forms, and follow-up paths are treated as product features."
-              },
-              {
-                icon: Smartphone,
-                title: "Mobile-first execution",
-                description: "Key flows are designed for the phones most customers actually use."
-              },
-              {
-                icon: Handshake,
-                title: "Plain-English planning",
-                description: "The work starts with the business goal, not a stack list."
-              }
-            ].map(({ icon: Icon, title, description }, index) => (
-              <Reveal key={title} delay={index * 0.05}>
-                <div>
-                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-white/[0.03] text-[color:var(--accent)]">
-                    <Icon size={28} />
-                  </div>
-                  <h3 className="mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+
+          {site.slug === "flextech-media" ? (
+            <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3">
+              {home.reasons.map(({ title, description }, index) => {
+                const Icon = [Target, Smartphone, Zap][index] ?? Target;
+                return (
+                  <Reveal key={title} delay={index * 0.05}>
+                    <div className="group relative h-full rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-7 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:border-[color:var(--primary)]/40 hover:shadow-[0_8px_30px_rgba(107,38,217,0.12)]">
+                      <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-[color:var(--primary)]/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="relative">
+                        <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] shadow-[0_0_20px_rgba(107,38,217,0.08)]">
+                          <Icon size={20} />
+                        </div>
+                        <h3 className="mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                        <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mx-auto mt-10 grid max-w-5xl gap-10 text-center md:grid-cols-3">
+              {home.reasons.map(({ title, description }, index) => {
+                const Icon = [Target, Smartphone, Handshake][index] ?? Target;
+                return (
+                  <Reveal key={title} delay={index * 0.05}>
+                    <div>
+                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
+                        <Icon size={28} />
+                      </div>
+                      <h3 className="mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          )}
         </Container>
       </Section>
 
       <Section className="relative bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50 overflow-hidden">
         <Container className="overflow-hidden">
           <Reveal>
-            <SectionHeading eyebrow="Testimonials" title="Useful systems leave people with less to chase." align="center" />
+            <SectionHeading eyebrow="Testimonials" title={home.testimonialsTitle} align="center" />
           </Reveal>
-          <TestimonialCarousel items={testimonials} />
+          {site.slug === "flextech-media" ? (
+            <TestimonialMarquee items={testimonials} />
+          ) : (
+            <TestimonialCarousel items={testimonials} siteSlug={site.slug} />
+          )}
         </Container>
       </Section>
 
       <Section className="relative overflow-hidden bg-gradient-to-b from-[color:var(--background)]/50 to-[color:var(--background)]">
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(79,79,79,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(79,79,79,0.1)_1px,transparent_1px)] bg-[size:14px_24px] opacity-50 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-        <Container className="grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
-          <Reveal className="self-center">
+        <Container className={cn("grid items-center gap-10 lg:grid-cols-[1fr_0.9fr]")}>
+          <Reveal className={cn(site.slug === "flextech-media" ? "self-start" : "self-center")}>
             <SectionHeading
               eyebrow="About"
-              title="More than just lines of code."
-              description="👋 Hi there! I'm a science teacher by day and a curious human all the time. My life is a happy collision of lesson plans, bug reports, birdsong, and dog-eared books. I believe the best ideas live at the intersection of the natural world and the digital one, and I'm always trying to find them."
+              title={home.aboutTitle}
+              description={home.aboutDescription}
             />
-            <Button asChild className="mt-7" variant="secondary">
-              <Link href="/about">More About Martin</Link>
-            </Button>
+            {site.slug === "flextech-media" ? (
+              <>
+                <p className="mt-5 text-sm leading-7 text-[color:var(--text-muted)]">
+                  The focus is not just visual polish. Every system is structured to improve follow-up, reduce friction, and help teams respond faster as the business grows.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {["Clear enquiry flow", "Mobile-first journeys", "Practical automation", "Easier customer follow-up"].map((point) => (
+                    <span key={point} className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--text-muted)]">
+                      {point}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <Button asChild className="mt-7" variant="secondary">
+                <Link href="/about">More About {site.brandLines[0]}</Link>
+              </Button>
+            )}
           </Reveal>
-          <Reveal className="relative mx-auto aspect-[4/5] w-full max-w-[420px] overflow-hidden rounded-[22px] self-center">
-            <Image src="/assets/hero-images/webp/about.webp" alt="Martin Mukoya outside the code editor" fill className="object-cover" sizes="(max-width: 768px) 100vw, 520px" />
-          </Reveal>
+          {site.slug === "flextech-media" ? (
+            <Reveal className="relative mx-auto w-full max-w-[420px] rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-8 shadow-[0_30px_80px_rgba(107,38,217,0.12)] dark:bg-[color:var(--surface)]">
+              <div className="rounded-[24px] bg-gradient-to-br from-[color:var(--surface-soft)]/90 via-[color:var(--primary)]/10 to-transparent p-8 dark:from-[color:var(--surface)]/80 dark:via-[color:var(--primary)]/10">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--primary)]">Campaign-ready systems</p>
+                <h3 className="mt-4 text-3xl font-black text-[color:var(--text-strong)]">Designed to support the work after launch.</h3>
+                <p className="mt-4 text-sm leading-7 text-[color:var(--text-normal)] dark:text-[color:var(--text-muted)]">
+                  From lead capture and booking flows to follow-up structure and operational clarity, every build is designed to stay useful as the business evolves.
+                </p>
+              </div>
+            </Reveal>
+          ) : (
+            <Reveal className="relative mx-auto aspect-[4/5] w-full max-w-[420px] overflow-hidden rounded-[22px] self-center">
+              <Image src={home.aboutImage} alt={home.aboutAlt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 520px" />
+            </Reveal>
+          )}
         </Container>
       </Section>
 
@@ -195,12 +241,67 @@ export default function HomePage() {
           style={{ backgroundImage: "url('/assets/backgrounds/SVG/SVG/bg-FAQ.svg')" }}
         />
         <Container className="relative z-10">
-          <Reveal>
-            <SectionHeading eyebrow="FAQ" title="Straight answers before we start." align="center" />
-          </Reveal>
-          <Reveal className="mx-auto mt-10 max-w-4xl">
-            <FAQList limit={4} />
-          </Reveal>
+          {site.slug === "flextech-media" ? (
+            <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+              {/* Left: Support panel */}
+              <Reveal className="lg:sticky lg:top-32">
+                <div className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)]">
+                  <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)] ring-2 ring-[color:var(--primary)]/20 lg:mx-0">
+                    <Image src="/assets/UI Faces/10.webp" alt="" fill className="object-cover" sizes="64px" />
+                  </div>
+                  <h3 className="mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
+                  <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">
+                    I&rsquo;m happy to explain the process, discuss ideas, or help you understand what makes the most sense for your business.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                    <TrackedAnchor
+                      siteSlug={site.slug}
+                      eventType="email_click"
+                      eventPage="/"
+                      eventSource="faq_contact"
+                      href={`mailto:${site.contact.email}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-3 text-xs font-bold text-[color:var(--text-normal)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10"
+                    >
+                      <Mail size={14} /> Send an email
+                    </TrackedAnchor>
+                    <TrackedAnchor
+                      siteSlug={site.slug}
+                      eventType="whatsapp_click"
+                      eventPage="/"
+                      eventSource="faq_contact"
+                      href={site.contact.whatsappHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-3 text-xs font-bold text-[color:var(--text-normal)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10"
+                    >
+                      <MessageCircle size={14} /> Text on WhatsApp
+                    </TrackedAnchor>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* Right: FAQ accordion */}
+              <Reveal>
+                <SectionHeading
+                  eyebrow="FAQ"
+                  title="Questions that usually come up before we start."
+                  align="left"
+                />
+                <div className="mt-6">
+                  <FAQList items={content.faqs} limit={4} variant="soft" />
+                </div>
+              </Reveal>
+            </div>
+          ) : (
+            <>
+              <Reveal>
+                <SectionHeading eyebrow="FAQ" title="Straight answers before we start." align="center" />
+              </Reveal>
+              <Reveal className="mx-auto mt-10 max-w-4xl">
+                <FAQList items={content.faqs} limit={4} />
+              </Reveal>
+            </>
+          )}
         </Container>
       </Section>
 
@@ -209,24 +310,241 @@ export default function HomePage() {
   );
 }
 
-function SocialLinks() {
+function SocialLinks({ site }: { site: PublicSiteConfig }) {
+  if (site.slug === "flextech-media") {
+    const faces = [
+      "/assets/UI Faces/10.webp",
+      "/assets/UI Faces/17.webp",
+      "/assets/UI Faces/2.webp",
+      "/assets/UI Faces/20.webp",
+      "/assets/UI Faces/5.webp"
+    ];
+
+    return (
+        <div className="mt-12 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-center">
+          <div className="flex -space-x-4">
+            {faces.map((src, index) => (
+              <div
+                key={src}
+                className={cn(
+                    "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+                  index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
+                )}
+              >
+                <Image src={src} alt={`FlexTech team face ${index + 1}`} fill className="object-cover" sizes="56px" />
+              </div>
+            ))}
+          </div>
+        </div>
+          <div className="max-w-xl text-center sm:text-left">
+            <p className="text-base leading-7 text-[color:var(--text-normal)]">
+          Built for businesses that want leads, bookings and measurable growth.
+            </p>
+          </div>
+
+        <div className="flex flex-col items-center gap-3 sm:flex-row">
+          <TrackedAnchor
+            siteSlug={site.slug}
+            eventType="email_click"
+            eventPage="/"
+            eventSource="hero_contact_cta"
+            aria-label={`Email ${site.brandName}`}
+            href={`mailto:${site.contact.email}`}
+            className="inline-flex items-center justify-center gap-2 rounded-[1rem] bg-[color:var(--primary)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--primary-light)]"
+          >
+            <Mail size={16} /> Email
+          </TrackedAnchor>
+          <TrackedAnchor
+            siteSlug={site.slug}
+            eventType="whatsapp_click"
+            eventPage="/"
+            eventSource="hero_contact_cta"
+            aria-label={`WhatsApp ${site.brandName}`}
+            href={site.contact.whatsappHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-6 py-3 text-sm font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10"
+          >
+            <MessageCircle size={16} /> WhatsApp
+          </TrackedAnchor>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-8 flex items-center gap-3 text-[color:var(--text-muted)]">
-      <a aria-label="GitHub" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={contact.github} target="_blank" rel="noreferrer">
+      <a aria-label="GitHub" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.github} target="_blank" rel="noreferrer">
         <Github size={18} />
       </a>
-      <a aria-label="LinkedIn" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={contact.linkedin} target="_blank" rel="noreferrer">
+      <a aria-label="LinkedIn" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.linkedin} target="_blank" rel="noreferrer">
         <Linkedin size={18} />
       </a>
-      <a aria-label="Facebook" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={contact.facebook} target="_blank" rel="noreferrer">
+      <a aria-label="Facebook" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.facebook} target="_blank" rel="noreferrer">
         <Facebook size={18} />
       </a>
-      <a aria-label="Email Martin" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={`mailto:${contact.email}`}>
+      <TrackedAnchor siteSlug={site.slug} eventType="email_click" eventPage="/" eventSource="hero_socials" aria-label={`Email ${site.brandName}`} className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={`mailto:${site.contact.email}`}>
         <Mail size={18} />
-      </a>
-      <a aria-label="WhatsApp Martin" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={contact.whatsappHref} target="_blank" rel="noreferrer">
+      </TrackedAnchor>
+      <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/" eventSource="hero_socials" aria-label={`WhatsApp ${site.brandName}`} className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.whatsappHref} target="_blank" rel="noreferrer">
         <MessageCircle size={18} />
-      </a>
+      </TrackedAnchor>
     </div>
+  );
+}
+
+function HeroCopy({ site, className = "" }: { site: PublicSiteConfig; className?: string }) {
+  const home = site.home;
+  const isFlexTech = site.slug === "flextech-media";
+
+  return (
+    <Reveal className={`flex flex-col ${isFlexTech ? "items-center text-center" : "items-center text-center"} ${className}`} delay={0.08}>
+      <Badge className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)] dark:bg-[color:var(--surface)] dark:text-[color:var(--text-strong)]">
+        {home.eyebrow}
+      </Badge>
+      <h1 className="mt-8 max-w-4xl text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
+        {home.heroTitle}
+      </h1>
+      <p className="mt-6 max-w-3xl text-base leading-8 text-[color:var(--text-normal)] sm:text-lg">
+        {home.heroDescription}
+      </p>
+      <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <Button asChild size="lg" className="w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white shadow-[0_24px_60px_rgba(107,38,217,0.18)] transition hover:bg-[color:var(--primary-light)] sm:w-auto">
+          <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
+            {home.primaryCta} <ArrowRight size={18} />
+          </TrackedLink>
+        </Button>
+        <Button asChild size="lg" variant="secondary" className="w-full rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-8 py-4 font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--primary)]/10 sm:w-auto">
+          <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
+            {home.secondaryCta}
+          </TrackedLink>
+        </Button>
+      </div>
+      <SocialLinks site={site} />
+    </Reveal>
+  );
+}
+
+function FlexTechHero({ site }: { site: PublicSiteConfig }) {
+  const home = site.home;
+  const faces = [
+    "/assets/UI%20Faces/10.webp",
+    "/assets/UI%20Faces/17.webp",
+    "/assets/UI%20Faces/2.webp",
+    "/assets/UI%20Faces/20.webp",
+    "/assets/UI%20Faces/5.webp"
+  ];
+
+  return (
+    <Container className="relative overflow-hidden rounded-[2rem] bg-[color:var(--background)] px-4 py-16 sm:px-6 lg:px-8">
+      <div className="absolute inset-0">
+        <Image src={home.heroImage} alt="" fill className="object-cover opacity-20" priority />
+        <div className="absolute inset-0 bg-gradient-to-br from-[color:var(--background)]/95 via-[color:var(--surface)]/88 to-[color:var(--primary)]/72" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(107,38,217,0.24),transparent_16%),radial-gradient(circle_at_top_right,rgba(107,38,217,0.18),transparent_20%),radial-gradient(circle_at_75%_18%,rgba(255,255,255,0.12),transparent_15%)]" />
+      </div>
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center">
+        <Badge className="rounded-full bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)]">
+          {home.eyebrow}
+        </Badge>
+        <h1 className="mt-8 text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
+          {home.heroTitle}
+        </h1>
+        <p className="mx-auto mt-6 max-w-3xl text-center text-base leading-8 text-[color:var(--text-normal)] sm:text-lg">
+          {home.heroDescription}
+        </p>
+        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <Button asChild size="lg" className="group w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white transition hover:bg-[color:var(--primary-light)] sm:w-auto">
+            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
+              <span className="inline-flex items-center gap-2">
+                {home.primaryCta}
+                <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+            </TrackedLink>
+          </Button>
+          <Button asChild size="lg" variant="secondary" className="w-full rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-8 py-4 font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10 sm:w-auto">
+            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
+              {home.secondaryCta}
+            </TrackedLink>
+          </Button>
+        </div>
+        <div className="mt-12 flex flex-col items-center gap-6">
+          <div className="flex items-center justify-center">
+            <div className="flex -space-x-4">
+              {faces.map((src, index) => (
+                <div
+                  key={src}
+                  className={cn(
+                    "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+                    index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
+                  )}
+                >
+                  <Image src={src} alt={`FlexTech team face ${index + 1}`} fill className="object-cover" sizes="56px" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="max-w-xl text-center sm:text-left">
+            <p className="text-base leading-7 text-[color:var(--text-normal)]">
+              Built for businesses that want leads, bookings and measurable growth.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <TrackedAnchor
+              siteSlug={site.slug}
+              eventType="email_click"
+              eventPage="/"
+              eventSource="hero_contact_cta"
+              aria-label={`Email ${site.brandName}`}
+              href={`mailto:${site.contact.email}`}
+              className="inline-flex items-center justify-center gap-2 rounded-[1rem] bg-[color:var(--primary)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--primary-light)]"
+            >
+              <Mail size={16} /> Email
+            </TrackedAnchor>
+            <TrackedAnchor
+              siteSlug={site.slug}
+              eventType="whatsapp_click"
+              eventPage="/"
+              eventSource="hero_contact_cta"
+              aria-label={`WhatsApp ${site.brandName}`}
+              href={site.contact.whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-6 py-3 text-sm font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10"
+            >
+              <MessageCircle size={16} /> WhatsApp
+            </TrackedAnchor>
+          </div>
+        </div>
+      </div>
+    </Container>
+  );
+}
+
+function MartinHeroVisual({ site }: { site: PublicSiteConfig }) {
+  const home = site.home;
+
+  return (
+    <Reveal className="relative mx-auto aspect-square w-[min(48vw,11.5rem)] sm:w-[12.5rem] lg:w-[13.25rem]">
+      <div className="absolute inset-0 rounded-full bg-[color:var(--primary)]/15 blur-2xl" />
+      <div className="relative h-full overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/70 shadow-[0_8px_24px_rgba(0,0,0,0.16)] ring-1 ring-[color:var(--border-subtle)]">
+        <Image
+          src={home.heroImage}
+          alt={home.heroAlt}
+          fill
+          priority
+          unoptimized
+          className="scale-[1.08] object-cover object-center"
+          sizes="(max-width: 640px) 48vw, 212px"
+        />
+      </div>
+      <div className="absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--surface-soft)] sm:text-sm">
+        <span className="relative mr-2 inline-flex h-2.5 w-2.5">
+          <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
+          <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#22C55E]" />
+        </span>
+        {site.availability}
+      </div>
+    </Reveal>
   );
 }

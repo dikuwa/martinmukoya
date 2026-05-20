@@ -1,6 +1,8 @@
 import { notFound, ok, parseJson, serverError, validationError } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth-guard";
 import { invalidateTag, tags } from "@/lib/cache";
 import { db } from "@/lib/db";
+import { siteAssignment } from "@/lib/sites";
 import { faqUpdateSchema } from "@/lib/validation/content";
 import { z } from "zod";
 
@@ -9,9 +11,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const faq = await db.fAQ.findUnique({ where: { id } });
+    const faq = await db.fAQ.findUnique({ where: { id }, include: { sites: true } });
 
     if (!faq) return notFound("FAQ not found");
+    if (!faq.published) {
+      const { error } = await requireAdmin();
+      if (error) return error;
+    }
+
     return ok(faq);
   } catch (error) {
     return serverError(error);
@@ -20,9 +27,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     const data = await parseJson(request, faqUpdateSchema);
-    const faq = await db.fAQ.update({ where: { id }, data });
+    const { siteIds, siteSlugs, ...faqData } = data;
+    const faq = await db.fAQ.update({ where: { id }, data: { ...faqData, sites: siteAssignment(siteIds, siteSlugs, "set") } });
     await invalidateTag(tags.faqs);
     await invalidateTag(tags.dashboard);
     return ok(faq);
@@ -34,6 +45,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     await db.fAQ.delete({ where: { id } });
     await invalidateTag(tags.faqs);

@@ -197,6 +197,53 @@ export const testimonials = [
   }
 ];
 
+export const flextechServices = [
+  {
+    id: "web-applications",
+    number: "01",
+    title: "Web Applications",
+    summary:
+      "Reliable systems that help teams capture leads, manage work, and serve customers online without unnecessary complexity.",
+    who: "SMEs, clinics, schools, startups, and service providers that have outgrown basic pages.",
+    problems: ["Scattered enquiries", "Manual admin work", "Slow customer follow-up"],
+    outcomes: ["Cleaner lead capture", "Better internal workflows", "A system that can grow with the business"],
+    image: "/assets/backgrounds/webP/brand-01.webp"
+  },
+  {
+    id: "booking-systems",
+    number: "02",
+    title: "Booking Systems",
+    summary:
+      "Appointment and reservation flows that make it easier for customers to choose a time and easier for teams to prepare.",
+    who: "Clinics, consultants, salons, coaches, training providers, and appointment-led businesses.",
+    problems: ["Missed calls", "Double bookings", "Unclear appointment details"],
+    outcomes: ["More confirmed bookings", "Less back-and-forth", "Better reminders and follow-up"],
+    image: "/assets/backgrounds/webP/brand-02.webp"
+  },
+  {
+    id: "ecommerce",
+    number: "03",
+    title: "E-commerce",
+    summary:
+      "Product, cart, checkout, and order workflows built around trust, speed, and practical operations.",
+    who: "Retailers, creators, local brands, and service businesses selling products or packages.",
+    problems: ["Manual orders", "Low buyer confidence", "No stock or order visibility"],
+    outcomes: ["Simpler buying flow", "Clearer order records", "A more professional sales channel"],
+    image: "/assets/backgrounds/webP/brand-03.webp"
+  },
+  {
+    id: "ai-automations",
+    number: "04",
+    title: "AI Automations",
+    summary:
+      "Practical AI helpers for FAQs, lead qualification, content support, internal summaries, and routine workflows.",
+    who: "Businesses that want useful AI inside existing processes, not shiny demos with no operational value.",
+    problems: ["Repeated questions", "Slow lead qualification", "Manual summaries and handovers"],
+    outcomes: ["Faster responses", "Cleaner handovers", "Less repetitive work for the team"],
+    image: "/assets/hero-images/webp/hero-04.webp"
+  }
+];
+
 export const faqs = [
   {
     question: "How much does a website or system cost?",

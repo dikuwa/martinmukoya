@@ -34,3 +34,7 @@ export async function requireRole(role: string | string[]) {
 
   return { session, error: null };
 }
+
+export function requireAdmin() {
+  return requireRole("ADMIN");
+}

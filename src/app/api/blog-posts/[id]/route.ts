@@ -1,6 +1,8 @@
 import { notFound, ok, parseJson, serverError, validationError } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth-guard";
 import { invalidateTag, tags } from "@/lib/cache";
 import { db } from "@/lib/db";
+import { siteAssignment } from "@/lib/sites";
 import { blogPostUpdateSchema } from "@/lib/validation/content";
 import { z } from "zod";
 
@@ -9,9 +11,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const post = await db.blogPost.findFirst({ where: { OR: [{ id }, { slug: id }] } });
+    const post = await db.blogPost.findFirst({ where: { OR: [{ id }, { slug: id }] }, include: { sites: true } });
 
     if (!post) return notFound("Blog post not found");
+    if (!post.published) {
+      const { error } = await requireAdmin();
+      if (error) return error;
+    }
+
     return ok(post);
   } catch (error) {
     return serverError(error);
@@ -20,13 +27,17 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     const data = await parseJson(request, blogPostUpdateSchema);
+    const { siteIds, siteSlugs, ...postData } = data;
     const existing = await db.blogPost.findFirst({ where: { OR: [{ id }, { slug: id }] } });
 
     if (!existing) return notFound("Blog post not found");
 
-    const post = await db.blogPost.update({ where: { id: existing.id }, data });
+    const post = await db.blogPost.update({ where: { id: existing.id }, data: { ...postData, sites: siteAssignment(siteIds, siteSlugs, "set") } });
     await invalidateTag(tags.blogPosts);
     await invalidateTag(tags.dashboard);
     return ok(post);
@@ -38,6 +49,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     const existing = await db.blogPost.findFirst({ where: { OR: [{ id }, { slug: id }] } });
 

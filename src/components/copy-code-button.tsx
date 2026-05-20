@@ -2,7 +2,6 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 export function CopyCodeButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -14,8 +13,19 @@ export function CopyCodeButton({ code }: { code: string }) {
   }
 
   return (
-    <Button aria-label="Copy code" size="icon" variant="ghost" onClick={copyCode}>
-      {copied ? <Check size={16} /> : <Copy size={16} />}
-    </Button>
+    <button
+      type="button"
+      aria-label="Copy code"
+      onClick={copyCode}
+      className="flex size-8 items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--code-accent)]"
+      style={{
+        color: "var(--code-copy-icon)",
+        backgroundColor: copied ? "var(--code-copy-icon-hover-bg)" : "transparent"
+      }}
+      onMouseEnter={(e) => { if (!copied) { e.currentTarget.style.backgroundColor = "var(--code-copy-icon-hover-bg)"; e.currentTarget.style.color = "var(--code-copy-icon-hover)"; } }}
+      onMouseLeave={(e) => { if (!copied) { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--code-copy-icon)"; } }}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
   );
 }

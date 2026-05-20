@@ -66,6 +66,29 @@ model User {
   testimonials  Testimonial[]
 }
 
+model Site {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  primaryDomain   String?          @unique
+  aliases         String[]
+  brandConfig     Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  projects        Project[]
+  blogPosts       BlogPost[]
+  faqs            FAQ[]
+  testimonials    Testimonial[]
+  leads           Lead[]
+  contactMessages ContactMessage[]
+  chatSessions    ChatSession[]
+  analyticsEvents AnalyticsEvent[]
+  settings        SiteSetting[]
+
+  @@index([slug])
+  @@index([primaryDomain])
+}
+
 model Session {
   id        String   @id
   userId    String
@@ -135,6 +158,7 @@ model Project {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   author           User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  sites            Site[]
   testimonials     Testimonial[]
 
   @@index([published, featured, sortOrder])
@@ -160,6 +184,7 @@ model BlogPost {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   author         User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  sites          Site[]
 
   @@index([published, publishedAt])
   @@index([category])
@@ -169,6 +194,7 @@ model BlogPost {
 
 model Lead {
   id               String           @id @default(cuid())
+  siteId           String?
   name             String
   email            String
   phone            String?
@@ -184,8 +210,10 @@ model Lead {
   internalNotes    String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  site             Site?            @relation(fields: [siteId], references: [id], onDelete: SetNull)
   chatSessions     ChatSession[]
 
+  @@index([siteId])
   @@index([status, createdAt])
   @@index([serviceType])
   @@index([source])
@@ -194,6 +222,7 @@ model Lead {
 
 model ContactMessage {
   id          String               @id @default(cuid())
+  siteId      String?
   name        String
   email       String
   phone       String?
@@ -203,7 +232,9 @@ model ContactMessage {
   status      ContactMessageStatus @default(NEW)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
+  site        Site?                @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
+  @@index([siteId])
   @@index([status, createdAt])
   @@index([email])
   @@index([inquiryType])
@@ -225,6 +256,7 @@ model Testimonial {
   updatedAt  DateTime @updatedAt
   project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  sites      Site[]
 
   @@index([published, featured, sortOrder])
   @@index([projectId])
@@ -242,6 +274,7 @@ model FAQ {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  sites     Site[]
 
   @@index([published, sortOrder])
   @@index([category])
@@ -250,15 +283,18 @@ model FAQ {
 
 model ChatSession {
   id            String        @id @default(cuid())
+  siteId        String?
   visitorId     String?
   leadId        String?
   summary       String?
   handedToHuman Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  site          Site?         @relation(fields: [siteId], references: [id], onDelete: SetNull)
   lead          Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
   messages      ChatMessage[]
 
+  @@index([siteId])
   @@index([leadId])
   @@index([visitorId])
   @@index([handedToHuman, createdAt])
@@ -277,6 +313,8 @@ model ChatMessage {
 
 model AnalyticsEvent {
   id        String   @id @default(cuid())
+  siteId    String?
+  siteSlug  String?
   eventType String
   page      String?
   referrer  String?
@@ -285,7 +323,10 @@ model AnalyticsEvent {
   country   String?
   metadata  Json?
   createdAt DateTime @default(now())
+  site      Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
+  @@index([siteId, createdAt])
+  @@index([siteSlug])
   @@index([eventType, createdAt])
   @@index([page])
   @@index([source])
@@ -294,9 +335,13 @@ model AnalyticsEvent {
 
 model SiteSetting {
   id        String   @id @default(cuid())
-  key       String   @unique
+  siteId    String?
+  key       String
   value     Json
   updatedAt DateTime @updatedAt
+  site      Site?    @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
+  @@unique([siteId, key])
+  @@index([siteId])
   @@index([key])
 }

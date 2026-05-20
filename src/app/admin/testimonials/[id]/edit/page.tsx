@@ -8,7 +8,7 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditTestimonialPage({ params }: PageProps) {
   const { id } = await params;
-  const testimonial = await db.testimonial.findUnique({ where: { id } });
+  const testimonial = await db.testimonial.findUnique({ where: { id }, include: { sites: true } });
   if (!testimonial) notFound();
   return <div className="grid gap-8"><PageHeader title={`Edit ${testimonial.clientName}`} description="Update social proof details." actions={<DeleteButton endpoint={`/api/testimonials/${testimonial.id}`} redirectTo="/admin/testimonials" />} /><TestimonialForm initialData={testimonial} /></div>;
 }

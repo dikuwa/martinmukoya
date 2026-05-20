@@ -2,15 +2,27 @@ import { Reveal } from "@/components/public/motion";
 import { ProjectsClient } from "@/components/public/projects-client";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Container, Section } from "@/components/ui/container";
-import { projects } from "@/lib/site-data";
+import { getPublicContent } from "@/lib/public-content";
+import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getCurrentSite } from "@/lib/sites";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Projects",
-  description: "Case studies by Martin Mukoya covering booking systems, lead-generation websites, ecommerce, and automation."
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
 
-export default function ProjectsPage() {
+  return {
+    title: "Projects",
+    description: site.pages.projects.metadataDescription
+  };
+}
+
+export default async function ProjectsPage() {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const content = await getPublicContent(site, currentSite?.id);
+  const page = site.pages.projects;
+
   return (
     <>
       <Section className="pb-10">
@@ -18,15 +30,15 @@ export default function ProjectsPage() {
           <Reveal>
             <SectionHeading
               eyebrow="Projects"
-              title="Selected systems, case studies, and business outcomes."
-              description="These examples show the kind of practical work Martin builds: clear customer journeys, useful admin flows, and dependable foundations for future improvements."
+              title={page.title}
+              description={page.description}
             />
           </Reveal>
         </Container>
       </Section>
       <Section className="pt-0 bg-gradient-to-b from-[color:var(--background-elevated)]/90 to-[color:var(--background)]/50">
         <Container>
-          <ProjectsClient projects={projects} />
+          <ProjectsClient projects={content.projects} siteSlug={site.slug} />
         </Container>
       </Section>
     </>

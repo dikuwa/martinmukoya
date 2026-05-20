@@ -8,7 +8,7 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditProjectPage({ params }: PageProps) {
   const { id } = await params;
-  const project = await db.project.findUnique({ where: { id } });
+  const project = await db.project.findUnique({ where: { id }, include: { sites: true } });
   if (!project) notFound();
   return (
     <div className="grid gap-8">

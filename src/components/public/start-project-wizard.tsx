@@ -3,17 +3,17 @@
 
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics-client";
-import { contact, services } from "@/lib/site-data";
+import type { PublicSiteConfig } from "@/lib/public-site-config";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Bot, CalendarCheck, Check, MessageCircle, MonitorCog, Rocket, ShoppingBag } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Bot, CalendarCheck, Check, MessageCircle, MonitorCog, Rocket, ShoppingBag } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-const budgets = ["Under $1000", "$1000 - $3000", "$7000 - $15,000", "$15,000+"] as const;
+const budgets = ["Under N$15k", "N$15k - N$50k", "N$50k - N$100k", "N$100k+"] as const;
 const timelines = ["ASAP within 1 month", "1-3 months", "3-6 months", "6+ months"] as const;
 
 const wizardSchema = z
@@ -58,14 +58,16 @@ const serviceIcons = {
   other: Rocket
 };
 
-export function StartProjectWizard() {
+export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const cardRef = useRef<HTMLFormElement | null>(null);
   const formStarted = useRef(false);
+  const previousStepRef = useRef(step);
   const submitLead = useMutation({
     mutationFn: async (values: WizardInput) => {
       const parsed = wizardSchema.parse(values);
-      const selectedServiceItems = services.filter((service) => parsed.selectedServices.includes(service.id));
+      const selectedServiceItems = site.services.filter((service) => parsed.selectedServices.includes(service.id));
       const selectedServiceTitles = [
         ...selectedServiceItems.map((service) => service.title),
         ...(parsed.selectedServices.includes("other") ? [`Other: ${parsed.otherDetails}`] : [])
@@ -85,6 +87,7 @@ export function StartProjectWizard() {
           serviceType,
           budgetRange: parsed.budgetRange,
           timeline,
+          siteSlug: site.slug,
           source: "start-project",
           preferredContact: parsed.preferredContact,
           website: parsed.website,
@@ -134,8 +137,17 @@ export function StartProjectWizard() {
   const selectedServices = useWatch({ control: form.control, name: "selectedServices" });
   const selectedBudget = useWatch({ control: form.control, name: "budgetRange" });
   const selectedTimeline = useWatch({ control: form.control, name: "timeline" });
+  const timelineFlexible = useWatch({ control: form.control, name: "timelineFlexible" });
   const otherSelected = selectedServices.includes("other");
-  const progress = step === 1 ? "33%" : step === 2 ? "66%" : "100%";
+
+  useEffect(() => {
+    if (previousStepRef.current === step) return;
+    previousStepRef.current = step;
+
+    window.requestAnimationFrame(() => {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [step]);
 
   async function nextStep() {
     if (step === 1) {
@@ -144,6 +156,7 @@ export function StartProjectWizard() {
     }
     trackEvent({
       eventType: "step_completed",
+      siteSlug: site.slug,
       page: "/start-project",
       source: "start_project_form",
       metadata: { form: "start_project", step }
@@ -160,6 +173,7 @@ export function StartProjectWizard() {
       formStarted.current = true;
       trackEvent({
         eventType: "form_started",
+        siteSlug: site.slug,
         page: "/start-project",
         source: "start_project_form",
         metadata: { form: "start_project" }
@@ -172,7 +186,13 @@ export function StartProjectWizard() {
   }
 
   function chooseBudget(value: string) {
-    form.setValue("budgetRange", value, { shouldDirty: true, shouldValidate: true });
+    const current = form.getValues("budgetRange");
+    form.setValue("budgetRange", current === value ? "" : value, { shouldDirty: true, shouldValidate: true });
+  }
+
+  function chooseTimeline(value: (typeof timelines)[number]) {
+    const current = form.getValues("timeline");
+    form.setValue("timeline", current === value ? undefined : value, { shouldDirty: true, shouldValidate: true });
   }
 
   async function onSubmit(values: WizardInput) {
@@ -181,6 +201,7 @@ export function StartProjectWizard() {
 
       trackEvent({
         eventType: "form_submitted",
+        siteSlug: site.slug,
         page: "/start-project",
         source: "start_project_form",
         metadata: {
@@ -193,7 +214,7 @@ export function StartProjectWizard() {
       });
 
       toast.success("Project request sent", {
-        description: `${result.parsed.name}, I’ll review this and follow up with a practical next step.`
+        description: `${result.parsed.name}, ${site.slug === "flextech-media" ? "FlexTech will review this and follow up with a practical next step." : "I’ll review this and follow up with a practical next step."}`
       });
       setSubmitted(true);
       form.reset();
@@ -213,13 +234,15 @@ export function StartProjectWizard() {
             Thanks. Your brief is in good shape.
           </h2>
           <p className="mt-4 text-[clamp(1rem,calc(0.95rem+0.35vw),1.12rem)] leading-8 text-[color:var(--text-muted)]">
-            I’ll review the services, budget, timeline, and notes you shared, then come back with the clearest next step. If timing is urgent, WhatsApp is the quickest way to add context.
+            {site.slug === "flextech-media"
+              ? "FlexTech will review the services, budget, timeline, and notes you shared, then come back with the clearest next step. If timing is urgent, WhatsApp is the quickest way to add context."
+              : "I’ll review the services, budget, timeline, and notes you shared, then come back with the clearest next step. If timing is urgent, WhatsApp is the quickest way to add context."}
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg">
-            <a href={contact.whatsappHref} target="_blank" rel="noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", page: "/start-project", source: "start_project_success" })}>
-              WhatsApp Martin <MessageCircle size={18} />
+            <a href={site.contact.whatsappHref} target="_blank" rel="noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", siteSlug: site.slug, page: "/start-project", source: "start_project_success" })}>
+              {site.finalCta.secondary} <MessageCircle size={18} />
             </a>
           </Button>
           <Button type="button" variant="secondary" size="lg" onClick={() => setSubmitted(false)}>
@@ -232,67 +255,18 @@ export function StartProjectWizard() {
 
   return (
     <form
+      ref={cardRef}
       onSubmit={form.handleSubmit(onSubmit)}
-      className="mx-auto w-full max-w-5xl overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]"
+      className="mx-auto w-full max-w-5xl scroll-mt-28 overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]"
     >
       <div className="p-5 sm:p-6 lg:p-8">
         <input {...form.register("website")} className="hidden" tabIndex={-1} autoComplete="off" />
-        <div className="mb-6 rounded-full bg-[color:var(--surface-soft)] p-3 sm:p-4">
-          <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-            <div className="h-full rounded-full bg-[color:var(--accent)] transition-[width] duration-300" style={{ width: progress }} />
-          </div>
-          <div className="grid grid-cols-3 items-center gap-3">
-            {[
-              { index: 1, label: "Services" },
-              { index: 2, label: "Budget" },
-              { index: 3, label: "Timeline" }
-            ].map((item) => {
-              const active = item.index === step;
-              const completed = item.index < step;
-
-              return (
-                <div key={item.index} className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold",
-                      completed
-                        ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
-                        : active
-                        ? "border-[color:var(--accent)] bg-white text-[color:var(--accent)]"
-                        : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-muted)]"
-                    )}
-                  >
-                    {completed ? <Check size={14} /> : item.index}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--text-faint)]">Step {item.index}</p>
-                    <p className={cn("text-sm font-semibold", active ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-muted)]")}>{item.label}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">Step {step} of 3</p>
-            <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-              {step === 1 && "Select the services that match your project."}
-              {step === 2 && "Pick a budget range or leave it open for a flexible quote."}
-              {step === 3 && "Select the timeline, then share your details and project notes."}
-            </p>
-          </div>
-          <div className="text-right text-xs uppercase tracking-[0.24em] text-[color:var(--text-faint)]">
-            {selectedServices.length ? `${selectedServices.length} service${selectedServices.length > 1 ? "s" : ""} chosen` : "No services selected"}
-          </div>
-        </div>
-
         {step === 1 ? (
           <div>
-            <WizardTitle title="Choose your services" description="Select one or more services and add custom details as needed." />
+            <WizardTitle center title="Choose your services" description="Select one or more services and add custom details as needed." />
+            <StepProgress step={step} />
             <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {[...services, { id: "other", number: "05", title: "Other", summary: "Describe a custom service or integration." }].map((service) => {
+              {[...site.services, { id: "other", title: "Other", summary: "Describe a custom service or integration." }].map((service) => {
                 const Icon = serviceIcons[service.id as keyof typeof serviceIcons] ?? MonitorCog;
                 const selected = selectedServices.includes(service.id);
 
@@ -301,29 +275,37 @@ export function StartProjectWizard() {
                     key={service.id}
                     type="button"
                     onClick={() => toggleService(service.id)}
+                    aria-pressed={selected}
                     className={cn(
-                      "group flex min-h-28 items-start gap-4 rounded-[18px] border p-5 text-left transition duration-200 hover:-translate-y-0.5",
+                      "group relative flex min-h-[170px] flex-col rounded-[22px] border p-6 text-left transition duration-200",
                       selected
-                        ? "border-2 border-[color:var(--accent)] bg-[rgba(198,97,63,0.09)]"
-                        : "border border-[color:var(--border-subtle)] bg-white/[0.03] hover:border-[rgba(198,97,63,0.35)]"
+                        ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10"
+                        : "border border-[color:var(--border-subtle)] bg-[color:var(--surface)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)]"
                     )}
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] text-[color:var(--accent)]">
-                      <Icon size={20} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="block text-xs font-black uppercase tracking-[0.24em] text-[color:var(--text-faint)]">{service.number}</span>
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--text-muted)]">{selected ? "Selected" : "Tap to select"}</span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
+                          <Icon size={20} />
+                        </span>
+                        <div>
+                          <h3 className="font-display text-[clamp(1.2rem,calc(1.02rem+0.8vw),1.5rem)] font-black text-[color:var(--text-strong)]">
+                            {service.id === "ai-automations" ? "AI Automations" : service.title}
+                          </h3>
+                        </div>
                       </div>
-                      <h3 className="mt-3 font-display text-[clamp(1.2rem,calc(1.02rem+0.8vw),1.5rem)] font-black text-[color:var(--text-strong)]">
-                        {service.title}
-                      </h3>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{service.summary}</p>
+                      <span
+                        className={cn(
+                          "grid h-10 w-10 place-items-center rounded-full border text-[color:var(--text-muted)] transition",
+                          selected
+                            ? "border-[color:var(--primary)] bg-[color:var(--primary)]/15 text-[color:var(--primary)]"
+                            : "border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]"
+                        )}
+                      >
+                        {selected ? <Check size={18} /> : null}
+                      </span>
                     </div>
-                    <span className="mt-1 grid h-9 w-9 place-items-center rounded-2xl border border-[color:var(--border-subtle)] bg-white/[0.06] text-[color:var(--text-strong)] transition group-hover:border-[color:var(--accent)]">
-                      {selected ? <Check size={18} className="text-[color:var(--accent)]" /> : null}
-                    </span>
+                    <p className="mt-5 text-sm leading-6 text-[color:var(--text-muted)]">{service.summary}</p>
                   </button>
                 );
               })}
@@ -332,7 +314,7 @@ export function StartProjectWizard() {
               <div className="mt-6">
                 <label className="mb-3 block text-sm font-semibold text-[color:var(--text-strong)]">Other service details</label>
                 <textarea
-                  className="min-h-32 w-full rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                  className="min-h-32 w-full rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                   placeholder="Describe the custom work or integration you need..."
                   {...form.register("otherDetails")}
                 />
@@ -341,8 +323,8 @@ export function StartProjectWizard() {
             ) : null}
             <FieldError message={form.formState.errors.selectedServices?.message} />
             <div className="mt-8 flex justify-end">
-              <Button type="button" size="lg" onClick={nextStep}>
-                Continue
+              <Button type="button" variant="secondary" size="lg" onClick={nextStep}>
+                Next <ArrowRight size={16} />
               </Button>
             </div>
           </div>
@@ -350,31 +332,40 @@ export function StartProjectWizard() {
 
         {step === 2 ? (
           <div>
-            <WizardTitle title="Select a budget range" description="Choose a budget range or leave the field open for a flexible proposal." />
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <WizardTitle center title="Select a budget range" description="Optional, but helpful. Choose a Namibian dollar range or leave it open for a flexible proposal." />
+            <StepProgress step={step} />
+            <div className="mx-auto mt-8 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {budgets.map((budget) => (
                 <button
                   key={budget}
                   type="button"
                   onClick={() => chooseBudget(budget)}
+                  aria-pressed={selectedBudget === budget}
                   className={cn(
-                    "min-h-28 rounded-[18px] border p-5 text-left font-display text-[clamp(1.2rem,calc(1.02rem+0.8vw),1.5rem)] font-black transition duration-200 hover:-translate-y-0.5",
+                    "relative min-h-[76px] rounded-[16px] border px-4 py-4 text-left font-display text-[clamp(1.02rem,calc(0.98rem+0.35vw),1.18rem)] font-black transition duration-200",
                     selectedBudget === budget
-                      ? "border-2 border-[color:var(--accent)] bg-[rgba(198,97,63,0.09)] text-[color:var(--text-strong)]"
-                      : "border border-[color:var(--border-subtle)] bg-white/[0.03] text-[color:var(--text-strong)] hover:border-[rgba(198,97,63,0.35)]"
+                      ? "border-2 border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-[color:var(--text-strong)]"
+                      : "border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] hover:border-[color:var(--primary)] hover:bg-[color:var(--surface-soft)]"
                   )}
                 >
+                  {selectedBudget === budget && (
+                    <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full border border-[color:var(--primary)] bg-[color:var(--primary)] text-white">
+                      <Check size={14} />
+                    </span>
+                  )}
                   {budget}
                 </button>
               ))}
             </div>
-            <p className="mt-4 text-sm text-[color:var(--text-muted)]">This step is optional — choose a range that feels right, or continue without one.</p>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-[color:var(--text-muted)]">
+              Budget is optional. Tap a selected range again to clear it, or continue without choosing one.
+            </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={back} className="inline-flex items-center gap-2 text-sm font-bold text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]">
+              <Button type="button" variant="secondary" size="lg" onClick={back}>
                 <ArrowLeft size={16} /> Back
-              </button>
-              <Button type="button" size="lg" onClick={nextStep}>
-                Next
+              </Button>
+              <Button type="button" variant="secondary" size="lg" onClick={nextStep}>
+                Next <ArrowRight size={16} />
               </Button>
             </div>
           </div>
@@ -382,48 +373,72 @@ export function StartProjectWizard() {
 
         {step === 3 ? (
           <div>
-            <WizardTitle title="Choose a timeline" description="Pick a launch window and whether the schedule can be flexible." />
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <WizardTitle center title="Choose a timeline" description="Pick a launch window and whether the schedule can be flexible." />
+            <StepProgress step={step} />
+            <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {timelines.map((timeline) => (
                 <button
                   key={timeline}
                   type="button"
-                  onClick={() => form.setValue("timeline", timeline, { shouldDirty: true, shouldValidate: true })}
+                  onClick={() => chooseTimeline(timeline)}
+                  aria-pressed={selectedTimeline === timeline}
                   className={cn(
-                    "min-h-28 rounded-[18px] border p-5 text-left font-display text-[clamp(1.15rem,calc(1rem+0.7vw),1.35rem)] font-black transition duration-200 hover:-translate-y-0.5",
+                    "relative min-h-[76px] rounded-[16px] border px-4 py-4 text-left font-display text-[clamp(1rem,calc(0.96rem+0.35vw),1.15rem)] font-black transition duration-200",
                     selectedTimeline === timeline
-                      ? "border-2 border-[color:var(--accent)] bg-[rgba(198,97,63,0.09)] text-[color:var(--text-strong)]"
-                      : "border border-[color:var(--border-subtle)] bg-white/[0.03] text-[color:var(--text-strong)] hover:border-[rgba(198,97,63,0.35)]"
+                      ? "border-2 border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-[color:var(--text-strong)]"
+                      : "border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] hover:border-[color:var(--primary)] hover:bg-[color:var(--surface-soft)]"
                   )}
                 >
+                  {selectedTimeline === timeline && (
+                    <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full border border-[color:var(--primary)] bg-[color:var(--primary)] text-white">
+                      <Check size={14} />
+                    </span>
+                  )}
                   {timeline}
                 </button>
               ))}
             </div>
-            <label className="mt-6 flex items-center gap-3 text-sm font-semibold text-[color:var(--text-strong)]">
+            <label
+              className={cn(
+                "mt-6 inline-flex cursor-pointer items-center gap-3 rounded-full border px-4 py-3 text-sm font-semibold transition",
+                timelineFlexible
+                  ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-[color:var(--text-strong)]"
+                  : "border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] hover:border-[color:var(--primary)] hover:text-[color:var(--text-strong)]"
+              )}
+            >
               <input
                 type="checkbox"
-                className="h-5 w-5 rounded border border-[color:var(--border-subtle)] bg-white/[0.04] text-[color:var(--accent)] focus:ring-0"
+                className="sr-only"
                 {...form.register("timelineFlexible")}
               />
+              <span
+                className={cn(
+                  "grid h-5 w-5 place-items-center rounded-[6px] border transition",
+                  timelineFlexible
+                    ? "border-[color:var(--primary)] bg-[color:var(--primary)] text-white"
+                    : "border-[color:var(--border-subtle)] bg-[color:var(--surface)]"
+                )}
+              >
+                {timelineFlexible ? <Check size={13} /> : null}
+              </span>
               Schedule is flexible
             </label>
             <FieldError message={form.formState.errors.timeline?.message} />
 
             <div className="mt-8 grid gap-4">
               <input
-                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                 placeholder="Company or organisation (optional)"
                 {...form.register("company")}
               />
               <input
-                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                 placeholder="Your Name"
                 {...form.register("name")}
               />
               <FieldError message={form.formState.errors.name?.message} />
               <input
-                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                 placeholder="Your Email"
                 type="email"
                 {...form.register("email")}
@@ -431,13 +446,13 @@ export function StartProjectWizard() {
               <FieldError message={form.formState.errors.email?.message} />
               <div className="grid gap-4 sm:grid-cols-[1fr_0.8fr]">
                 <input
-                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                   placeholder="Phone or WhatsApp (optional)"
                   autoComplete="tel"
                   {...form.register("phone")}
                 />
                 <select
-                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]"
+                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--primary)]"
                   {...form.register("preferredContact")}
                 >
                   <option value="EMAIL">Email</option>
@@ -446,7 +461,7 @@ export function StartProjectWizard() {
                 </select>
               </div>
               <textarea
-                className="min-h-44 resize-y rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--accent)]"
+                className="min-h-44 resize-y rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
                 placeholder="Tell me more about the project..."
                 {...form.register("message")}
               />
@@ -454,11 +469,11 @@ export function StartProjectWizard() {
             </div>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={back} className="inline-flex items-center gap-2 text-sm font-bold text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]">
+              <Button type="button" variant="secondary" size="lg" onClick={back} className="inline-flex items-center gap-2">
                 <ArrowLeft size={16} /> Back
-              </button>
+              </Button>
               <Button type="submit" size="lg" className="sm:min-w-64" disabled={form.formState.isSubmitting || submitLead.isPending}>
-                {form.formState.isSubmitting || submitLead.isPending ? "Submitting..." : "Submit Request"} <Rocket size={18} />
+                {form.formState.isSubmitting || submitLead.isPending ? "Submitting..." : "Submit Request"} <ArrowRight size={18} />
               </Button>
             </div>
           </div>
@@ -471,20 +486,61 @@ export function StartProjectWizard() {
 function mapServiceType(serviceId: string) {
   if (serviceId === "booking-systems") return "BOOKING_SYSTEM";
   if (serviceId === "ecommerce") return "ECOMMERCE";
-  if (serviceId === "ai-automations") return "AI_AUTOMATION";
-  if (serviceId === "web-applications") return "WEB_APP";
+  if (serviceId === "ai-automations" || serviceId === "automation") return "AI_AUTOMATION";
+  if (serviceId === "web-applications" || serviceId === "brand-websites" || serviceId === "content-systems" || serviceId === "digital-campaigns") return "WEB_APP";
 
   return "OTHER";
 }
 
-function WizardTitle({ title, description }: { title: string; description: string }) {
+function StepProgress({ step }: { step: number }) {
+  const stepItems = [
+    { index: 1, label: "Services" },
+    { index: 2, label: "Budget" },
+    { index: 3, label: "Timeline" }
+  ];
+
+  const progressWidth = step === 1 ? "0%" : step === 2 ? "50%" : "100%";
+
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent)]">Project step</p>
+    <div className="relative mt-8 mb-10 flex items-center justify-between gap-4 px-5 sm:px-10">
+      <div className="absolute left-5 right-5 top-5 h-1 rounded-full bg-[color:var(--border-subtle)]" />
+      <div className="absolute left-5 top-5 h-1 rounded-full bg-[color:var(--primary)]" style={{ width: progressWidth }} />
+      {stepItems.map((item) => {
+        const active = item.index === step;
+        const completed = item.index < step;
+
+        return (
+          <div key={item.index} className="relative flex flex-col items-center text-center">
+            <span
+              className={cn(
+                "relative z-10 flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition",
+                completed
+                  ? "border-[color:var(--primary)] bg-[color:var(--primary)] text-white"
+                  : active
+                  ? "border-[color:var(--primary)] bg-[color:var(--surface)] text-[color:var(--primary)]"
+                  : "border-[color:var(--border-subtle)] bg-[color:var(--background)] text-[color:var(--text-muted)]"
+              )}
+            >
+              {completed ? <Check size={14} /> : item.index}
+            </span>
+            <span className="mt-3 text-sm font-semibold text-[color:var(--text-muted)]">
+              {item.label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WizardTitle({ title, description, center }: { title: string; description: string; center?: boolean }) {
+  return (
+    <div className={cn(center ? "mx-auto text-center" : "", "max-w-3xl")}>
+      <p className="text-sm font-semibold text-[color:var(--text-muted)]">Project Steps</p>
       <h2 className="mt-3 font-display text-[clamp(1.75rem,calc(1.35rem+1.5vw),2.7rem)] font-black leading-tight text-[color:var(--text-strong)]">
         {title}
       </h2>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+      <p className={cn("mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]", center ? "mx-auto" : "")}>{description}</p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { notFound, ok, parseJson, serverError, validationError } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth-guard";
 import { invalidateTag, tags } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { leadUpdateSchema } from "@/lib/validation/content";
@@ -8,6 +9,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     const lead = await db.lead.findUnique({ where: { id }, include: { chatSessions: true } });
 
@@ -20,6 +24,9 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     const data = await parseJson(request, leadUpdateSchema);
     const lead = await db.lead.update({ where: { id }, data });
@@ -34,6 +41,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await context.params;
     await db.lead.delete({ where: { id } });
     await invalidateTag(tags.leads);

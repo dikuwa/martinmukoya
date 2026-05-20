@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { Suspense } from "react";
 
-type PageProps = { searchParams: Promise<{ search?: string; published?: string; category?: string; page?: string }> };
+type PageProps = { searchParams: Promise<{ search?: string; published?: string; category?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
 
 async function BlogTable({ searchParams }: PageProps) {
@@ -18,26 +18,31 @@ async function BlogTable({ searchParams }: PageProps) {
   const where = {
     ...(params.search ? { OR: [{ title: { contains: params.search, mode: "insensitive" as const } }, { excerpt: { contains: params.search, mode: "insensitive" as const } }] } : {}),
     ...(params.published ? { published: params.published === "true" } : {}),
-    ...(params.category ? { category: params.category } : {})
+    ...(params.category ? { category: params.category } : {}),
+    ...(params.site && params.site !== "all" ? { sites: { some: { slug: params.site } } } : {})
   };
   const total = await db.blogPost.count({ where });
   const items = await db.blogPost.findMany({
     where,
     orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
     skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE
+    take: PAGE_SIZE,
+    include: { sites: true }
   });
   const categories = await db.blogPost.findMany({ distinct: ["category"], select: { category: true }, where: { category: { not: null } } });
+  const sites = await db.site.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
       <AdminFilters
         search={params.search}
+        clearHref="/admin/blog"
         filters={
           <>
             <SelectFilter name="published" label="Published" value={params.published} options={[{ label: "Published", value: "true" }, { label: "Draft", value: "false" }]} />
             <SelectFilter name="category" label="Category" value={params.category} options={categories.filter((item) => item.category).map((item) => ({ label: item.category!, value: item.category! }))} />
+            <SelectFilter name="site" label="Site" value={params.site} options={[{ label: "All sites", value: "all" }, ...sites.map((site) => ({ label: site.name, value: site.slug }))]} />
           </>
         }
       />
@@ -45,8 +50,10 @@ async function BlogTable({ searchParams }: PageProps) {
         items={items}
         empty="No posts found."
         editHref={(item) => `/admin/blog/${item.id}/edit`}
+        actionLabel="Edit"
         columns={[
           { header: "Post", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.title}</p><p className="text-xs text-[color:var(--text-muted)]">{item.slug}</p></div> },
+          { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
           { header: "Category", cell: (item) => item.category ?? "Uncategorized" },
           { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> },
           { header: "Updated", cell: (item) => item.updatedAt.toLocaleDateString() }

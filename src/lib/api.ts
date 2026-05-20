@@ -13,7 +13,9 @@ export const listQuerySchema = z.object({
   status: z.string().trim().optional(),
   serviceType: z.string().trim().optional(),
   category: z.string().trim().optional(),
-  source: z.string().trim().optional()
+  source: z.string().trim().optional(),
+  site: z.string().trim().optional(),
+  siteId: z.string().trim().optional()
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;

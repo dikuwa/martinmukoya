@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { Suspense } from "react";
 
-type PageProps = { searchParams: Promise<{ search?: string; published?: string; featured?: string; serviceType?: string; page?: string }> };
+type PageProps = { searchParams: Promise<{ search?: string; published?: string; featured?: string; serviceType?: string; site?: string; page?: string }> };
 
 const SERVICE_OPTIONS = [
   { label: "Web Applications", value: "Web Applications" },
@@ -32,26 +32,31 @@ async function ProjectsTable({ searchParams }: PageProps) {
     } : {}),
     ...(params.published ? { published: params.published === "true" } : {}),
     ...(params.featured ? { featured: params.featured === "true" } : {}),
-    ...(params.serviceType ? { services: { has: params.serviceType } } : {})
+    ...(params.serviceType ? { services: { has: params.serviceType } } : {}),
+    ...(params.site && params.site !== "all" ? { sites: { some: { slug: params.site } } } : {})
   };
   const total = await db.project.count({ where });
   const items = await db.project.findMany({
     where,
     orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
     skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE
+    take: PAGE_SIZE,
+    include: { sites: true }
   });
+  const sites = await db.site.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
       <AdminFilters
         search={params.search}
+        clearHref="/admin/projects"
         filters={
           <>
             <SelectFilter name="published" label="Published" value={params.published} options={[{ label: "Published", value: "true" }, { label: "Draft", value: "false" }]} />
             <SelectFilter name="featured" label="Featured" value={params.featured} options={[{ label: "Featured", value: "true" }, { label: "Normal", value: "false" }]} />
             <SelectFilter name="serviceType" label="Service" value={params.serviceType} options={SERVICE_OPTIONS} />
+            <SelectFilter name="site" label="Site" value={params.site} options={[{ label: "All sites", value: "all" }, ...sites.map((site) => ({ label: site.name, value: site.slug }))]} />
           </>
         }
       />
@@ -59,8 +64,10 @@ async function ProjectsTable({ searchParams }: PageProps) {
         items={items}
         empty="No projects found."
         editHref={(item) => `/admin/projects/${item.id}/edit`}
+        actionLabel="Edit"
         columns={[
           { header: "Project", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.title}</p><p className="text-xs text-[color:var(--text-muted)]">{item.slug}</p></div> },
+          { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
           { header: "Industry", cell: (item) => item.industry ?? "General" },
           { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> },
           { header: "Featured", cell: (item) => item.featured ? <StatusPill tone="accent">Featured</StatusPill> : <StatusPill>Normal</StatusPill> }

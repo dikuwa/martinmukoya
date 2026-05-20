@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Github, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -8,8 +10,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 
 const signInSchema = z.object({
   email: z.string().email("Enter a valid email."),
@@ -70,7 +70,7 @@ export function AuthCard({ mode }: AuthCardProps) {
   return (
     <div className="mx-auto w-full max-w-[400px] rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
       <div>
-        <p className="text-sm font-semibold text-[color:var(--accent)]">Admin access</p>
+        <p className="text-sm font-semibold text-[color:var(--primary)]">Admin access</p>
         <h1 className="mt-2 font-display text-3xl font-black text-[color:var(--text-strong)]">
           {isSignUp ? "Create account" : "Welcome back"}
         </h1>

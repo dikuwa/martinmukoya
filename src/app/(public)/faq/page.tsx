@@ -3,25 +3,38 @@ import { FAQList } from "@/components/public/faq-list";
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Container, Section } from "@/components/ui/container";
+import { getPublicContent } from "@/lib/public-content";
+import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getCurrentSite } from "@/lib/sites";
 
-export const metadata: Metadata = {
-  title: "FAQ",
-  description: "Answers about Martin Mukoya's pricing, timelines, process, support, hosting, AI automation, and ecommerce work."
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
 
-export default function FAQPage() {
+  return {
+    title: "FAQ",
+    description: site.pages.faq.metadataDescription
+  };
+}
+
+export default async function FAQPage() {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const content = await getPublicContent(site, currentSite?.id);
+  const page = site.pages.faq;
+
   return (
     <Section>
       <Container>
         <Reveal>
           <SectionHeading
             eyebrow="FAQ"
-            title="Straight answers about the process."
-            description="A quick place to understand pricing, timelines, support, and what kind of digital systems are a good fit."
+            title={page.title}
+            description={page.description}
           />
         </Reveal>
         <Reveal className="mt-10 max-w-4xl">
-          <FAQList />
+          <FAQList items={content.faqs} />
         </Reveal>
       </Container>
     </Section>

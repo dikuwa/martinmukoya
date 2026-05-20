@@ -1,13 +1,20 @@
 "use client";
 
-import type { testimonials } from "@/lib/site-data";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
 
-type Testimonial = (typeof testimonials)[number];
+type Testimonial = {
+  id?: string;
+  clientName: string;
+  role?: string | null;
+  company?: string | null;
+  quote: string;
+  image?: string | null;
+};
 
-export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
+export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[]; siteSlug?: string }) {
+  const isMartinMukoya = siteSlug !== "flextech-media";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   function scroll(direction: "prev" | "next") {
@@ -27,6 +34,16 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
         <div
           ref={scrollRef}
           className="flex gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={
+            isMartinMukoya
+              ? {
+                  maskImage: `linear-gradient(to right, transparent 0px, black 60px, black calc(100% - 60px), transparent 100%), linear-gradient(to bottom, black 0px, black calc(100% - 40px), transparent 100%)`,
+                  WebkitMaskImage: `linear-gradient(to right, transparent 0px, black 60px, black calc(100% - 60px), transparent 100%), linear-gradient(to bottom, black 0px, black calc(100% - 40px), transparent 100%)`,
+                  maskComposite: "intersect",
+                  WebkitMaskComposite: "source-in",
+                }
+              : undefined
+          }
         >
           {items.map((item) => (
             <article
@@ -34,9 +51,9 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
               className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
             >
               <div className="relative h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
-                <Image src={item.image} alt={item.clientName} fill className="object-cover" sizes="64px" />
+                <Image src={item.image || "/assets/testimonials/testimonials.png"} alt={item.clientName} fill className="object-cover" sizes="64px" />
               </div>
-              <p className="mt-12 text-4xl leading-none text-[color:var(--accent)]">“</p>
+              <p className="mt-12 text-4xl leading-none text-[color:var(--primary)]">“</p>
               <p className="mt-4 font-display text-[clamp(1.45rem,calc(1.2rem+0.9vw),1.9rem)] font-black leading-tight text-[color:var(--text-strong)]">
                 {item.quote}
               </p>
@@ -55,7 +72,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
           type="button"
           aria-label="Previous testimonial"
           onClick={() => scroll("prev")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--accent)]"
+          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)]"
         >
           <ArrowLeft size={18} />
         </button>
@@ -63,7 +80,7 @@ export function TestimonialCarousel({ items }: { items: Testimonial[] }) {
           type="button"
           aria-label="Next testimonial"
           onClick={() => scroll("next")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--accent)]"
+          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)]"
         >
           <ArrowRight size={18} />
         </button>

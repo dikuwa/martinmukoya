@@ -4,37 +4,60 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const initialMessages = [
-  {
-    id: 1,
-    author: "AI",
-    text: "👋Hi, I can help you choose a service, shape a brief, or find the quickest way to reach Martin.",
-    time: "Now"
-  }
-];
+const whatsappHref = "https://wa.me/264818563005";
 
-export function AIChatbot() {
+function siteAwareGreeting(slug: string) {
+  if (slug === "flextech-media") {
+    return {
+      title: "Campaign assistant",
+      subtitle: "Fast guidance before handoff",
+      initial: "👋 Hi! I'm the FlexTech project assistant. I can help you understand our services, shape a campaign brief, or find the fastest way to speak with the team.",
+      humanLabel: "Team"
+    };
+  }
+  return {
+    title: "Project assistant",
+    subtitle: "Fast guidance before handoff",
+    initial: "👋 Hi! I can help you choose a service, shape a brief, or find the quickest way to reach Martin.",
+    humanLabel: "Human"
+  };
+}
+
+export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<Array<{ id: number; author: string; text: string; time: string }>>(() => [
+    { id: 1, author: "AI", text: siteAwareGreeting(siteSlug).initial, time: "Now" }
+  ]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const siteSlugRef = useRef(siteSlug);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageIdRef = useRef(2);
   const hasConversationStarted = messages.length > 1;
+
+  const greeting = useMemo(() => siteAwareGreeting(siteSlugRef.current), []);
+  const humanLabel = greeting.humanLabel;
 
   const quickReplies = useMemo(
     () => [
       "Choose a service",
       "Project timeline",
       "Budget guidance",
-      "Talk to Martin"
+      `Talk to ${humanLabel}`
     ],
-    []
+    [humanLabel]
   );
 
+  function adjustTextareaHeight(target: HTMLTextAreaElement) {
+    target.style.height = "auto";
+    target.style.height = `${Math.min(target.scrollHeight, 168)}px`;
+  }
+
   async function handleSend(content: string) {
-    if (!content.trim()) return;
+    if (!content.trim() || loading) return;
 
     const userMessageId = messageIdRef.current++;
     const userMessage = {
@@ -48,20 +71,55 @@ export function AIChatbot() {
     setDraft("");
     setLoading(true);
 
-    window.setTimeout(() => {
-      const aiMessageId = messageIdRef.current++;
-      setMessages((current) => [
-        ...current,
-        {
-          id: aiMessageId,
-          author: "AI",
-          text: getAssistantReply(content),
-          time: "Now"
+    // add a placeholder assistant message we will stream into
+    const aiMessageId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      { id: aiMessageId, author: "AI", text: "", time: "Now" }
+    ]);
+
+    try {
+      const res = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, sessionId, siteSlug: siteSlugRef.current })
+      });
+
+      if (!res.body) throw new Error("No response body");
+      const nextSessionId = res.headers.get("X-Chat-Session-Id");
+      if (nextSessionId) {
+        setSessionId(nextSessionId);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: d } = await reader.read();
+        done = d;
+        if (value) {
+          const chunk = decoder.decode(value);
+          setMessages((current) =>
+            current.map((m) => (m.id === aiMessageId ? { ...m, text: m.text + chunk } : m))
+          );
         }
-      ]);
+      }
+    } catch (err) {
+      console.error("chat error", err);
+      setMessages((current) =>
+        current.map((m) => (m.id === aiMessageId ? { ...m, text: "Sorry — something went wrong." } : m))
+      );
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   }
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      adjustTextareaHeight(textareaRef.current);
+    }
+  }, [draft, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -97,25 +155,27 @@ export function AIChatbot() {
   }, [open]);
 
   return (
-    <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3 sm:bottom-6">
+    <div className="fixed bottom-24 right-6 z-[60] flex flex-col items-end gap-3 lg:bottom-6">
       {open && (
-        <div ref={panelRef} className="flex max-h-[min(42rem,calc(100vh-7rem))] w-[min(100vw-2rem,23rem)] flex-col overflow-hidden rounded-[26px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/96 shadow-[var(--shadow-sm)] backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-subtle)] px-4 py-3.5">
+        <div ref={panelRef} className="flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(100vw-2rem,23rem)] flex-col overflow-hidden rounded-[26px] border border-[color:var(--primary)]/20 bg-[color:var(--background-elevated)]/95 shadow-[0_24px_70px_rgba(107,38,217,0.14)] backdrop-blur-xl lg:max-h-[min(42rem,calc(100vh-7rem))]">
+          <div className="flex items-center justify-between gap-3 border-b border-[color:var(--primary)]/15 px-4 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--primary)]/10 text-[color:var(--primary)]">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
                 <MessageCircle size={18} />
               </div>
               <div>
-                <p className="text-sm font-bold text-[color:var(--text-strong)]">Project assistant</p>
-                <p className="mt-0.5 text-xs text-[color:var(--text-muted)]">Fast guidance before handoff</p>
+                <p className="text-sm font-bold text-[color:var(--text-strong)]">{greeting.title}</p>
+                <p className="mt-0.5 text-xs text-[color:var(--text-muted)]">{greeting.subtitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="mailto:info@martinmukoya.com"
-                className="hidden rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs font-bold text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 sm:inline-flex"
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/10 px-3 py-2 text-xs font-bold text-[color:var(--primary)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20 sm:inline-flex"
               >
-                Human
+                {humanLabel}
               </a>
               <Button
                 type="button"
@@ -130,21 +190,23 @@ export function AIChatbot() {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col">
-            <div ref={transcriptRef} className="min-h-[13rem] flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            <div ref={transcriptRef} className="chat-transcript min-h-[13rem] flex-1 space-y-3 overflow-y-auto px-4 py-4">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={
                     message.author === "AI"
-                      ? "max-w-[92%] rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4"
-                      : "ml-auto max-w-[88%] rounded-[20px] bg-[color:var(--primary)]/12 p-4 text-[color:var(--text-strong)]"
+                      ? "chat-bubble chat-bubble--assistant"
+                      : "ml-auto chat-bubble chat-bubble--user"
                   }
                 >
                   <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
                     <span>{message.author === "AI" ? "Assistant" : "You"}</span>
                     <span>{message.time}</span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 break-words whitespace-pre-wrap text-[color:var(--text-muted)]">{message.text}</p>
+                  <p className={`mt-2 text-sm leading-6 wrap-break-word whitespace-pre-wrap ${message.author === "AI" ? "text-[color:var(--text-muted)]" : "text-[color:var(--text-strong)]"}`}>
+                    {message.text}
+                  </p>
                   {message.id === 1 && !hasConversationStarted ? (
                     <div className="mt-4 grid grid-cols-2 gap-1.5">
                       {quickReplies.map((reply) => (
@@ -162,23 +224,27 @@ export function AIChatbot() {
                 </div>
               ))}
               {loading ? (
-                <div className="inline-flex max-w-[82%] items-center gap-2 rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-muted)]">
-                  <span className="flex gap-1">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--primary)]" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--primary)] [animation-delay:120ms]" />
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--primary)] [animation-delay:240ms]" />
+                <div className="chat-bubble chat-bubble--assistant chat-bubble--typing">
+                  <span className="flex items-center gap-2">
+                    <span className="typing-dot" />
+                    <span className="typing-dot" style={{ animationDelay: "120ms" }} />
+                    <span className="typing-dot" style={{ animationDelay: "240ms" }} />
                   </span>
-                  Thinking
+                  <span className="text-sm text-[color:var(--text-muted)]">Typing…</span>
                 </div>
               ) : null}
             </div>
 
             <div className="rounded-b-[26px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-4">
               <div>
-                <div className="flex min-w-0 items-end gap-2 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-2 transition focus-within:border-[color:var(--primary)]">
+                <div className="flex min-w-0 items-end gap-2 rounded-[18px] bg-[color:var(--surface-soft)] px-3 py-2 transition">
                   <textarea
+                    ref={textareaRef}
                     value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
+                    onChange={(event) => {
+                      setDraft(event.target.value);
+                      adjustTextareaHeight(event.target);
+                    }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
@@ -187,14 +253,14 @@ export function AIChatbot() {
                     }}
                     placeholder="Ask about scope, budget, or timeline"
                     rows={1}
-                    className="max-h-28 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto whitespace-pre-wrap bg-transparent py-3 text-sm leading-5 text-[color:var(--text-strong)] outline-none placeholder:text-[color:var(--text-faint)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="max-h-[10.5rem] min-h-[2.75rem] min-w-0 flex-1 resize-none overflow-y-auto whitespace-pre-wrap bg-transparent py-3 text-sm leading-6 text-[color:var(--text-strong)] outline-none focus-visible:shadow-none placeholder:text-[color:var(--text-faint)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   />
                   <Button type="button" onClick={() => handleSend(draft)} className="h-10 w-10 rounded-full p-0 text-sm" disabled={loading || !draft.trim()} aria-label="Send message">
                     <Send size={16} />
                   </Button>
                 </div>
-                <a href="mailto:info@martinmukoya.com" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden">
-                  Talk to Martin <ArrowUpRight size={13} />
+                <a href={whatsappHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden">
+                  Talk to {humanLabel} <ArrowUpRight size={13} />
                 </a>
               </div>
             </div>
@@ -205,7 +271,7 @@ export function AIChatbot() {
       <Button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--primary)] text-white shadow-[var(--shadow-sm)] transition hover:scale-[1.02]"
+        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--primary)] text-white shadow-[0_18px_40px_rgba(107,38,217,0.24)] transition duration-200 hover:scale-[1.02]"
         aria-label={open ? "Close chat" : "Open chat"}
       >
         <MessageCircle size={24} />
@@ -213,26 +279,4 @@ export function AIChatbot() {
       </Button>
     </div>
   );
-}
-
-function getAssistantReply(content: string) {
-  const lower = content.toLowerCase();
-
-  if (lower.includes("budget") || lower.includes("price")) {
-    return "A useful budget range depends on scope, integrations, and launch urgency. For a first pass, share the business goal, must-have features, and what you already have in place.";
-  }
-
-  if (lower.includes("timeline") || lower.includes("asap")) {
-    return "A focused site can move quickly, while booking systems, ecommerce, dashboards, and AI handovers need more planning and testing. The Start Project form captures enough context to estimate the next step.";
-  }
-
-  if (lower.includes("human") || lower.includes("martin") || lower.includes("whatsapp") || lower.includes("talk")) {
-    return "Best next step: send a short note through the handoff link above, or use WhatsApp if timing is urgent.";
-  }
-
-  if (lower.includes("service") || lower.includes("choose")) {
-    return "If the goal is more enquiries, start with a website or lead system. If the pain is scheduling, choose booking. If work is repetitive, AI automation may fit. Ecommerce is best when products and order flow are central.";
-  }
-
-  return "That sounds like something we can shape into a practical brief. Tell me the goal, the current friction, and what a good outcome would look like.";
 }

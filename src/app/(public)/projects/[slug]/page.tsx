@@ -2,7 +2,10 @@ import { Reveal } from "@/components/public/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { projects } from "@/lib/site-data";
+import { getPublicContent } from "@/lib/public-content";
+import { getPublicSiteConfig, publicSiteConfigs } from "@/lib/public-site-config";
+import { absoluteUrl, siteUrl } from "@/lib/seo";
+import { getCurrentSite } from "@/lib/sites";
 import { ArrowUpRight, Github } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -14,12 +17,15 @@ type ProjectPageProps = {
 };
 
 export function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+  return Object.values(publicSiteConfigs).flatMap((site) => site.projects.map((project) => ({ slug: project.slug })));
 }
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = projects.find((item) => item.slug === slug);
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const content = await getPublicContent(site, currentSite?.id);
+  const project = content.projects.find((item) => item.slug === slug);
 
   if (!project) {
     return { title: "Project not found" };
@@ -28,7 +34,15 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
   return {
     title: project.title,
     description: project.summary,
+    alternates: { canonical: `/projects/${project.slug}` },
     openGraph: {
+      title: project.title,
+      description: project.summary,
+      url: `/projects/${project.slug}`,
+      images: [project.coverImage]
+    },
+    twitter: {
+      card: "summary_large_image",
       title: project.title,
       description: project.summary,
       images: [project.coverImage]
@@ -38,14 +52,29 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const project = projects.find((item) => item.slug === slug);
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const content = await getPublicContent(site, currentSite?.id);
+  const project = content.projects.find((item) => item.slug === slug);
 
   if (!project) {
     notFound();
   }
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: project.title,
+    description: project.summary,
+    image: absoluteUrl(project.coverImage),
+    url: absoluteUrl(`/projects/${project.slug}`),
+    creator: { "@type": site.slug === "flextech-media" ? "Organization" : "Person", name: site.brandName, url: siteUrl },
+    about: project.services,
+    keywords: project.techStack.join(", ")
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <Section className="pb-12">
         <Container>
           <Reveal>
@@ -100,14 +129,14 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               Built as a maintainable web system with clear user flows, admin-ready data structures, and a path toward deeper automation.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
-              {project.techStack.map((tech) => (
-                <Badge key={tech}>{tech}</Badge>
+              {Array.from(new Set(project.techStack)).map((tech, index) => (
+                <Badge key={`${project.slug}-detail-tech-${tech}-${index}`}>{tech}</Badge>
               ))}
             </div>
           </Reveal>
           <Reveal className="grid gap-4 sm:grid-cols-2">
-            {project.gallery.map((image) => (
-              <div key={image} className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
+            {project.gallery.map((image, index) => (
+              <div key={`${project.slug}-gallery-${image}-${index}`} className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
                 <Image src={image} alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
               </div>
             ))}
@@ -123,7 +152,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               Share the business problem, the customer journey, and what needs to happen after someone gets in touch.
             </p>
             <Button asChild className="mt-6">
-              <Link href="/start-project">Start Your Project</Link>
+              <Link href="/start-project">{site.finalCta.primary}</Link>
             </Button>
           </div>
         </Container>

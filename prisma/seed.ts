@@ -7,6 +7,20 @@ dotenv.config({ path: ".env.local", override: true });
 
 const db = getDb();
 const adminEmail = process.env.ADMIN_EMAIL ?? "info@martinmukoya.com";
+const seedSites = [
+  {
+    name: "Martin Mukoya",
+    slug: "martin-mukoya",
+    primaryDomain: "martinmukoya.com",
+    aliases: ["www.martinmukoya.com", "localhost", "127.0.0.1"]
+  },
+  {
+    name: "FlexTech Media",
+    slug: "flextech-media",
+    primaryDomain: "flextechmedia.com",
+    aliases: ["www.flextechmedia.com", "flextech-media.localhost"]
+  }
+] as const;
 
 const projectSeeds = [
   ["Clinic Booking System", "clinic-booking-system", "Healthcare", "Booking Systems", "A mobile-first appointment flow for clinics that need fewer missed calls and clearer patient intake."],
@@ -93,8 +107,36 @@ async function main() {
       role: UserRole.ADMIN
     }
   });
+  const [martinSite, flextechSite] = await Promise.all(
+    seedSites.map((site) =>
+      db.site.upsert({
+        where: { slug: site.slug },
+        update: {
+          name: site.name,
+          primaryDomain: site.primaryDomain,
+          aliases: [...site.aliases]
+        },
+        create: {
+          name: site.name,
+          slug: site.slug,
+          primaryDomain: site.primaryDomain,
+          aliases: [...site.aliases],
+          brandConfig: site.slug === "flextech-media"
+            ? { theme: "agency", label: "Creative technology and media agency" }
+            : { theme: "portfolio", label: "Business systems developer" }
+        }
+      })
+    )
+  );
 
   for (const [index, [title, slug, industry, service, summary]] of projectSeeds.entries()) {
+    const assignedSites = index < 4
+      ? { set: [{ id: martinSite.id }] }
+      : { set: [{ id: martinSite.id }, { id: flextechSite.id }] };
+    const connectSites = index < 4
+      ? { connect: { id: martinSite.id } }
+      : { connect: [{ id: martinSite.id }, { id: flextechSite.id }] };
+
     await db.project.upsert({
       where: { slug },
       update: {
@@ -104,7 +146,8 @@ async function main() {
         services: [service, "Web Applications"],
         sortOrder: index,
         published: true,
-        featured: index < 5
+        featured: index < 5,
+        sites: assignedSites
       },
       create: {
         title,
@@ -126,15 +169,19 @@ async function main() {
         featured: index < 5,
         published: true,
         sortOrder: index,
-        authorId: admin.id
+        authorId: admin.id,
+        sites: connectSites
       }
     });
   }
 
   for (const [index, [title, slug, category, excerpt]] of blogSeeds.entries()) {
+    const blogSites = index < 6
+      ? [{ id: martinSite.id }]
+      : [{ id: martinSite.id }, { id: flextechSite.id }];
     await db.blogPost.upsert({
       where: { slug },
-      update: { title, excerpt, category, published: true },
+      update: { title, excerpt, category, published: true, sites: { set: blogSites } },
       create: {
         title,
         slug,
@@ -147,42 +194,56 @@ async function main() {
         seoDescription: excerpt,
         published: true,
         publishedAt: new Date(Date.UTC(2026, 3, 1 + index)),
-        authorId: admin.id
+        authorId: admin.id,
+        sites: { connect: blogSites }
       }
     });
   }
 
   await db.testimonial.deleteMany({});
-  await db.testimonial.createMany({
-    data: testimonialSeeds.map(([clientName, role, company, quote, image], index) => ({
-      clientName,
-      role,
-      company,
-      quote,
-      image,
-      featured: index < 5,
-      published: true,
-      sortOrder: index,
-      authorId: admin.id
-    }))
-  });
+  for (const [index, [clientName, role, company, quote, image]] of testimonialSeeds.entries()) {
+    const testimonialSites = index < 4
+      ? [{ id: martinSite.id }]
+      : [{ id: martinSite.id }, { id: flextechSite.id }];
+    await db.testimonial.create({
+      data: {
+        clientName,
+        role,
+        company,
+        quote,
+        image,
+        featured: index < 5,
+        published: true,
+        sortOrder: index,
+        authorId: admin.id,
+        sites: { connect: testimonialSites }
+      }
+    });
+  }
 
   await db.fAQ.deleteMany({});
-  await db.fAQ.createMany({
-    data: faqSeeds.map(([question, answer, category], index) => ({
-      question,
-      answer,
-      category,
-      published: true,
-      sortOrder: index,
-      authorId: admin.id
-    }))
-  });
+  for (const [index, [question, answer, category]] of faqSeeds.entries()) {
+    const faqSites = index < 4
+      ? [{ id: martinSite.id }]
+      : [{ id: martinSite.id }, { id: flextechSite.id }];
+    await db.fAQ.create({
+      data: {
+        question,
+        answer,
+        category,
+        published: true,
+        sortOrder: index,
+        authorId: admin.id,
+        sites: { connect: faqSites }
+      }
+    });
+  }
 
   await db.lead.deleteMany({});
   await db.lead.createMany({
     data: leadSeeds.map(([name, email, company, serviceType, message, source], index) => ({
       name,
+      siteId: martinSite.id,
       email,
       company,
       serviceType,
@@ -201,6 +262,7 @@ async function main() {
   await db.contactMessage.createMany({
     data: messageSeeds.map(([name, email, inquiryType, message], index) => ({
       name,
+      siteId: martinSite.id,
       email,
       inquiryType,
       message,
@@ -213,6 +275,8 @@ async function main() {
   await db.analyticsEvent.createMany({
     data: Array.from({ length: 30 }, (_, index): Prisma.AnalyticsEventCreateManyInput => ({
       eventType: ["page_view", "cta_click", "project_view", "blog_view", "whatsapp_click", "form_started"][index % 6],
+      siteId: martinSite.id,
+      siteSlug: martinSite.slug,
       page: ["/", "/projects", "/services", "/contact", "/start-project"][index % 5],
       referrer: index % 3 === 0 ? "https://google.com" : null,
       source: ["organic", "direct", "social", "referral"][index % 4],
@@ -232,9 +296,9 @@ async function main() {
 
   for (const setting of settings) {
     await db.siteSetting.upsert({
-      where: { key: setting.key },
+      where: { siteId_key: { siteId: martinSite.id, key: setting.key } },
       update: { value: setting.value },
-      create: setting
+      create: { ...setting, siteId: martinSite.id }
     });
   }
 

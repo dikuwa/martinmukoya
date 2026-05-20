@@ -1,15 +1,21 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { Button } from "@/components/ui/button";
 import type { Project } from "@/generated/prisma/client";
 import { projectSchema } from "@/lib/validation/content";
-import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
+const siteOptions = [
+  { label: "Martin Mukoya", value: "martin-mukoya" },
+  { label: "FlexTech Media", value: "flextech-media" }
+] as const;
 const projectFormSchema = projectSchema.omit({ gallery: true, techStack: true, services: true }).extend({
   galleryInput: z.string().optional(),
   techStackInput: z.string().optional(),
@@ -29,8 +35,22 @@ function splitCsv(value: string) {
   return value.split(",").map((item) => item.trim()).filter(Boolean);
 }
 
-export function ProjectForm({ initialData }: { initialData?: Partial<Project> }) {
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function initialSiteSlugs(initialData?: { sites?: Array<{ slug: string }> }) {
+  const slugs = initialData?.sites?.map((site) => site.slug).filter(Boolean) ?? [];
+  return slugs.length > 0 ? slugs : ["martin-mukoya"];
+}
+
+export function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites?: Array<{ slug: string }> } }) {
   const router = useRouter();
+  const [galleryUploadPreview, setGalleryUploadPreview] = useState("");
   const form = useForm<z.input<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -50,11 +70,28 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> })
       featured: initialData?.featured ?? false,
       published: initialData?.published ?? true,
       sortOrder: initialData?.sortOrder ?? 0,
+      siteSlugs: initialSiteSlugs(initialData),
       galleryInput: csv(initialData?.gallery),
       techStackInput: csv(initialData?.techStack),
       servicesInput: csv(initialData?.services)
     }
   });
+  const title = useWatch({ control: form.control, name: "title" });
+  const coverImage = useWatch({ control: form.control, name: "coverImage" });
+  const galleryInput = useWatch({ control: form.control, name: "galleryInput" });
+
+  function appendGalleryImage(value: string) {
+    setGalleryUploadPreview(value);
+    if (!value) return;
+
+    const existing = splitCsv(galleryInput ?? "");
+    if (existing.includes(value)) return;
+
+    form.setValue("galleryInput", [...existing, value].join(", "), {
+      shouldDirty: true,
+      shouldValidate: true
+    });
+  }
 
   async function onSubmit(values: z.input<typeof projectFormSchema>) {
     const payload = projectFormSchema.parse(values) as ProjectFormValues;
@@ -75,13 +112,28 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> })
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow-xs)]">
       <Field label="Title" error={form.formState.errors.title?.message}>
         <input {...form.register("title")} className={inputClass} />
       </Field>
-      <Field label="Slug" error={form.formState.errors.slug?.message}>
-        <input {...form.register("slug")} className={inputClass} />
-      </Field>
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <Field label="Slug" error={form.formState.errors.slug?.message}>
+              <input {...form.register("slug")} className={inputClass} placeholder="clinic-booking-system" />
+            </Field>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => form.setValue("slug", slugify(title ?? ""), { shouldDirty: true, shouldValidate: true })}
+            disabled={!title}
+          >
+            Generate
+          </Button>
+        </div>
+        <p className="text-xs leading-5 text-[color:var(--text-muted)]">Used in the public case study URL. Keep it short, lowercase, and stable after publishing.</p>
+      </div>
       <Field label="Summary" error={form.formState.errors.summary?.message}>
         <textarea {...form.register("summary")} className={textareaClass} />
       </Field>
@@ -109,12 +161,24 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> })
         <textarea {...form.register("caseStudyContent")} className={textareaClass} />
       </Field>
       <div className="grid gap-5 md:grid-cols-2">
-        <Field label="Cover image">
-          <input {...form.register("coverImage")} className={inputClass} />
-        </Field>
-        <Field label="Gallery images, comma-separated">
-          <input {...form.register("galleryInput")} className={inputClass} />
-        </Field>
+        <ImageUploadField
+          label="Cover image"
+          folder="projects"
+          value={coverImage ?? ""}
+          onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
+        />
+        <div className="grid gap-3">
+          <ImageUploadField
+            label="Add gallery image"
+            folder="projects/gallery"
+            value={galleryUploadPreview}
+            onChange={appendGalleryImage}
+            placeholder="Upload or paste a gallery image URL"
+          />
+          <Field label="Gallery images, comma-separated">
+            <input {...form.register("galleryInput")} className={inputClass} />
+          </Field>
+        </div>
         <Field label="Tech stack, comma-separated">
           <input {...form.register("techStackInput")} className={inputClass} />
         </Field>
@@ -128,26 +192,42 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> })
           <input {...form.register("githubUrl")} className={inputClass} />
         </Field>
       </div>
+      <fieldset className="grid gap-2">
+        <legend className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</legend>
+        <div className="flex flex-wrap gap-5">
+          {siteOptions.map((site) => (
+            <label key={site.value} className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
+              <input type="checkbox" value={site.value} {...form.register("siteSlugs")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" />
+              {site.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="flex flex-wrap gap-5">
         <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-          <input type="checkbox" {...form.register("published")} /> Published
+          <input type="checkbox" {...form.register("published")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" /> Published
         </label>
         <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-          <input type="checkbox" {...form.register("featured")} /> Featured
+          <input type="checkbox" {...form.register("featured")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" /> Featured
         </label>
         <Field label="Sort order">
           <input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={inputClass} />
         </Field>
       </div>
-      <Button type="submit" disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? "Saving..." : "Save Project"}
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Saving..." : "Save Project"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => router.push("/admin/projects")}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }
 
-const inputClass = "h-11 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-4 text-sm text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]";
-const textareaClass = "min-h-28 rounded-[12px] border border-[color:var(--border-subtle)] bg-white/[0.04] px-4 py-3 text-sm text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--accent)]";
+const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
+const textareaClass = "min-h-28 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (

@@ -1,41 +1,53 @@
 import { ContactForm } from "@/components/public/contact-form";
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
+import { TrackedAnchor } from "@/components/public/tracked-anchor";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { contact } from "@/lib/site-data";
+import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getCurrentSite } from "@/lib/sites";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: "Contact Martin Mukoya for websites, booking systems, ecommerce, AI automations, and developer opportunities."
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
 
-export default function ContactPage() {
+  return {
+    title: "Contact",
+    description: site.pages.contact.metadataDescription
+  };
+}
+
+export default async function ContactPage() {
+  const currentSite = await getCurrentSite();
+  const site = getPublicSiteConfig(currentSite?.slug);
+  const contact = site.contact;
+  const page = site.pages.contact;
+
   return (
     <Section>
       <Container className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
         <Reveal>
           <SectionHeading
             eyebrow="Contact"
-            title="Tell me what needs to work better."
-            description="Share the business goal, the current friction, and what a good result would look like. I’ll help shape it into a practical next step."
+            title={page.title}
+            description={page.description}
           />
           <div className="mt-8 grid gap-3">
-            <ContactLink icon={<Mail size={18} />} label={contact.email} href={`mailto:${contact.email}`} />
-            <ContactLink icon={<Phone size={18} />} label={contact.phone} href={contact.phoneHref} />
-            <ContactLink icon={<MapPin size={18} />} label={contact.location} href="/contact" />
+            <ContactLink siteSlug={site.slug} icon={<Mail size={18} />} label={contact.email} href={`mailto:${contact.email}`} />
+            <ContactLink siteSlug={site.slug} icon={<Phone size={18} />} label={contact.phone} href={contact.phoneHref} />
+            <ContactLink siteSlug={site.slug} icon={<MapPin size={18} />} label={contact.location} href="/contact" />
           </div>
           <Button asChild className="mt-7" variant="secondary">
-            <a href={contact.whatsappHref} target="_blank" rel="noreferrer">
-              <MessageCircle size={17} /> Continue on WhatsApp
-            </a>
+            <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/contact" eventSource="contact_page_cta" href={contact.whatsappHref} target="_blank" rel="noreferrer">
+              <MessageCircle size={17} /> {page.whatsappLabel}
+            </TrackedAnchor>
           </Button>
         </Reveal>
         <Reveal>
           <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] md:p-8">
-            <ContactForm />
+            <ContactForm site={site} />
           </div>
         </Reveal>
       </Container>
@@ -43,11 +55,13 @@ export default function ContactPage() {
   );
 }
 
-function ContactLink({ icon, label, href }: { icon: React.ReactNode; label: string; href: string }) {
+function ContactLink({ icon, label, href, siteSlug }: { icon: React.ReactNode; label: string; href: string; siteSlug: string }) {
+  const eventType = href.startsWith("mailto:") ? "email_click" : href.startsWith("tel:") ? "phone_click" : "contact_link_click";
+
   return (
-    <a href={href} className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] p-4 text-sm font-bold text-[color:var(--text-strong)] transition hover:border-[color:var(--accent)]">
-      <span className="text-[color:var(--accent)]">{icon}</span>
+    <TrackedAnchor siteSlug={siteSlug} eventType={eventType} eventPage="/contact" eventSource="contact_details" href={href} className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] p-4 text-sm font-bold text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)]">
+      <span className="text-[color:var(--primary)]">{icon}</span>
       {label}
-    </a>
+    </TrackedAnchor>
   );
 }
