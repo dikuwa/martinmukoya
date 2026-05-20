@@ -14,7 +14,7 @@ import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Monitor, Smartphone, Target, Zap } from "lucide-react";
+import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target, Zap } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,7 +51,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Section className={cn("relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20", site.slug === "flextech-media" ? "bg-[color:var(--background)]" : "") }>
+      <Section className={cn("motion-hero-stage relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20", site.slug === "flextech-media" ? "bg-[color:var(--background)]" : "") }>
         {site.slug !== "flextech-media" && (
           <Image
             src="/assets/backgrounds/SVG/map-03.svg"
@@ -73,7 +73,11 @@ export default async function HomePage() {
         <Container className="mt-12">
           <div className="flex flex-wrap items-center justify-center gap-2 border-y border-[color:var(--border-subtle)] py-5">
             {home.techStack.map((tech, index) => (
-              <span key={`${site.slug}-home-tech-${tech}-${index}`} className="rounded-full bg-white/[0.04] px-4 py-2 text-xs font-bold text-[color:var(--text-faint)]">
+              <span
+                key={`${site.slug}-home-tech-${tech}-${index}`}
+                className="motion-chip rounded-full bg-white/[0.04] px-4 py-2 text-xs font-bold text-[color:var(--text-faint)]"
+                style={{ animationDelay: `${0.18 + index * 0.045}s` }}
+              >
                 {tech}
               </span>
             ))}
@@ -323,7 +327,7 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
     return (
         <div className="mt-12 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-center">
-          <div className="flex -space-x-4">
+          <div className="motion-avatar-stack flex -space-x-4">
             {faces.map((src, index) => (
               <div
                 key={src}
@@ -331,6 +335,7 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
                     "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
                   index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                 )}
+                style={{ animationDelay: `${0.18 + index * 0.055}s` }}
               >
                 <Image src={src} alt={`FlexTech team face ${index + 1}`} fill className="object-cover" sizes="56px" />
               </div>
@@ -399,7 +404,7 @@ function HeroCopy({ site, className = "" }: { site: PublicSiteConfig; className?
   const isFlexTech = site.slug === "flextech-media";
 
   return (
-    <Reveal className={`flex flex-col ${isFlexTech ? "items-center text-center" : "items-center text-center"} ${className}`} delay={0.08}>
+    <Reveal className={`flex flex-col ${isFlexTech ? "items-center text-center" : "items-center text-center"} ${className}`} delay={0.08} distance={24} duration={0.74}>
       <Badge className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)] dark:bg-[color:var(--surface)] dark:text-[color:var(--text-strong)]">
         {home.eyebrow}
       </Badge>
@@ -410,7 +415,7 @@ function HeroCopy({ site, className = "" }: { site: PublicSiteConfig; className?
         {home.heroDescription}
       </p>
       <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-        <Button asChild size="lg" className="w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white shadow-[0_24px_60px_rgba(107,38,217,0.18)] transition hover:bg-[color:var(--primary-light)] sm:w-auto">
+        <Button asChild size="lg" className="motion-sheen w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white shadow-[0_24px_60px_rgba(107,38,217,0.18)] transition hover:bg-[color:var(--primary-light)] sm:w-auto">
           <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
             {home.primaryCta} <ArrowRight size={18} />
           </TrackedLink>
@@ -444,17 +449,24 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(107,38,217,0.24),transparent_16%),radial-gradient(circle_at_top_right,rgba(107,38,217,0.18),transparent_20%),radial-gradient(circle_at_75%_18%,rgba(255,255,255,0.12),transparent_15%)]" />
       </div>
       <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center">
-        <Badge className="rounded-full bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)]">
-          {home.eyebrow}
-        </Badge>
-        <h1 className="mt-8 text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
-          {home.heroTitle}
-        </h1>
-        <p className="mx-auto mt-6 max-w-3xl text-center text-base leading-8 text-[color:var(--text-normal)] sm:text-lg">
-          {home.heroDescription}
-        </p>
+        <Reveal delay={0.04} distance={14}>
+          <Badge className="rounded-full bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)]">
+            {home.eyebrow}
+          </Badge>
+        </Reveal>
+        <Reveal delay={0.12} distance={28} duration={0.78}>
+          <h1 className="mt-8 text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
+            {home.heroTitle}
+          </h1>
+        </Reveal>
+        <Reveal delay={0.2} distance={18}>
+          <p className="mx-auto mt-6 max-w-3xl text-center text-base leading-8 text-[color:var(--text-normal)] sm:text-lg">
+            {home.heroDescription}
+          </p>
+        </Reveal>
+        <Reveal delay={0.28} distance={16}>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Button asChild size="lg" className="group w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white transition hover:bg-[color:var(--primary-light)] sm:w-auto">
+          <Button asChild size="lg" className="motion-sheen group w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white transition hover:bg-[color:var(--primary-light)] sm:w-auto">
             <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
               <span className="inline-flex items-center gap-2">
                 {home.primaryCta}
@@ -468,9 +480,11 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
             </TrackedLink>
           </Button>
         </div>
+        </Reveal>
+        <Reveal delay={0.36} direction="up" distance={16}>
         <div className="mt-12 flex flex-col items-center gap-6">
           <div className="flex items-center justify-center">
-            <div className="flex -space-x-4">
+            <div className="motion-avatar-stack flex -space-x-4">
               {faces.map((src, index) => (
                 <div
                   key={src}
@@ -478,6 +492,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
                     "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
                     index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                   )}
+                  style={{ animationDelay: `${0.42 + index * 0.055}s` }}
                 >
                   <Image src={src} alt={`FlexTech team face ${index + 1}`} fill className="object-cover" sizes="56px" />
                 </div>
@@ -516,6 +531,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
             </TrackedAnchor>
           </div>
         </div>
+        </Reveal>
       </div>
     </Container>
   );
@@ -525,8 +541,8 @@ function MartinHeroVisual({ site }: { site: PublicSiteConfig }) {
   const home = site.home;
 
   return (
-    <Reveal className="relative mx-auto aspect-square w-[min(48vw,11.5rem)] sm:w-[12.5rem] lg:w-[13.25rem]">
-      <div className="absolute inset-0 rounded-full bg-[color:var(--primary)]/15 blur-2xl" />
+    <Reveal className="motion-float relative mx-auto aspect-square w-[min(48vw,11.5rem)] sm:w-[12.5rem] lg:w-[13.25rem]" scale={0.96} distance={12} duration={0.8}>
+      <div className="motion-orbit absolute inset-0 rounded-full bg-[color:var(--primary)]/15 blur-2xl" />
       <div className="relative h-full overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/70 shadow-[0_8px_24px_rgba(0,0,0,0.16)] ring-1 ring-[color:var(--border-subtle)]">
         <Image
           src={home.heroImage}
@@ -538,7 +554,7 @@ function MartinHeroVisual({ site }: { site: PublicSiteConfig }) {
           sizes="(max-width: 640px) 48vw, 212px"
         />
       </div>
-      <div className="absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--surface-soft)] sm:text-sm">
+      <div className="motion-presence-chip absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--surface-soft)] sm:text-sm">
         <span className="relative mr-2 inline-flex h-2.5 w-2.5">
           <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
           <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#22C55E]" />

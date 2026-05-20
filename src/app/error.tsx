@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden px-4">

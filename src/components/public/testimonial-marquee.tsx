@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Testimonial = {
   id?: string;
@@ -15,7 +15,7 @@ type Testimonial = {
 function TestimonialCard({ item }: { item: Testimonial }) {
   return (
     <article className="flex w-[min(72vw,24rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-7 shadow-[0_3px_10px_rgba(0,0,0,0.04)] backdrop-blur-sm dark:bg-[color:var(--surface)]/60">
-      <p className="text-4xl leading-none text-[color:var(--primary)]/40">"</p>
+      <p className="text-4xl leading-none text-[color:var(--primary)]/40">&ldquo;</p>
       <p className="mt-3 flex-1 text-sm leading-7 text-[color:var(--text-normal)]">
         {item.quote}
       </p>
@@ -54,37 +54,38 @@ function MarqueeRow({
   // Duplicate items 3x for seamless looping
   const duplicated = [...items, ...items, ...items];
 
-  const animate = useCallback((timestamp: number) => {
-    if (!lastTimeRef.current) lastTimeRef.current = timestamp;
-    const delta = timestamp - lastTimeRef.current;
-    lastTimeRef.current = timestamp;
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
 
-    if (!isPaused && rowRef.current) {
-      // LTR: move left→right (positive translate), RTL: move right→left (negative translate)
-      posRef.current += direction === "ltr" ? delta * speed : -delta * speed;
+    function animate(timestamp: number) {
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+      const delta = timestamp - lastTimeRef.current;
+      lastTimeRef.current = timestamp;
 
-      const cardWidth = 24 * 16 + 20; // w-96 (24rem) + gap (5 = 1.25rem)
-      const totalWidth = cardWidth * items.length;
+      if (!isPaused && rowRef.current) {
+        posRef.current += direction === "ltr" ? delta * speed : -delta * speed;
 
-      // Reset when a full set has scrolled past
-      if (direction === "ltr" && posRef.current >= totalWidth) {
-        posRef.current = 0;
-      } else if (direction === "rtl" && posRef.current <= -totalWidth) {
-        posRef.current = 0;
+        const cardWidth = 24 * 16 + 20;
+        const totalWidth = cardWidth * items.length;
+
+        if (direction === "ltr" && posRef.current >= totalWidth) {
+          posRef.current = 0;
+        } else if (direction === "rtl" && posRef.current <= -totalWidth) {
+          posRef.current = 0;
+        }
+
+        rowRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
       }
 
-      rowRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
+      animRef.current = requestAnimationFrame(animate);
     }
 
-    animRef.current = requestAnimationFrame(animate);
-  }, [isPaused, direction, speed, items.length]);
-
-  useEffect(() => {
     animRef.current = requestAnimationFrame(animate);
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [animate]);
+  }, [isPaused, direction, speed, items.length]);
 
   return (
     <div

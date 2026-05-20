@@ -17,8 +17,8 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
           <div className="absolute left-1/2 top-0 h-[400px] w-[800px] -translate-x-1/2 rounded-full bg-[color:var(--primary)]/8 blur-[120px]" />
         </div>
         <Container>
-          <Reveal>
-            <div className="relative mx-auto max-w-4xl rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/70 p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)] backdrop-blur-sm sm:p-12 lg:p-16">
+          <Reveal scale={0.98} distance={20}>
+            <div className="motion-card relative mx-auto max-w-4xl rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/70 p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)] backdrop-blur-sm sm:p-12 lg:p-16">
               <div className="mx-auto max-w-2xl text-center">
                 <Badge>{site.finalCta.eyebrow}</Badge>
                 <h2 className="mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
@@ -28,7 +28,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
                   {site.finalCta.description}
                 </p>
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                  <Button asChild size="lg">
+                  <Button asChild size="lg" className="motion-sheen">
                     <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="global" eventSource="final_cta_start_project" href="/start-project">{site.finalCta.primary}</TrackedLink>
                   </Button>
                   <Button asChild size="lg" variant="secondary">
@@ -60,7 +60,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
   return (
     <Section className="py-14 bg-[color:var(--background-elevated)]">
       <Container>
-        <Reveal>
+        <Reveal scale={0.98} distance={20}>
           <div className="mx-auto max-w-3xl text-center">
             <Badge>{site.finalCta.eyebrow}</Badge>
             <h2 className="mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
@@ -70,7 +70,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
               {site.finalCta.description}
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="motion-sheen">
                 <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="global" eventSource="final_cta_start_project" href="/start-project">{site.finalCta.primary}</TrackedLink>
               </Button>
               <Button asChild size="lg" variant="secondary">

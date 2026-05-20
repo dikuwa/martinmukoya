@@ -38,7 +38,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const messageIdRef = useRef(2);
   const hasConversationStarted = messages.length > 1;
 
-  const greeting = useMemo(() => siteAwareGreeting(siteSlugRef.current), []);
+  const greeting = useMemo(() => siteAwareGreeting(siteSlug), [siteSlug]);
   const humanLabel = greeting.humanLabel;
 
   const quickReplies = useMemo(
@@ -108,7 +108,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     } catch (err) {
       console.error("chat error", err);
       setMessages((current) =>
-        current.map((m) => (m.id === aiMessageId ? { ...m, text: "Sorry — something went wrong." } : m))
+        current.map((m) => (m.id === aiMessageId ? { ...m, text: "Sorry, something went wrong." } : m))
       );
     } finally {
       setLoading(false);

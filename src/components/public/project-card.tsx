@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, Github } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 type Project = {
   id?: string;
@@ -25,14 +24,14 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
   const techStack = Array.from(new Set(project.techStack || [])).slice(0, 4);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)]">
+    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)] hover:shadow-[0_14px_36px_rgba(107,38,217,0.10)]">
       <Link href={`/projects/${project.slug}`} className="block">
         <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--surface-soft)]">
           <Image
             src={project.coverImage || "/assets/hero-images/webp/hero-image.webp"}
             alt={project.title}
             fill
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
+            className="motion-media object-cover group-hover:scale-[1.035]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         </div>
@@ -90,14 +89,14 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
   const techStack = Array.from(new Set(project.techStack || [])).slice(0, 4);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[color:var(--primary)]/30 hover:shadow-[0_12px_40px_rgba(107,38,217,0.12)]">
+    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:border-[color:var(--primary)]/30 hover:shadow-[0_16px_46px_rgba(107,38,217,0.14)]">
       <Link href={`/projects/${project.slug}`} className="block">
         <div className="relative aspect-[16/9] overflow-hidden bg-[color:var(--surface-soft)]">
           <Image
             src={project.coverImage || "/assets/hero-images/webp/hero-image.webp"}
             alt={project.title}
             fill
-            className="object-cover transition duration-700 group-hover:scale-[1.04]"
+            className="motion-media object-cover group-hover:scale-[1.045]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--surface)]/20 to-transparent" />

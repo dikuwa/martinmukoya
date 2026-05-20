@@ -4,10 +4,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function ThemeSwitcher() {
   const { resolvedTheme, setTheme } = useTheme();
-  const isLight = resolvedTheme === "light";
+  const [mounted, setMounted] = useState(false);
+  const isLight = mounted && resolvedTheme === "light";
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <Button
