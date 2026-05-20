@@ -53,10 +53,10 @@ export function ImageUploadField({
   }
 
   return (
-    <div className="grid gap-2 text-sm font-bold text-[color:var(--text-strong)]">
+    <div className="grid min-w-0 content-start gap-2 text-sm font-bold text-[color:var(--text-strong)]">
       <span>{label}</span>
       {value ? (
-        <div className="group relative aspect-[16/9] overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
+        <div className="group relative h-28 overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] sm:h-32">
           <img src={value} alt="" className="h-full w-full object-cover transition duration-200 group-hover:scale-105" />
           <button
             type="button"
@@ -70,7 +70,7 @@ export function ImageUploadField({
           </button>
         </div>
       ) : (
-        <div className="flex aspect-[16/9] items-center justify-center rounded-[calc(var(--radius)*0.75)] border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
+        <div className="flex h-28 items-center justify-center rounded-[calc(var(--radius)*0.75)] border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] sm:h-32">
           <ImagePlus size={24} className="text-[color:var(--text-faint)]" />
         </div>
       )}

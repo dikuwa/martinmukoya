@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { BlogPost, ChatSession, ContactMessage, FAQ, Lead, SiteSetting, Testimonial } from "@/generated/prisma/client";
 import { blogPostSchema, contactMessageUpdateSchema, faqSchema, leadUpdateSchema, siteSettingSchema, siteSettingUpdateSchema, testimonialSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
@@ -19,7 +20,7 @@ const siteOptions = [
 ] as const;
 const formShellClass = "grid gap-6 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow-xs)]";
 const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
-const selectClass = `${inputClass} appearance-none pr-9`;
+const selectClass = `${inputClass} bg-none appearance-none pr-10`;
 const textareaClass = "min-h-28 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
 const monoTextareaClass = `${textareaClass} font-mono`;
 const checkboxClass = "h-4 w-4 accent-[color:var(--primary)] rounded-[4px] border-[color:var(--border-subtle)] focus:ring-2 focus:ring-[color:var(--primary)]/30";
@@ -31,6 +32,32 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {children}
       {error ? <span className="text-xs text-[color:var(--destructive)]">{error}</span> : null}
     </label>
+  );
+}
+
+function AdminSelect({ children, className = "", ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span className="relative block">
+      <select {...props} className={`${selectClass} w-full ${className}`}>
+        {children}
+      </select>
+      <ChevronDown
+        aria-hidden="true"
+        size={16}
+        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]"
+      />
+    </span>
+  );
+}
+
+function AdminOption({ children, ...props }: React.OptionHTMLAttributes<HTMLOptionElement>) {
+  return (
+    <option
+      {...props}
+      className="bg-[color:var(--surface)] text-[color:var(--text-strong)] checked:bg-[color:var(--surface-soft)]"
+    >
+      {children}
+    </option>
   );
 }
 
@@ -126,24 +153,21 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
         <Field label="Title" error={form.formState.errors.title?.message}><input {...form.register("title")} className={inputClass} /></Field>
-        <div className="grid gap-2">
-          <div className="flex items-end gap-3">
-            <div className="min-w-0 flex-1">
-              <Field label="Slug" error={form.formState.errors.slug?.message}><input {...form.register("slug")} className={inputClass} placeholder="better-lead-capture" /></Field>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => form.setValue("slug", slugify(title ?? ""), { shouldDirty: true, shouldValidate: true })}
-              disabled={!title}
-            >
-              Generate
-            </Button>
-          </div>
-          <p className="text-xs leading-5 text-[color:var(--text-muted)]">Used in the public blog URL. Keep it stable once the post is shared.</p>
-        </div>
+        <Field label="Slug" error={form.formState.errors.slug?.message}><input {...form.register("slug")} className={inputClass} placeholder="better-lead-capture" /></Field>
+        <Button
+          type="button"
+          variant="secondary"
+          className="md:mt-7"
+          onClick={() => form.setValue("slug", slugify(title ?? ""), { shouldDirty: true, shouldValidate: true })}
+          disabled={!title}
+        >
+          Generate
+        </Button>
+        <p className="text-xs leading-5 text-[color:var(--text-muted)] md:col-start-2">
+          Used in the public blog URL. Keep it stable once the post is shared.
+        </p>
       </div>
       <Field label="Excerpt" error={form.formState.errors.excerpt?.message}><textarea {...form.register("excerpt")} className={textareaClass} rows={3} /></Field>
       <Field label="Content (Markdown supported)" error={form.formState.errors.content?.message}>
@@ -298,9 +322,9 @@ export function LeadStatusForm({ lead }: { lead: Lead }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
-        <select {...form.register("status")} className={selectClass}>
-          {leadStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
+        <AdminSelect {...form.register("status")}>
+          {leadStatuses.map((status) => <AdminOption key={status} value={status}>{status}</AdminOption>)}
+        </AdminSelect>
       </Field>
       <Field label="Internal notes"><textarea {...form.register("internalNotes")} className={textareaClass} /></Field>
       <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Update Lead"}</Button>
@@ -330,9 +354,9 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
-        <select {...form.register("status")} className={selectClass}>
-          {messageStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
+        <AdminSelect {...form.register("status")}>
+          {messageStatuses.map((status) => <AdminOption key={status} value={status}>{status}</AdminOption>)}
+        </AdminSelect>
       </Field>
       <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Update Message"}</Button>
     </form>
@@ -449,11 +473,11 @@ export function SiteSettingCreateForm() {
         <input {...form.register("key")} className={inputClass} placeholder="homepage.hero" />
       </Field>
       <Field label="Site" error={form.formState.errors.siteSlug?.message}>
-        <select {...form.register("siteSlug")} className={selectClass}>
+        <AdminSelect {...form.register("siteSlug")}>
           {siteOptions.map((site) => (
-            <option key={site.value} value={site.value}>{site.label}</option>
+            <AdminOption key={site.value} value={site.value}>{site.label}</AdminOption>
           ))}
-        </select>
+        </AdminSelect>
       </Field>
       <SettingsAssetUpload />
       <Field label="JSON value" error={form.formState.errors.value?.message}>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -81,7 +82,18 @@ async function ProjectsTable({ searchParams }: PageProps) {
 export default function AdminProjectsPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Projects" description="Create, publish, feature, reorder, and edit public case studies." actions={<Button asChild><Link href="/admin/projects/new">New Project</Link></Button>} />
+      <PageHeader
+        title="Projects"
+        description="Create, publish, feature, reorder, and edit public case studies."
+        actions={
+          <Button asChild>
+            <Link href="/admin/projects/new">
+              <Plus size={16} />
+              Add Project
+            </Link>
+          </Button>
+        }
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <ProjectsTable {...props} />

@@ -160,14 +160,20 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       <Field label="Case study content" error={form.formState.errors.caseStudyContent?.message}>
         <textarea {...form.register("caseStudyContent")} className={textareaClass} />
       </Field>
-      <div className="grid gap-5 md:grid-cols-2">
-        <ImageUploadField
-          label="Cover image"
-          folder="projects"
-          value={coverImage ?? ""}
-          onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
-        />
-        <div className="grid gap-3">
+      <section className="grid gap-4 rounded-[calc(var(--radius)*0.85)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/40 p-4">
+        <div>
+          <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">Project media</h2>
+          <p className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+            Add a compact cover preview and optional gallery images for the public case study.
+          </p>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2 md:items-start">
+          <ImageUploadField
+            label="Cover image"
+            folder="projects"
+            value={coverImage ?? ""}
+            onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
+          />
           <ImageUploadField
             label="Add gallery image"
             folder="projects/gallery"
@@ -175,10 +181,14 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
             onChange={appendGalleryImage}
             placeholder="Upload or paste a gallery image URL"
           />
-          <Field label="Gallery images, comma-separated">
-            <input {...form.register("galleryInput")} className={inputClass} />
-          </Field>
+          <div className="md:col-span-2">
+            <Field label="Gallery images, comma-separated">
+              <input {...form.register("galleryInput")} className={inputClass} />
+            </Field>
+          </div>
         </div>
+      </section>
+      <div className="grid gap-5 md:grid-cols-2">
         <Field label="Tech stack, comma-separated">
           <input {...form.register("techStackInput")} className={inputClass} />
         </Field>
