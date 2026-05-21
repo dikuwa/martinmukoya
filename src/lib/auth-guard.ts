@@ -23,7 +23,7 @@ export async function requireRole(role: string | string[]) {
   }
 
   const allowed = Array.isArray(role) ? role : [role];
-  const userRole = session.user.role as string | undefined;
+  const userRole = (session.user as { role?: string }).role;
 
   if (!userRole || !allowed.includes(userRole)) {
     return {

@@ -12,7 +12,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/auth/sign-in?redirect=/admin");
   }
 
-  if (session.user.role !== "ADMIN") {
+  const userRole = (session.user as { role?: string }).role;
+
+  if (userRole !== "ADMIN") {
     redirect("/");
   }
 
