@@ -42,7 +42,7 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
             <Badge key={`${project.slug}-${service}-${index}`}>{service}</Badge>
           ))}
         </div>
-        <h3 className="mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
+        <h3 className="text-balance mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
           <Link href={`/projects/${project.slug}`}>{project.title}</Link>
         </h3>
         <p className="mt-3 min-h-[4.5rem] text-sm leading-6 text-[color:var(--text-muted)]">{project.summary}</p>
@@ -113,7 +113,7 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
             </span>
           ))}
         </div>
-        <h3 className="mt-4 font-display text-2xl font-black text-[color:var(--text-strong)]">
+        <h3 className="text-balance mt-4 font-display text-2xl font-black text-[color:var(--text-strong)]">
           <Link href={`/projects/${project.slug}`}>{project.title}</Link>
         </h3>
         <p className="mt-2 min-h-[4rem] text-sm leading-6 text-[color:var(--text-muted)]">{project.summary}</p>

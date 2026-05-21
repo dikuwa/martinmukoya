@@ -1,5 +1,6 @@
 "use client";
 
+import { BlogEditor } from "@/components/admin/blog-editor";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button } from "@/components/ui/button";
 import type { BlogPost, ChatSession, ContactMessage, FAQ, Lead, SiteSetting, Testimonial } from "@/generated/prisma/client";
@@ -137,6 +138,7 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
   });
   const title = useWatch({ control: form.control, name: "title" });
   const coverImage = useWatch({ control: form.control, name: "coverImage" });
+  const content = useWatch({ control: form.control, name: "content" });
 
   async function onSubmit(values: z.input<typeof formSchema>) {
     const payload = formSchema.parse(values);
@@ -170,8 +172,11 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
         </p>
       </div>
       <Field label="Excerpt" error={form.formState.errors.excerpt?.message}><textarea {...form.register("excerpt")} className={textareaClass} rows={3} /></Field>
-      <Field label="Content (Markdown supported)" error={form.formState.errors.content?.message}>
-        <textarea {...form.register("content")} className={`${monoTextareaClass} min-h-96`} placeholder="Write your post content here. Use Markdown for formatting, code blocks, etc." />
+      <Field label="Content (Markdown)" error={form.formState.errors.content?.message}>
+        <BlogEditor
+          value={content ?? ""}
+          onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
+        />
       </Field>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Category"><input {...form.register("category")} className={inputClass} /></Field>

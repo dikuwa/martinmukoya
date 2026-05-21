@@ -122,7 +122,7 @@ export function ContactForm({ site }: { site: PublicSiteConfig }) {
       <div className="grid gap-5 rounded-[16px] border border-[color:var(--border-subtle)] bg-white/[0.03] p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent)]">Message received</p>
-          <h2 className="mt-3 font-display text-[clamp(1.8rem,calc(1.4rem+1.5vw),2.5rem)] font-black leading-tight text-[color:var(--text-strong)]">
+          <h2 className="text-balance mt-3 font-display text-[clamp(1.8rem,calc(1.4rem+1.5vw),2.5rem)] font-black leading-tight text-[color:var(--text-strong)]">
             {pageCopy.successTitle}
           </h2>
           <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">

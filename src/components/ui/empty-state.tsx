@@ -19,7 +19,7 @@ export function EmptyState({ title, description, actionLabel, actionHref, classN
           <path d="M9 14l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
-      <h2 className="mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h2>
+      <h2 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h2>
       <p className="mt-2 max-w-sm text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
       {actionLabel && actionHref ? (
         <Button asChild className="mt-6">

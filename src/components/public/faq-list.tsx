@@ -39,7 +39,7 @@ export function FAQList({ items = faqs, limit, variant = "default" }: { items?: 
               )}
               onClick={() => setOpenIndex(isOpen ? null : index)}
             >
-              <span>{faq.question}</span>
+              <span className="text-balance">{faq.question}</span>
               <span
                 className={cn(
                   "grid h-8 w-8 shrink-0 place-items-center rounded-full border transition duration-300",

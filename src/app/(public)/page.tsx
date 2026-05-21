@@ -150,7 +150,7 @@ export default async function HomePage() {
                         <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] shadow-[0_0_20px_rgba(107,38,217,0.08)]">
                           <Icon size={20} />
                         </div>
-                        <h3 className="mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                        <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
                         <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
                       </div>
                     </div>
@@ -168,7 +168,7 @@ export default async function HomePage() {
                       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
                         <Icon size={28} />
                       </div>
-                      <h3 className="mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                      <h3 className="text-balance mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
                       <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
                     </div>
                   </Reveal>
@@ -224,7 +224,7 @@ export default async function HomePage() {
             <Reveal className="relative mx-auto w-full max-w-[420px] rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-8 shadow-[0_30px_80px_rgba(107,38,217,0.12)] dark:bg-[color:var(--surface)]">
               <div className="rounded-[24px] bg-gradient-to-br from-[color:var(--surface-soft)]/90 via-[color:var(--primary)]/10 to-transparent p-8 dark:from-[color:var(--surface)]/80 dark:via-[color:var(--primary)]/10">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--primary)]">Campaign-ready systems</p>
-                <h3 className="mt-4 text-3xl font-black text-[color:var(--text-strong)]">Designed to support the work after launch.</h3>
+                <h3 className="text-balance mt-4 text-3xl font-black text-[color:var(--text-strong)]">Designed to support the work after launch.</h3>
                 <p className="mt-4 text-sm leading-7 text-[color:var(--text-normal)] dark:text-[color:var(--text-muted)]">
                   From lead capture and booking flows to follow-up structure and operational clarity, every build is designed to stay useful as the business evolves.
                 </p>
@@ -253,7 +253,7 @@ export default async function HomePage() {
                   <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)] ring-2 ring-[color:var(--primary)]/20 lg:mx-0">
                     <Image src="/assets/UI Faces/10.webp" alt="" fill className="object-cover" sizes="64px" />
                   </div>
-                  <h3 className="mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
+                  <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
                   <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">
                     I&rsquo;m happy to explain the process, discuss ideas, or help you understand what makes the most sense for your business.
                   </p>
@@ -408,7 +408,7 @@ function HeroCopy({ site, className = "" }: { site: PublicSiteConfig; className?
       <Badge className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-4 py-2 text-[0.75rem] font-semibold text-[color:var(--text-muted)] dark:bg-[color:var(--surface)] dark:text-[color:var(--text-strong)]">
         {home.eyebrow}
       </Badge>
-      <h1 className="mt-8 max-w-4xl text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
+      <h1 className="text-balance mt-8 max-w-4xl text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
         {home.heroTitle}
       </h1>
       <p className="mt-6 max-w-3xl text-base leading-8 text-[color:var(--text-normal)] sm:text-lg">
@@ -455,7 +455,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
           </Badge>
         </Reveal>
         <Reveal delay={0.12} distance={28} duration={0.78}>
-          <h1 className="mt-8 text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
+          <h1 className="text-balance mt-8 text-[clamp(2.8rem,4vw,5.2rem)] font-display font-black leading-[0.92] tracking-[-0.03em] text-[color:var(--text-strong)]">
             {home.heroTitle}
           </h1>
         </Reveal>

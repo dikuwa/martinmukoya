@@ -21,7 +21,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
             <div className="motion-card relative mx-auto max-w-4xl rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/70 p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)] backdrop-blur-sm sm:p-12 lg:p-16">
               <div className="mx-auto max-w-2xl text-center">
                 <Badge>{site.finalCta.eyebrow}</Badge>
-                <h2 className="mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
+                <h2 className="text-balance mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
                   {site.finalCta.title}
                 </h2>
                 <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">
@@ -63,7 +63,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
         <Reveal scale={0.98} distance={20}>
           <div className="mx-auto max-w-3xl text-center">
             <Badge>{site.finalCta.eyebrow}</Badge>
-            <h2 className="mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
+            <h2 className="text-balance mt-4 font-display text-[clamp(2rem,calc(1.45rem+2.5vw),4rem)] font-black leading-tight text-[color:var(--text-strong)]">
               {site.finalCta.title}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]">

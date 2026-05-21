@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MarkdownRenderer } from "./markdown-renderer";
 
 const whatsappHref = "https://wa.me/264818563005";
 
@@ -91,6 +92,11 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         setSessionId(nextSessionId);
       }
 
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error || "The AI assistant is temporarily unavailable.");
+      }
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -108,7 +114,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     } catch (err) {
       console.error("chat error", err);
       setMessages((current) =>
-        current.map((m) => (m.id === aiMessageId ? { ...m, text: "Sorry, something went wrong." } : m))
+        current.map((m) => (m.id === aiMessageId ? { ...m, text: err instanceof Error ? err.message : "The AI assistant is temporarily unavailable." } : m))
       );
     } finally {
       setLoading(false);
@@ -204,9 +210,15 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     <span>{message.author === "AI" ? "Assistant" : "You"}</span>
                     <span>{message.time}</span>
                   </div>
-                  <p className={`mt-2 text-sm leading-6 wrap-break-word whitespace-pre-wrap ${message.author === "AI" ? "text-[color:var(--text-muted)]" : "text-[color:var(--text-strong)]"}`}>
-                    {message.text}
-                  </p>
+                  {message.author === "AI" ? (
+                    <div className="mt-2 text-sm leading-6">
+                      <MarkdownRenderer content={message.text} isUser={false} />
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm leading-6 wrap-break-word text-[color:var(--text-strong)]">
+                      {message.text}
+                    </p>
+                  )}
                   {message.id === 1 && !hasConversationStarted ? (
                     <div className="mt-4 grid grid-cols-2 gap-1.5">
                       {quickReplies.map((reply) => (
@@ -230,14 +242,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     <span className="typing-dot" style={{ animationDelay: "120ms" }} />
                     <span className="typing-dot" style={{ animationDelay: "240ms" }} />
                   </span>
-                  <span className="text-sm text-[color:var(--text-muted)]">Typing…</span>
+                  <span className="text-sm lowercase text-[color:var(--text-muted)]">typing</span>
                 </div>
               ) : null}
             </div>
 
             <div className="rounded-b-[26px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-4">
               <div>
-                <div className="flex min-w-0 items-end gap-2 rounded-[18px] bg-[color:var(--surface-soft)] px-3 py-2 transition">
+                <div className="chat-composer-shell flex min-w-0 items-end gap-2 rounded-[18px] border border-transparent bg-[color:var(--surface-soft)] px-3 py-2 transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[color:var(--primary)]/35 focus-within:shadow-[0_0_0_4px_rgba(107,38,217,0.10)]">
                   <textarea
                     ref={textareaRef}
                     value={draft}
@@ -253,7 +265,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     }}
                     placeholder="Ask about scope, budget, or timeline"
                     rows={1}
-                    className="max-h-[10.5rem] min-h-[2.75rem] min-w-0 flex-1 resize-none overflow-y-auto whitespace-pre-wrap bg-transparent py-3 text-sm leading-6 text-[color:var(--text-strong)] outline-none focus-visible:shadow-none placeholder:text-[color:var(--text-faint)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="chat-composer-textarea max-h-[10.5rem] min-h-[2.75rem] min-w-0 flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent py-3 text-sm leading-6 text-[color:var(--text-strong)] shadow-none outline-none ring-0 focus:border-transparent focus:shadow-none focus:outline-none focus:ring-0 focus:ring-transparent focus-visible:border-transparent focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-transparent placeholder:text-[color:var(--text-faint)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   />
                   <Button type="button" onClick={() => handleSend(draft)} className="h-10 w-10 rounded-full p-0 text-sm" disabled={loading || !draft.trim()} aria-label="Send message">
                     <Send size={16} />

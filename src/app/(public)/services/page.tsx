@@ -75,7 +75,7 @@ export default async function ServicesPage() {
                       <ServiceIcon id={service.id} />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
+                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
                       <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
                     </div>
                   </div>
@@ -119,7 +119,7 @@ export default async function ServicesPage() {
                       <ServiceIcon id={service.id} />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
+                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
                       <p className="mt-3 mx-auto max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ function InfoBlock({
         ? "bg-[color:var(--surface-soft)]"
         : "bg-white/[0.03]"
     )}>
-      <h3 className="text-sm font-bold text-[color:var(--text-strong)]">{title}</h3>
+      <h3 className="text-balance text-sm font-bold text-[color:var(--text-strong)]">{title}</h3>
       {description ? (
         <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
       ) : null}

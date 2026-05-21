@@ -84,7 +84,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
         <Container className="max-w-4xl">
           <Reveal>
             <Badge>{post.category}</Badge>
-            <h1 className="mt-5 font-display text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.98] text-[color:var(--text-strong)]">
+            <h1 className="text-balance mt-5 font-display text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.98] text-[color:var(--text-strong)]">
               {post.title}
             </h1>
             <p className="mt-5 text-lg leading-8 text-[color:var(--text-muted)]">{post.excerpt}</p>

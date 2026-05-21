@@ -15,7 +15,7 @@ for (const line of content.split(/\r?\n/)) {
 const groups = [
   {
     title: "Required for local app",
-    keys: ["DATABASE_URL", "UPSTASH_REDIS_URL", "UPSTASH_REDIS_TOKEN", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "OPENAI_API_KEY", "NEXT_PUBLIC_APP_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD"]
+    keys: ["DATABASE_URL", "UPSTASH_REDIS_URL", "UPSTASH_REDIS_TOKEN", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "OPENAI_API_KEY", "OPENAI_MODEL", "NEXT_PUBLIC_APP_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD"]
   },
   {
     title: "Needed only for admin image uploads",
@@ -27,7 +27,7 @@ const groups = [
   },
   {
     title: "Optional login/provider extras",
-    keys: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "AI_GATEWAY_API_KEY"]
+    keys: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "AI_GATEWAY_API_KEY", "OPENROUTER_API_KEY", "OPENROUTER_MODEL", "SITE_URL", "SITE_NAME", "UPLOADTHING_TOKEN"]
   }
 ];
 

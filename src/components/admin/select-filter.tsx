@@ -32,6 +32,16 @@ export function SelectFilter({ name, value, options, label }: SelectFilterProps)
     setOpen(false);
   }
 
+  const renderedOptions = useMemo(() => {
+    const seen = new Set<string>();
+
+    return [{ label: "All", value: "" }, ...options].filter((option) => {
+      if (seen.has(option.value)) return false;
+      seen.add(option.value);
+      return true;
+    });
+  }, [options]);
+
   return (
     <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--text-faint)]">
       {label}
@@ -55,12 +65,12 @@ export function SelectFilter({ name, value, options, label }: SelectFilterProps)
             role="listbox"
             className="absolute left-0 top-[calc(100%+0.45rem)] z-50 grid w-full min-w-48 overflow-hidden rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]"
           >
-            {[{ label: "All", value: "" }, ...options].map((option) => {
+            {renderedOptions.map((option, index) => {
               const active = option.value === selected;
 
               return (
                 <button
-                  key={`${name}-${option.value || "all"}`}
+                  key={`${name}-${option.value || "all"}-${index}`}
                   type="button"
                   role="option"
                   aria-selected={active}

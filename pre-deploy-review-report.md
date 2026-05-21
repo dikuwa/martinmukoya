@@ -1,6 +1,6 @@
 # Pre-Deploy Review Report
 
-Date: 2026-05-17  
+Date: 2026-05-21  
 Project: Martin Mukoya Portfolio  
 Stack: Next.js 16, TypeScript, Prisma v7, Supabase/Postgres, Better Auth, Upstash Redis, Resend, OpenAI, PostHog, Cloudflare R2
 
@@ -8,10 +8,10 @@ Stack: Next.js 16, TypeScript, Prisma v7, Supabase/Postgres, Better Auth, Upstas
 
 - Critical issues: 0
 - High priority issues: 0 open, 3 addressed during review
-- Medium priority issues: 3 open
+- Medium priority issues: 1 open, 2 addressed during final env pass
 - Low priority issues: 3 open
 
-The app is in a good pre-deploy state for local QA. `pnpm lint`, `pnpm build`, `pnpm env:check`, and route smoke checks pass. Core local environment values are present. Production image uploads still need Cloudflare R2 keys, and external analytics still needs a PostHog project key.
+The app is in a good pre-deploy state for local QA. `pnpm lint`, `pnpm build`, `pnpm env:check`, and service smoke checks pass. Core local environment values are present. Cloudflare R2 uploads, public R2 reads, OpenAI, and PostHog have been verified locally.
 
 ## Critical Issues
 
@@ -55,21 +55,17 @@ Fix applied:
 
 Expected improvement: Smaller initial client work for public pages while preserving chat behavior.
 
-## Medium Priority Issues
+## Medium Priority Issues Addressed
 
 ### 1. Cloudflare R2 Keys Missing Locally
 
 Location: `.env.local`, checked via `pnpm env:check`
 
-Impact: Admin image uploads will fail until R2 credentials are added.
+Status: Addressed.
 
-Action:
-- Fill these values:
-  - `CLOUDFLARE_R2_ACCESS_KEY_ID`
-  - `CLOUDFLARE_R2_SECRET_ACCESS_KEY`
-  - `CLOUDFLARE_R2_ENDPOINT`
-  - `CLOUDFLARE_R2_BUCKET_NAME`
-  - `CLOUDFLARE_R2_PUBLIC_DEV_URL`
+Verification:
+- `pnpm env:check` confirms all R2 values are set.
+- A one-file R2 smoke test uploaded `codex-smoke/health-check.txt`, read it publicly with `200 OK`, then deleted it.
 
 Guide: `docs/setup-api-keys.md`
 
@@ -77,13 +73,15 @@ Guide: `docs/setup-api-keys.md`
 
 Location: `.env.local`, checked via `pnpm env:check`
 
-Impact: Internal analytics still works, but external PostHog analytics will not receive events.
+Status: Addressed.
 
-Action:
-- Add `NEXT_PUBLIC_POSTHOG_KEY`.
-- Keep `NEXT_PUBLIC_POSTHOG_HOST` as the correct region host.
+Verification:
+- `pnpm env:check` confirms `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` are set.
+- A PostHog smoke event returned `200 OK`.
 
-### 3. Browser Automation Was Partially Blocked
+## Medium Priority Issues
+
+### 1. Browser Automation Was Partially Blocked
 
 Location: Browser plugin session
 
@@ -132,13 +130,27 @@ pnpm lint
 pnpm build
 ```
 
+External service smoke checks:
+
+```text
+OpenAI chat completion: 200 OK
+Cloudflare R2 upload/read/delete: 200 OK
+PostHog capture event: 200 OK
+```
+
 Route smoke checks:
 
 ```text
 / 200
+/about 200
+/projects 200
+/services 200
+/blog 200
 /start-project 200
 /contact 200
+/faq 200
 /admin/chat 200
+/admin 200
 /sitemap.xml 200
 /robots.txt 200
 ```
@@ -158,12 +170,11 @@ Route smoke checks:
 
 Ready for final staging QA once these are done:
 
-1. Add Cloudflare R2 credentials if admin image uploads are required before launch.
-2. Add PostHog key if external analytics is required before launch.
-3. Set production values in Vercel:
+1. Set production values in Vercel:
    - `NEXT_PUBLIC_APP_URL`
    - `BETTER_AUTH_URL`
    - all required secrets from `.env.example`
-4. Run database push/seed against the production database.
-5. Verify Resend domain so emails send from `info@martinmukoya.com`.
-6. Run one fresh browser visual QA pass on mobile and desktop.
+   - use `docs/deployment-checklist.md` for the exact production env list
+2. Run database push/seed against the production database.
+3. Verify Resend domain so emails send from `info@martinmukoya.com`.
+4. Run one fresh browser visual QA pass on mobile and desktop.

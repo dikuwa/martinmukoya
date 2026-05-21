@@ -13,7 +13,7 @@ export function PageHeader({ eyebrow, title, description, actions }: PageHeaderP
     <div className="flex flex-col gap-5 border-b border-[color:var(--border-subtle)] pb-6 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
         {eyebrow ? <Badge className="mb-4">{eyebrow}</Badge> : null}
-        <h1 className="font-display text-3xl font-black tracking-normal text-[color:var(--text-strong)] md:text-5xl">
+        <h1 className="text-balance font-display text-3xl font-black tracking-normal text-[color:var(--text-strong)] md:text-5xl">
           {title}
         </h1>
         {description ? (

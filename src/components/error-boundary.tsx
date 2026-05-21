@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="rounded-[18px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-6">
-          <h2 className="font-display text-xl font-black text-[color:var(--text-strong)]">
+          <h2 className="text-balance font-display text-xl font-black text-[color:var(--text-strong)]">
             {this.props.fallbackTitle ?? "Something needs attention"}
           </h2>
           <p className="mt-2 text-sm text-[color:var(--text-muted)]">

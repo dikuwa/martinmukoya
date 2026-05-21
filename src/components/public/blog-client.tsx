@@ -65,7 +65,7 @@ function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: bool
         </Link>
         <div className="p-5">
           <Badge>{getDisplayTag(post.category, true)}</Badge>
-          <h2 className="mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
+          <h2 className="text-balance mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
             <Link href={`/blog/${post.slug}`}>{post.title}</Link>
           </h2>
           <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{post.excerpt}</p>
@@ -95,7 +95,7 @@ function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: bool
       </Link>
       <div className="p-5">
         <Badge>{post.category}</Badge>
-        <h2 className="mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
+        <h2 className="text-balance mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
           <Link href={`/blog/${post.slug}`}>{post.title}</Link>
         </h2>
         <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{post.excerpt}</p>

@@ -26,7 +26,7 @@ export default async function StartProjectPage() {
       <Container>
         <Reveal className="mx-auto max-w-5xl text-center">
           <Badge>{page.eyebrow}</Badge>
-          <h1 className="mt-6 font-display text-[clamp(2.25rem,calc(1.7rem+3vw),4.25rem)] font-black leading-none text-[color:var(--text-strong)]">
+          <h1 className="text-balance mt-6 font-display text-[clamp(2.25rem,calc(1.7rem+3vw),4.25rem)] font-black leading-none text-[color:var(--text-strong)]">
             {page.title}
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-[clamp(1rem,calc(0.95rem+0.5vw),1.2rem)] leading-8 text-[color:var(--text-muted)]">

@@ -24,7 +24,7 @@ export function ServiceCard({ service }: { service: Service }) {
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] transition duration-200 group-hover:scale-105 group-hover:border-[color:var(--primary)] group-hover:bg-[color:var(--primary)]/10">
             <Icon size={19} />
           </span>
-          <h3 className="font-display text-[clamp(1.05rem,calc(0.95rem+0.5vw),1.35rem)] font-black text-[color:var(--text-strong)]">
+          <h3 className="text-balance font-display text-[clamp(1.05rem,calc(0.95rem+0.5vw),1.35rem)] font-black text-[color:var(--text-strong)]">
             {service.title}
           </h3>
         </div>

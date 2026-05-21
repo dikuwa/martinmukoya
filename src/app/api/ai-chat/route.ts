@@ -12,8 +12,8 @@ const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
 function buildSystemPrompt(siteSlug?: string | null): string {
   if (siteSlug === "flextech-media") {
-    return `You are the website assistant for FlexTech Media, a digital media and technology agency.
-You help visitors understand agency services, shape a campaign brief, and choose the best next contact path.
+    return `You are the friendly website assistant for FlexTech Media, a digital media and technology agency in Namibia.
+Your job is to help visitors explore services, shape a campaign idea, or get them to the right person on the team.
 
 Services to discuss:
 - Brand websites and campaign landing pages
@@ -22,18 +22,23 @@ Services to discuss:
 - Lead capture and enquiry management
 - AI automations and workflow integrations
 
+Personality:
+- Sound like a helpful teammate who genuinely wants to see the visitor succeed.
+- Use natural, conversational language. Throw in the occasional "great question" or "love that" when it fits.
+- Be proactive — if someone mentions a goal, suggest one or two relevant services without overwhelming them.
+- Keep it real: share honest ballpark ranges, never overpromise.
+
 Rules:
-- Be clear, warm, concise, and action-oriented.
 - Do not pretend to be a human agent. You are an assistant that can help route the visitor to the FlexTech team.
-- Do not guarantee exact prices, timelines, rankings, revenue, or outcomes. Give ranges only when the visitor asks.
-- Do not take external actions, make calls, send messages, or promise that a team member has already responded.
-- If the visitor wants pricing, timeline, booking, a consultation, WhatsApp, or a human handover, ask for their email or suggest using the Start Project form or WhatsApp.
-- Ask at most one useful follow-up question at a time.
-- Keep replies under 120 words unless the visitor asks for detail.`;
+- Do not guarantee exact prices, timelines, rankings, revenue, or outcomes.
+- If the visitor wants pricing, timeline, a consultation, WhatsApp, or a human handover, ask for their email or point them to the Start Project form.
+- Ask at most one follow-up question at a time.
+- Keep replies under 120 words unless the visitor asks for detail.
+- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.`;
   }
 
-  return `You are the website assistant for Martin Mukoya, a practical business-systems developer in Namibia.
-You help visitors understand services, shape a short project brief, and choose the best next contact path.
+  return `You are the friendly website assistant for Martin Mukoya, a practical business-systems developer based in Namibia.
+Your job is to help visitors understand services, shape a project brief, and get them connected with Martin when they're ready.
 
 Services to discuss:
 - Web applications and business dashboards
@@ -41,47 +46,62 @@ Services to discuss:
 - Ecommerce flows and online storefronts
 - AI automations and workflow integrations
 
+Personality:
+- Sound like a warm, knowledgable colleague who's excited to help visitors build something great.
+- Write like you talk — natural and conversational. Use phrases like "here's the thing" or "that's a solid idea" when it feels right.
+- When someone shares what they're working on, show genuine interest and offer focused next steps.
+- Be honest about what's possible; give ballpark ranges, never hard promises.
+
 Rules:
-- Be clear, warm, concise, and action-oriented.
-- Do not pretend to be Martin or a human. You are an assistant that can help route the visitor to Martin.
-- Do not guarantee exact prices, timelines, rankings, revenue, or outcomes. Give ranges only when the visitor asks and explain that Martin confirms after scope.
-- Do not take external actions, make calls, send messages, or promise that Martin has already responded.
-- If the visitor wants pricing, timeline, booking, a consultation, WhatsApp, or a human handover, ask for their email or suggest using the Start Project form or WhatsApp.
-- Ask at most one useful follow-up question at a time.
-- Keep replies under 120 words unless the visitor asks for detail.`;
+- Do not pretend to be Martin or a human. You are an assistant that routes visitors to Martin.
+- Do not guarantee exact prices, timelines, rankings, revenue, or outcomes.
+- If the visitor wants pricing, timeline, a consultation, WhatsApp, or to speak with Martin, ask for their email or point them to the Start Project form.
+- Ask at most one follow-up question at a time.
+- Keep replies under 120 words unless the visitor asks for detail.
+- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.`;
 }
 
 function fallbackAssistantReply(content: string, siteSlug?: string | null): string {
   const lower = content.toLowerCase();
   const isFlexTech = siteSlug === "flextech-media";
-  const brandName = isFlexTech ? "FlexTech Media" : "Martin Mukoya";
-  const handover = isFlexTech
-    ? "If you need the fastest handoff, tap the Human button and continue on WhatsApp with the FlexTech team."
-    : "If you want the fastest handoff, tap the Human button and continue on WhatsApp with Martin.";
-  const servicesList = isFlexTech
-    ? "brand websites, campaign pages, content systems, analytics, and AI automations"
-    : "websites, booking systems, ecommerce flows, dashboards, and practical AI automations";
-  const serviceQuestion = isFlexTech
-    ? "What are you trying to launch or improve first: brand presence, campaign pages, content workflow, or lead capture?"
-    : "What are you trying to improve first: leads, bookings, sales, or internal workflow?";
+  const contactLabel = isFlexTech ? "the FlexTech team" : "Martin";
+  const handoverLine = isFlexTech
+    ? "If you need to speak with someone directly, tap the Team button at the top of the chat."
+    : "If you'd like to talk to Martin directly, tap the Human button at the top of the chat.";
 
+  // Direct handover requests — warm, immediate, no extra questions
+  if (/\bhuman|martin|flextech|whatsapp|contact|call|talk to|handoff|hand off\b/.test(lower)) {
+    return `Sure! The quickest way to reach ${contactLabel} is WhatsApp — it lets ${isFlexTech ? "the team" : "Martin"} see the full context and reply directly. Just tap the ${isFlexTech ? "Team" : "Human"} button at the top of this chat.`;
+  }
+
+  // Timeline questions
   if (/\btimeline|time|deadline|how long|launch\b/.test(lower)) {
-    return `A practical ${isFlexTech ? "project" : "timeline"} depends on scope. A focused ${isFlexTech ? "brand site or campaign page" : "website"} can move faster while ${isFlexTech ? "content systems, analytics dashboards, and automations" : "booking systems, ecommerce, dashboards, and AI workflows"} need more planning and testing. ${handover}`;
+    const fast = isFlexTech ? "a brand site or campaign page" : "a focused website";
+    const slow = isFlexTech
+      ? "content systems, analytics dashboards, or automations"
+      : "booking systems, ecommerce, dashboards, or AI workflows";
+    return `Timelines depend on scope, but here's a rough guide: ${fast} can move quickly (a few weeks), while ${slow} typically need more discovery and testing. Happy to help narrow it down if you share what you're trying to build. ${handoverLine}`;
   }
 
-  if (/\bbudget|price|cost|quote|pricing|money\b/.test(lower)) {
-    return `Budget depends on the service, integrations, content, and urgency. The safest next step is to share the service you need${isFlexTech ? ", your campaign type," : ""} your rough budget range, and what success should look like. ${handover}`;
+  // Budget / pricing questions
+  if (/\bbudget|price|cost|quote|pricing|money|how much\b/.test(lower)) {
+    const details = isFlexTech ? "your campaign type, rough range, and what success looks like" : "the service you need, a rough budget range, and what the outcome should look like";
+    return `Every project is a bit different depending on integrations, content, and urgency. The most useful next step is to share ${details} — that gives enough context for a realistic ballpark. ${handoverLine}`;
   }
 
-  if (/\bservice|website|booking|ecommerce|shop|ai|automation|dashboard|system|campaign|brand|content\b/.test(lower)) {
-    return `I can help you shape this into a clearer brief. ${brandName} usually works around ${servicesList}. ${serviceQuestion}`;
+  // Service enquiry
+  if (/\bservice|website|booking|ecommerce|shop|ai|automation|dashboard|system|campaign|brand|content|build|create\b/.test(lower)) {
+    if (isFlexTech) {
+      return `Great choice. FlexTech works on brand websites, campaign pages, content systems, analytics, and automations. To help shape a clearer brief — are you looking to launch something new, improve an existing system, or build a campaign around a specific offer?`;
+    }
+    return `Nice. Martin builds things like websites, booking systems, ecommerce flows, dashboards, and AI automations. To help narrow it down — are you looking to improve leads, bookings, sales, or an internal workflow?`;
   }
 
-  if (/\bhuman|martin|flextech|whatsapp|contact|call|handoff|hand off\b/.test(lower)) {
-    return `Sure. The quickest route is WhatsApp so ${isFlexTech ? "the FlexTech team" : "Martin"} can see the context and reply directly. Tap the Human button at the top of this chat.`;
+  // Everything else — open, friendly invitation
+  if (isFlexTech) {
+    return `I'm here to help you explore FlexTech's services, shape a campaign idea, or connect you with the team. What are you hoping to launch or improve?`;
   }
-
-  return `I can help you choose a service, shape a ${isFlexTech ? "campaign brief" : "project brief"}, or find the quickest way to reach ${isFlexTech ? "the FlexTech team" : "Martin"}. Tell me what you want to build or improve, and I'll help narrow the next step. ${handover}`;
+  return `I'm here to help you figure out the right service, shape a project brief, or connect you directly with Martin. What are you trying to build or improve?`;
 }
 
 function inferServiceType(content: string) {
@@ -123,6 +143,68 @@ async function streamAndSaveFallback(sessionId: string, content: string, reply: 
       "X-Assistant-Fallback": content ? "true" : "empty"
     }
   });
+}
+
+async function readApiError(response: Response) {
+  try {
+    const payload = await response.json();
+    const error = payload?.error ?? {};
+    return {
+      message: typeof error.message === "string" ? error.message : "AI provider request failed.",
+      code: typeof error.code === "string" ? error.code : undefined,
+      type: typeof error.type === "string" ? error.type : undefined
+    };
+  } catch {
+    return { message: "AI provider request failed." };
+  }
+}
+
+function publicApiErrorMessage() {
+  return "The AI assistant is temporarily unavailable. Please try again later, or use the contact form to get in touch directly.";
+}
+
+type AIProvider = "openrouter" | "openai";
+
+function getProviderConfig(): {
+  provider: AIProvider | null;
+  endpoint: string;
+  apiKey: string;
+  model: string;
+  extraHeaders: Record<string, string>;
+} {
+  const openAIKey = process.env.OPENAI_API_KEY;
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+
+  if (openAIKey) {
+    return {
+      provider: "openai",
+      endpoint: "https://api.openai.com/v1/chat/completions",
+      apiKey: openAIKey,
+      model: process.env.OPENAI_MODEL || "gpt-4o",
+      extraHeaders: {}
+    };
+  }
+
+  if (openRouterKey) {
+    return {
+      provider: "openrouter",
+      endpoint: "https://openrouter.ai/api/v1/chat/completions",
+      apiKey: openRouterKey,
+      model: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
+      extraHeaders: {
+        "HTTP-Referer": process.env.SITE_URL || "https://martinmukoya.com",
+        "X-Title": process.env.SITE_NAME || "Martin Mukoya"
+      }
+    };
+  }
+
+  return {
+    provider: null,
+    endpoint: "",
+    apiKey: "",
+    model: "",
+    extraHeaders: {}
+  };
 }
 
 export async function POST(req: Request) {
@@ -236,10 +318,10 @@ export async function POST(req: Request) {
     await invalidateTag(tags.chatSessions);
     await invalidateTag(tags.dashboard);
 
-    // If OpenAI key not present, fall back to simple canned reply streaming
-    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    // Determine AI provider — prefer OpenAI, fall back to OpenRouter
+    const config = getProviderConfig();
 
-    if (!OPENAI_KEY) {
+    if (!config.provider) {
       return streamAndSaveFallback(activeSession.id, content, fallbackAssistantReply(content, activeSiteSlug));
     }
 
@@ -249,16 +331,18 @@ export async function POST(req: Request) {
       take: 10
     });
 
-    // Call OpenAI streaming API with site-aware system prompt
+    // Call the AI provider's streaming API with site-aware system prompt
     const systemPrompt = buildSystemPrompt(activeSiteSlug);
-    const openAiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+
+    const aiRes = await fetch(config.endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_KEY}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+        ...config.extraHeaders
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        model: config.model,
         messages: [
           { role: "system", content: systemPrompt },
           ...recentMessages.map((message) => ({
@@ -272,9 +356,29 @@ export async function POST(req: Request) {
       })
     });
 
-    if (!openAiRes.ok || !openAiRes.body) {
-      console.error("OpenAI chat completion unavailable", { status: openAiRes.status });
-      return streamAndSaveFallback(activeSession.id, content, fallbackAssistantReply(content, activeSiteSlug));
+    if (!aiRes.ok || !aiRes.body) {
+      const apiError = await readApiError(aiRes);
+      console.error(`${config.provider} chat completion unavailable`, {
+        status: aiRes.status,
+        code: apiError.code,
+        type: apiError.type,
+        message: apiError.message
+      });
+      const errorMessage = publicApiErrorMessage();
+      await db.chatMessage.create({
+        data: { sessionId: activeSession.id, role: "ASSISTANT", content: errorMessage }
+      });
+      await invalidateTag(tags.chatSessions);
+      await invalidateTag(tags.dashboard);
+
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: 503,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Chat-Session-Id": activeSession.id,
+          "X-Assistant-Provider": `${config.provider}-error`
+        }
+      });
     }
 
     const encoder = new TextEncoder();
@@ -283,18 +387,22 @@ export async function POST(req: Request) {
     // stream assistant tokens to client and accumulate to persist
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = openAiRes.body!.getReader();
+        const reader = aiRes.body!.getReader();
         let assistantText = "";
         let done = false;
+        let buffer = "";
 
         try {
           while (!done) {
             const { value, done: rdone } = await reader.read();
             done = !!rdone;
             if (value) {
-              const chunk = decoder.decode(value, { stream: true });
-              // OpenAI SSE stream emits lines like 'data: {...}\n\n'
-              for (const line of chunk.split(/\n/)) {
+              buffer += decoder.decode(value, { stream: true });
+              // SSE stream emits lines like 'data: {...}\n\n'
+              const lines = buffer.split(/\n/);
+              buffer = lines.pop() ?? "";
+
+              for (const line of lines) {
                 const trimmed = line.trim();
                 if (!trimmed) continue;
                 if (trimmed === "data: [DONE]") {
@@ -332,7 +440,13 @@ export async function POST(req: Request) {
       }
     });
 
-    return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "X-Chat-Session-Id": activeSession.id } });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Chat-Session-Id": activeSession.id,
+        "X-Assistant-Provider": config.provider
+      }
+    });
   } catch (err) {
     console.error("ai-chat route error:", err);
     return new Response(JSON.stringify({ error: "Internal error" }), { status: 500 });

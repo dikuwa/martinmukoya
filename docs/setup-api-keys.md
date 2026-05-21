@@ -57,7 +57,7 @@ https://resend.com/domains
 
 ```bash
 OPENAI_API_KEY="..."
-OPENAI_MODEL="gpt-4o-mini"
+OPENAI_MODEL="gpt-4o"
 ```
 
 ### 6. Public Website URL
@@ -76,7 +76,10 @@ For production, use the final live website URL.
 - Open `R2 Object Storage`.
 - Create a bucket.
 - Create an R2 API token.
-- Copy the S3 endpoint, access key, secret key, bucket name, and public bucket/dev URL.
+- Copy the S3 endpoint, access key, secret key, and bucket name.
+- For `CLOUDFLARE_R2_PUBLIC_DEV_URL`, open the bucket, go to `Settings`, then enable either:
+  - `Public Development URL` and copy the `https://pub-....r2.dev` URL, or
+  - a custom public domain if you connected one.
 - Paste them as:
 
 ```bash
@@ -93,7 +96,8 @@ If these are missing, the site still runs, but admin image uploads will fail.
 
 ### PostHog Analytics
 - Go to: https://us.posthog.com/project/settings
-- Copy the project API key.
+- Open `Project Settings`.
+- Copy the `Project API key`. It is public/client-safe and usually starts with `phc_`.
 - Paste it as:
 
 ```bash

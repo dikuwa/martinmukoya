@@ -230,7 +230,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
       <div className="mx-auto grid w-full max-w-5xl gap-6 overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 sm:p-8">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--accent)]">Request received</p>
-          <h2 className="mt-3 font-display text-[clamp(2rem,calc(1.45rem+2vw),3.2rem)] font-black leading-tight text-[color:var(--text-strong)]">
+          <h2 className="text-balance mt-3 font-display text-[clamp(2rem,calc(1.45rem+2vw),3.2rem)] font-black leading-tight text-[color:var(--text-strong)]">
             Thanks. Your brief is in good shape.
           </h2>
           <p className="mt-4 text-[clamp(1rem,calc(0.95rem+0.35vw),1.12rem)] leading-8 text-[color:var(--text-muted)]">
@@ -289,7 +289,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
                           <Icon size={20} />
                         </span>
                         <div>
-                          <h3 className="font-display text-[clamp(1.2rem,calc(1.02rem+0.8vw),1.5rem)] font-black text-[color:var(--text-strong)]">
+                          <h3 className="text-balance font-display text-[clamp(1.2rem,calc(1.02rem+0.8vw),1.5rem)] font-black text-[color:var(--text-strong)]">
                             {service.id === "ai-automations" ? "AI Automations" : service.title}
                           </h3>
                         </div>
@@ -537,7 +537,7 @@ function WizardTitle({ title, description, center }: { title: string; descriptio
   return (
     <div className={cn(center ? "mx-auto text-center" : "", "max-w-3xl")}>
       <p className="text-sm font-semibold text-[color:var(--text-muted)]">Project Steps</p>
-      <h2 className="mt-3 font-display text-[clamp(1.75rem,calc(1.35rem+1.5vw),2.7rem)] font-black leading-tight text-[color:var(--text-strong)]">
+      <h2 className="text-balance mt-3 font-display text-[clamp(1.75rem,calc(1.35rem+1.5vw),2.7rem)] font-black leading-tight text-[color:var(--text-strong)]">
         {title}
       </h2>
       <p className={cn("mt-3 max-w-2xl text-sm leading-6 text-[color:var(--text-muted)]", center ? "mx-auto" : "")}>{description}</p>

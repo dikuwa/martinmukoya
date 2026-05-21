@@ -4,6 +4,7 @@ dist/
 coverage/
 .env*.local
 .env.local
+.env*.bak
 *.tsbuildinfo
 pnpm-lock.yaml
 .DS_Store
