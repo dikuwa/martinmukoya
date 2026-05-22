@@ -188,6 +188,7 @@ function SettingsAssetUpload() {
         value={assetUrl}
         onChange={setAssetUrl}
         placeholder="Upload or paste an asset URL for the JSON value"
+        cropAspect={false}
       />
       <p className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
         Add the generated URL to the JSON value where the setting needs an image, logo, or background asset.
@@ -269,6 +270,7 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
           value={coverImage ?? ""}
           onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
           placeholder="https://example.com/image.jpg"
+          cropAspect={false}
         />
         <Field label="SEO title" error={form.formState.errors.seoTitle?.message}><input {...form.register("seoTitle")} className={inputClass} /></Field>
       </div>
@@ -325,6 +327,8 @@ export function TestimonialForm({ initialData }: { initialData?: Partial<Testimo
           folder="testimonials"
           value={image ?? ""}
           onChange={(value) => form.setValue("image", value, { shouldDirty: true, shouldValidate: true })}
+          cropAspect={1}
+          cropShape="round"
         />
       </div>
       <Field label="Quote" error={form.formState.errors.quote?.message}><textarea {...form.register("quote")} className={textareaClass} /></Field>

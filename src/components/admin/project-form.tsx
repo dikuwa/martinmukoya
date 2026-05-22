@@ -173,6 +173,7 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
             folder="projects"
             value={coverImage ?? ""}
             onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
+            cropAspect={false}
           />
           <ImageUploadField
             label="Add gallery image"
@@ -180,6 +181,7 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
             value={galleryUploadPreview}
             onChange={appendGalleryImage}
             placeholder="Upload or paste a gallery image URL"
+            cropAspect={false}
           />
           <div className="md:col-span-2">
             <Field label="Gallery images, comma-separated">

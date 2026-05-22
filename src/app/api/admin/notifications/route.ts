@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentSite } from "@/lib/sites";
 import { syncNotifications } from "@/lib/notifications";
 import { invalidateTag, tags } from "@/lib/cache";
 
@@ -8,26 +7,28 @@ export const dynamic = "force-dynamic";
 
 /**
  * Full notification data endpoint — returns unread items, counts,
- * and syncs any missed notifications from source records.
+ * aggregated across ALL sites (the admin dashboard is a unified view).
+ *
+ * Also syncs any missed notifications from source records.
  */
 export async function GET() {
   try {
-    const site = await syncNotifications();
-    const siteFilter = site ? { siteId: site.id } : {};
+    // Sync missed notifications from any site
+    await syncNotifications();
 
     const [total, unreadNotifications, counts, totalRead] = await Promise.all([
-      db.notification.count({ where: { ...siteFilter, read: false } }),
+      db.notification.count({ where: { read: false } }),
       db.notification.findMany({
-        where: { ...siteFilter, read: false },
+        where: { read: false },
         orderBy: { createdAt: "desc" },
         take: 50,
       }),
       db.notification.groupBy({
         by: ["type"],
-        where: { ...siteFilter, read: false },
+        where: { read: false },
         _count: true,
       }),
-      db.notification.count({ where: { ...siteFilter, read: true } }),
+      db.notification.count({ where: { read: true } }),
     ]);
 
     const countMap: Record<string, number> = { leads: 0, messages: 0, chats: 0 };
@@ -69,15 +70,12 @@ export async function GET() {
 }
 
 /**
- * Mark all unread notifications as read.
+ * Mark all unread notifications as read across ALL sites.
  */
 export async function PATCH() {
   try {
-    const site = await getCurrentSite();
-    const siteFilter = site ? { siteId: site.id } : {};
-
     const result = await db.notification.updateMany({
-      where: { ...siteFilter, read: false },
+      where: { read: false },
       data: { read: true, readAt: new Date() },
     });
 
@@ -91,17 +89,15 @@ export async function PATCH() {
 }
 
 /**
- * Delete all read notifications (default) or all notifications (?all=true).
+ * Delete all read notifications (default) or all notifications (?all=true)
+ * across ALL sites.
  */
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const clearAll = searchParams.get("all") === "true";
 
-    const site = await getCurrentSite();
-    const siteFilter = site ? { siteId: site.id } : {};
-
-    const where = clearAll ? siteFilter : { ...siteFilter, read: true };
+    const where = clearAll ? {} : { read: true };
 
     const result = await db.notification.deleteMany({ where });
 

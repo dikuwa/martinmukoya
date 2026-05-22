@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { getCurrentSite } from "@/lib/sites";
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -66,21 +65,19 @@ export async function createNotification(input: NotificationInput) {
 // ── Sync ────────────────────────────────────────────────────
 
 /**
- * Scan the database for source records (leads, messages, chat
- * handovers) that don't have a Notification row yet and create
- * them. Designed to be called from the GET endpoints so missed
+ * Scan ALL source records (leads, messages, chat handovers) across
+ * all sites that don't have a Notification row yet and create them.
+ *
+ * The admin dashboard is a unified view across both Martin Mukoya
+ * and FlexTech Media — so notifications are aggregated, not scoped
+ * to a single site.
+ *
+ * Designed to be called from the GET endpoints so missed
  * notifications (e.g. from transient errors) are back-filled.
  */
-export async function syncNotifications(siteIdOverride?: string) {
-  const site = siteIdOverride
-    ? await db.site.findUnique({ where: { id: siteIdOverride } })
-    : await getCurrentSite();
-
-  const siteFilter = site ? { siteId: site.id } : {};
-
-  // Existing notification (type, sourceId) pairs for the site
+export async function syncNotifications() {
+  // Existing notification (type, sourceId) pairs across ALL sites
   const existing = await db.notification.findMany({
-    where: siteFilter,
     select: { type: true, sourceId: true },
   });
 
@@ -89,15 +86,15 @@ export async function syncNotifications(siteIdOverride?: string) {
 
   const rows: SyncRow[] = [];
 
-  // Leads with status NEW
+  // Leads with status NEW (all sites)
   const leads = await db.lead.findMany({
-    where: { ...siteFilter, status: "NEW" },
-    select: { id: true, name: true, projectGoal: true, createdAt: true },
+    where: { status: "NEW" },
+    select: { id: true, siteId: true, name: true, projectGoal: true, createdAt: true },
   });
   for (const l of leads) {
     if (!has("lead", l.id)) {
       rows.push({
-        siteId: site?.id ?? null,
+        siteId: l.siteId,
         type: "lead",
         sourceId: l.id,
         title: l.name,
@@ -108,15 +105,15 @@ export async function syncNotifications(siteIdOverride?: string) {
     }
   }
 
-  // Contact messages with status NEW
+  // Contact messages with status NEW (all sites)
   const msgs = await db.contactMessage.findMany({
-    where: { ...siteFilter, status: "NEW" },
-    select: { id: true, name: true, inquiryType: true, message: true, createdAt: true },
+    where: { status: "NEW" },
+    select: { id: true, siteId: true, name: true, inquiryType: true, message: true, createdAt: true },
   });
   for (const m of msgs) {
     if (!has("message", m.id)) {
       rows.push({
-        siteId: site?.id ?? null,
+        siteId: m.siteId,
         type: "message",
         sourceId: m.id,
         title: m.name,
@@ -127,11 +124,12 @@ export async function syncNotifications(siteIdOverride?: string) {
     }
   }
 
-  // Chat sessions handed to human
+  // Chat sessions handed to human (all sites)
   const chats = await db.chatSession.findMany({
-    where: { ...siteFilter, handedToHuman: true },
+    where: { handedToHuman: true },
     select: {
       id: true,
+      siteId: true,
       visitorId: true,
       summary: true,
       updatedAt: true,
@@ -141,7 +139,7 @@ export async function syncNotifications(siteIdOverride?: string) {
   for (const c of chats) {
     if (!has("chat", c.id)) {
       rows.push({
-        siteId: site?.id ?? null,
+        siteId: c.siteId,
         type: "chat",
         sourceId: c.id,
         title: c.lead?.name ?? c.visitorId ?? "Anonymous visitor",
@@ -156,6 +154,4 @@ export async function syncNotifications(siteIdOverride?: string) {
     await db.notification.createMany({ data: rows, skipDuplicates: true });
     console.log(`[notifications] syncNotifications created ${rows.length} missing notification(s)`);
   }
-
-  return site; // return resolved site so callers can reuse it
 }

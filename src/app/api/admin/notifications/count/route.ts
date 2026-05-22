@@ -6,22 +6,28 @@ export const dynamic = "force-dynamic";
 
 /**
  * Lightweight count endpoint — returns just the unread total and
- * per-type breakdown. Runs syncNotifications() to back-fill any
- * notifications that were missed due to transient errors.
+ * per-type breakdown aggregated across ALL sites.
+ *
+ * The admin dashboard is a unified view across both Martin Mukoya
+ * and FlexTech Media — so notifications span all sites.
+ *
+ * Runs syncNotifications() to back-fill any notifications that
+ * were missed due to transient errors.
  *
  * Poll this frequently (every 5s) from the notification center for
  * real-time badge updates.
  */
 export async function GET() {
   try {
-    const site = await syncNotifications();
-    const siteFilter = site ? { siteId: site.id } : {};
+    // Sync missed notifications from any site
+    await syncNotifications();
 
+    // Count ALL unread notifications regardless of site
     const [total, counts] = await Promise.all([
-      db.notification.count({ where: { ...siteFilter, read: false } }),
+      db.notification.count({ where: { read: false } }),
       db.notification.groupBy({
         by: ["type"],
-        where: { ...siteFilter, read: false },
+        where: { read: false },
         _count: true,
       }),
     ]);
