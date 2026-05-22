@@ -248,11 +248,10 @@ export default async function HomePage() {
               {/* Left: Support panel */}
               <Reveal className="lg:sticky lg:top-32">
                 <div className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)]">
-                  <div className="relative -mx-8 -mt-8 mb-6 overflow-hidden rounded-t-[28px] aspect-[3/4] max-h-[260px]">
-                    <Image src="/assets/FAQs/FAQ.webp" alt="" fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 400px" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--surface)] to-transparent h-1/2 top-1/2" />
+                  <div className="relative mx-auto h-32 w-32 overflow-hidden rounded-2xl bg-[color:var(--surface-soft)] ring-2 ring-[color:var(--primary)]/20 lg:mx-0">
+                    <Image src="/assets/FAQs/FAQ.webp" alt="" fill className="object-cover object-top" sizes="128px" />
                   </div>
-                  <h3 className="text-balance font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
+                  <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
                   <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">
                     I&rsquo;m happy to explain the process, discuss ideas, or help you understand what makes the most sense for your business.
                   </p>
