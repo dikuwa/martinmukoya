@@ -26,11 +26,10 @@ export const metadata: Metadata = {
   description:
     "A practical business-systems developer helping businesses increase bookings, automate work, and turn visitors into clients.",
   openGraph: {
-    title: "Martin Mukoya | Business Systems Developer",
+    siteName: "Martin Mukoya",
     description:
       "Portfolio and lead-generation platform for practical websites, booking systems, ecommerce, and AI automations.",
     url: "/",
-    siteName: "Martin Mukoya",
     images: [
       {
         url: "/assets/hero-images/webp/hero-image.webp",

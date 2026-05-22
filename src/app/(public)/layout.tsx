@@ -11,6 +11,18 @@ export async function generateMetadata(): Promise<Metadata> {
     title: {
       default: `${config.brandName} | Business Systems`,
       template: `%s | ${config.brandName}`
+    },
+    icons: {
+      icon: config.slug === "flextech-media"
+        ? "/assets/favicons/flextech-media.svg"
+        : "/assets/favicons/martinmukoya.svg"
+    },
+    openGraph: {
+      title: {
+        default: `${config.brandName} | Business Systems`,
+        template: `%s | ${config.brandName}`
+      },
+      siteName: config.brandName
     }
   };
 }

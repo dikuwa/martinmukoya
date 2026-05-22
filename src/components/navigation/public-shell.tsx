@@ -101,10 +101,11 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
             <Phone size={14} /> {site.contact.phone}
           </a>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={cn("inline-flex items-center gap-2 whitespace-nowrap font-semibold", "text-[color:var(--text-normal)]")}>
-
-            <span className={cn("h-2 w-2 rounded-full", isFlexTech ? "bg-[color:var(--primary)]" : "bg-[color:var(--primary)]")} />
+        <div className="flex items-center gap-3">            <span className={cn("inline-flex items-center gap-2 whitespace-nowrap font-semibold", "text-[color:var(--text-normal)]")}>
+              <span className="relative inline-flex h-2 w-2">
+                <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
+                <span className="relative inline-block h-2 w-2 rounded-full bg-[#22C55E]" />
+              </span>
             {site.availability}
           </span>
           <TrackedAnchor
@@ -117,10 +118,10 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
             target="_blank"
             rel="noreferrer"
             className={cn(
-              "grid h-8 w-8 place-items-center rounded-full border text-[color:var(--primary)] transition",
+              "grid h-8 w-8 place-items-center rounded-full border transition",
               isFlexTech
-                ? "border-[#6b26d9]/25 bg-[#6b26d9]/10 text-white hover:border-[#6b26d9] hover:bg-[#6b26d9]/20"
-                : "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
+                ? "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
+                : "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
             )}
           >
             <MessageCircle size={14} />
@@ -191,8 +192,8 @@ function PrimaryNav({ site }: { site: PublicSiteConfig }) {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
-          <Button asChild className={cn("hidden lg:inline-flex shadow-[0_18px_40px_rgba(107,38,217,0.18)]", isFlexTech ? "bg-[#6b26d9] text-white hover:bg-[#551fad]" : "bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-light)]")}>
-            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage={pathname} eventSource="primary_nav_start_project" href="/start-project">
+          <Button asChild className={cn("hidden lg:inline-flex shadow-[0_18px_40px_rgba(34,197,94,0.18)]", "bg-[#22C55E] text-white hover:bg-[#16A34A]")}>
+            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage={pathname} eventSource="primary_nav_start_project" href="/start-project" className="text-white">
               {site.finalCta.primary}
             </TrackedLink>
           </Button>
@@ -346,7 +347,7 @@ function MobileBottomNav() {
               className={cn(
                 "grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--primary)]/12 hover:text-[color:var(--primary)]",
                 active && "bg-[color:var(--primary)]/12 !text-[color:var(--primary)]",
-                item.href === "/start-project" && "bg-[color:var(--primary)] !text-white hover:bg-[color:var(--primary-light)] hover:!text-white"
+                item.href === "/start-project" && "bg-[#22C55E] !text-white hover:bg-[#16A34A] hover:!text-white"
               )}
             >
               <Icon size={18} />

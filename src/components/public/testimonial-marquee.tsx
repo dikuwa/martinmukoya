@@ -39,16 +39,18 @@ function TestimonialCard({ item }: { item: Testimonial }) {
 function MarqueeRow({
   items,
   direction,
-  speed = 0.04
+  speed = 0.04,
+  initialOffset = 0
 }: {
   items: Testimonial[];
   direction: "ltr" | "rtl";
   speed?: number;
+  initialOffset?: number;
 }) {
   const [isPaused, setIsPaused] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
-  const posRef = useRef(0);
+  const posRef = useRef(initialOffset);
   const lastTimeRef = useRef(0);
 
   // Duplicate items 3x for seamless looping
@@ -114,7 +116,7 @@ export function TestimonialMarquee({ items }: { items: Testimonial[] }) {
   return (
     <div className="relative mt-10">
       {/* Top row - LTR (moves left to right) */}
-      <MarqueeRow items={items} direction="ltr" speed={0.04} />
+      <MarqueeRow items={items} direction="ltr" speed={0.035} />
 
       {/* Bottom row - RTL (moves right to left) */}
       <div className="mt-5">

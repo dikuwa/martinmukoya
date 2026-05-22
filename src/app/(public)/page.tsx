@@ -334,7 +334,7 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
               <div
                 key={src}
                 className={cn(
-                    "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)]/30 shadow-[0_18px_40px_rgba(0,0,0,0.12)]",
                   index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                 )}
                 style={{ animationDelay: `${0.18 + index * 0.055}s` }}
@@ -491,7 +491,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
                 <div
                   key={src}
                   className={cn(
-                    "relative h-14 w-14 overflow-hidden rounded-full border-4 border-[color:var(--background)] shadow-[0_18px_40px_rgba(0,0,0,0.18)]",
+                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)]/30 shadow-[0_18px_40px_rgba(0,0,0,0.12)]",
                     index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                   )}
                   style={{ animationDelay: `${0.42 + index * 0.055}s` }}

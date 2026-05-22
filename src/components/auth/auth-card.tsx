@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Github, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -60,13 +60,6 @@ export function AuthCard({ mode }: AuthCardProps) {
     router.refresh();
   }
 
-  async function signInWithGithub() {
-    await authClient.signIn.social({
-      provider: "github",
-      callbackURL: redirectTo
-    });
-  }
-
   return (
     <div className="mx-auto w-full max-w-[400px] rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
       <div>
@@ -118,9 +111,6 @@ export function AuthCard({ mode }: AuthCardProps) {
           {isSignUp ? "Create Admin" : "Sign In"}
         </Button>
       </form>
-      <Button className="mt-3 w-full" variant="secondary" onClick={signInWithGithub}>
-        <Github size={16} /> Continue with GitHub
-      </Button>
       <p className="mt-5 text-center text-sm text-[color:var(--text-muted)]">
         {isSignUp ? "Already have an account?" : "Need first-time setup?"}{" "}
         <Link className="font-bold text-[color:var(--text-strong)]" href={isSignUp ? "/auth/sign-in" : "/auth/sign-up"}>
