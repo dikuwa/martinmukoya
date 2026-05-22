@@ -4,7 +4,10 @@ import { config as dotenvConfig } from "dotenv";
 dotenvConfig({ path: ".env.local" });
 
 const flextechBaseUrl = "http://flextech-media.localhost:3000";
+const martinBaseUrl = "http://localhost:3000";
 const adminBaseUrl = "http://localhost:3000";
+const publicSiteBaseUrls = [martinBaseUrl, flextechBaseUrl];
+const publicRouteSeeds = ["/", "/projects", "/services", "/about", "/blog", "/contact", "/faq", "/start-project"];
 const testStamp = Date.now();
 const slowExpect = expect.configure({ timeout: 60000 });
 const auditNames = {
@@ -67,6 +70,42 @@ async function expectNoDeadClickables(page) {
   expect(deadClickables).toEqual([]);
 }
 
+async function collectInternalPublicLinks(page, baseUrl) {
+  return page.locator("a[href]").evaluateAll((links, siteBaseUrl) => {
+    const siteOrigin = new URL(siteBaseUrl).origin;
+
+    return links
+      .map((link) => link.getAttribute("href"))
+      .filter(Boolean)
+      .flatMap((href) => {
+        if (
+          href.startsWith("#") ||
+          href.startsWith("mailto:") ||
+          href.startsWith("tel:") ||
+          href.startsWith("sms:") ||
+          href.startsWith("javascript:")
+        ) {
+          return [];
+        }
+
+        const url = new URL(href, siteBaseUrl);
+        if (url.origin !== siteOrigin) return [];
+
+        return [`${url.pathname}${url.search}`];
+      });
+  }, baseUrl);
+}
+
+async function expectPublicPageToResolve(page, baseUrl, path) {
+  const response = await page.goto(`${baseUrl}${path}`);
+
+  expect(response, `${baseUrl}${path} returned a navigation response`).not.toBeNull();
+  expect(response.status(), `${baseUrl}${path} status`).toBeLessThan(400);
+  await expect(page.locator("body")).not.toContainText("This page lost its flow for a moment.");
+  await expect(page.locator("body")).not.toContainText("Application error");
+  await expectNoDeadClickables(page);
+}
+
 function rowWithText(page, text) {
   return page.getByRole("row").filter({ hasText: text });
 }
@@ -82,6 +121,10 @@ test("public navigation, CTAs, forms, chatbot, and content actions work", async 
   await page.goto(`${flextechBaseUrl}/`);
   await expect(page.getByRole("link", { name: /Book a Project/i }).first()).toBeVisible();
   await expectNoDeadClickables(page);
+
+  await page.locator("header").getByRole("link", { name: "Contact" }).click();
+  await slowExpect(page).toHaveURL(/\/contact$/);
+  await page.goBack();
 
   const beforeTheme = await page.locator("html").getAttribute("class");
   await page.getByRole("button", { name: "Toggle theme" }).click();
@@ -158,6 +201,27 @@ test("public navigation, CTAs, forms, chatbot, and content actions work", async 
 
   await page.goto(`${flextechBaseUrl}/definitely-missing-route`);
   await expect(page.getByRole("link", { name: /Back home/i })).toBeVisible();
+});
+
+test("public internal links resolve on both public sites", async ({ page }) => {
+  for (const baseUrl of publicSiteBaseUrls) {
+    const pendingPaths = [...publicRouteSeeds];
+    const visitedPaths = new Set();
+
+    while (pendingPaths.length > 0) {
+      const path = pendingPaths.shift();
+      if (!path || visitedPaths.has(path)) continue;
+
+      visitedPaths.add(path);
+      await expectPublicPageToResolve(page, baseUrl, path);
+
+      for (const linkedPath of await collectInternalPublicLinks(page, baseUrl)) {
+        if (!visitedPaths.has(linkedPath) && !pendingPaths.includes(linkedPath)) {
+          pendingPaths.push(linkedPath);
+        }
+      }
+    }
+  }
 });
 
 test("admin routes and CRUD flows work for public content and submissions", async ({ page }) => {

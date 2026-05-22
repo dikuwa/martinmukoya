@@ -103,7 +103,7 @@ function BlogCard({ post, isFlexTech, siteSlug }: { post: PublicBlogPost; isFlex
   }
 
   return (
-    <article className="group h-full overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--accent)]">
+    <article className="group h-full overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5">
       <TrackedLink
         siteSlug={siteSlug}
         eventType="blog_card_clicked"

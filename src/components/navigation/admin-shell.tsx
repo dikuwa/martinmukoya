@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ExternalLink, LayoutDashboard } from "lucide-react";
 import { AdminMobileNav, AdminNav } from "@/components/navigation/admin-nav";
+import { NotificationCenter } from "@/components/admin/notification-center";
 import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -43,6 +44,7 @@ export async function AdminShell({ children }: { children: React.ReactNode }) {
               <p className="text-sm text-[color:var(--text-muted)] truncate">Content, leads, analytics, and settings</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <NotificationCenter />
               <ThemeSwitcher />
               <Button asChild variant="secondary" size="sm">
                 <Link href="/">
