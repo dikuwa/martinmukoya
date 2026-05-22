@@ -185,22 +185,25 @@ export async function PATCH() {
 }
 
 /**
- * Delete all read notifications to free up space.
+ * Delete all read notifications (default) or all notifications (?all=true).
  */
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const clearAll = searchParams.get("all") === "true";
+
     const site = await getCurrentSite();
     const siteFilter = site ? { siteId: site.id } : {};
 
-    const result = await db.notification.deleteMany({
-      where: { ...siteFilter, read: true }
-    });
+    const where = clearAll ? siteFilter : { ...siteFilter, read: true };
+
+    const result = await db.notification.deleteMany({ where });
 
     await invalidateTag(tags.notifications);
 
     return NextResponse.json({ deleted: result.count });
   } catch (error) {
-    console.error("Notifications clear-read error:", error);
+    console.error("Notifications delete error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

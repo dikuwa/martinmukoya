@@ -8,6 +8,7 @@ import { sendContactMessageNotification, sendVisitorConfirmation } from "@/lib/e
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCurrentSite, getSiteBySlug } from "@/lib/sites";
 import { contactMessageSchema } from "@/lib/validation/content";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const contactSubmissionSchema = contactMessageSchema.extend({
@@ -74,6 +75,18 @@ export async function POST(request: Request) {
     const message = await db.contactMessage.create({ data: { ...messageData, siteId: site?.id } });
     await invalidateTag(tags.contactMessages);
     await invalidateTag(tags.dashboard);
+
+    // Create notification immediately so the bell icon shows it on next fetch
+    await createNotification({
+      siteId: site?.id ?? null,
+      type: "message",
+      sourceId: message.id,
+      title: message.name,
+      detail: `${message.inquiryType ?? "General"} — ${message.message.slice(0, 100)}`,
+      href: `/admin/messages/${message.id}`,
+      createdAt: message.createdAt
+    });
+
     await Promise.allSettled([
       trackServerEvent({
         eventType: "form_submitted",

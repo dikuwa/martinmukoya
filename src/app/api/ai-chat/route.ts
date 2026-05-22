@@ -2,6 +2,7 @@ import { PreferredContact, ServiceType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { trackServerEvent } from "@/lib/analytics";
 import { invalidateTag, tags } from "@/lib/cache";
+import { createNotification } from "@/lib/notifications";
 import { sendLeadNotification, sendVisitorConfirmation } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCurrentSite } from "@/lib/sites";
@@ -290,6 +291,18 @@ export async function POST(req: Request) {
         }
       });
       await invalidateTag(tags.leads);
+
+      // Create notification immediately so the bell icon shows it on next fetch
+      await createNotification({
+        siteId: site?.id ?? null,
+        type: "lead",
+        sourceId: lead.id,
+        title: lead.name,
+        detail: lead.projectGoal.slice(0, 120),
+        href: `/admin/leads/${lead.id}`,
+        createdAt: lead.createdAt
+      });
+
       await Promise.allSettled([
         trackServerEvent({
           eventType: "ai_handover",

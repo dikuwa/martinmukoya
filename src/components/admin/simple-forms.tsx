@@ -8,7 +8,7 @@ import { blogPostSchema, contactMessageUpdateSchema, faqSchema, leadUpdateSchema
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -36,30 +36,112 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   );
 }
 
-function AdminSelect({ children, className = "", ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+/**
+ * Fully custom select dropdown. Works with react-hook-form via a hidden input,
+ * so you can use it the same way as `<AdminSelect {...register("field")}>`.
+ *
+ * Children should be `<option value="...">Label</option>` elements just like
+ * a native select, but they are rendered as styled dropdown items.
+ */
+function AdminSelect({ children, className = "", value, onChange, onBlur, name, disabled }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [open, setOpen] = useState(false);
+  const [selectedValue, setSelectedValue] = useState(value?.toString() ?? "");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Parse children to get options list
+  const options = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [];
+    Children.forEach(children, (child) => {
+      if (isValidElement<{ value?: string | number; children?: React.ReactNode }>(child) && child.props.value !== undefined) {
+        opts.push({ value: String(child.props.value), label: String(child.props.children ?? "") });
+      }
+    });
+    return opts;
+  }, [children]);
+
+  const selectedLabel = useMemo(
+    () => options.find((o) => o.value === selectedValue)?.label ?? "Select...",
+    [options, selectedValue]
+  );
+
+  // Sync external value changes
+  useEffect(() => {
+    setSelectedValue(value?.toString() ?? "");
+  }, [value]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  function choose(nextValue: string) {
+    setSelectedValue(nextValue);
+    setOpen(false);
+    // Synthesize a change event for react-hook-form
+    const syntheticEvent = {
+      target: { value: nextValue, name: name ?? "" }
+    } as React.ChangeEvent<HTMLSelectElement>;
+    onChange?.(syntheticEvent);
+    onBlur?.(syntheticEvent as unknown as React.FocusEvent<HTMLSelectElement>);
+  }
+
   return (
-    <span className="relative block">
-      <select {...props} className={`${selectClass} w-full ${className}`}>
+    <div ref={wrapperRef} className="relative">
+      {/* Hidden native select for form integration */}
+      <select name={name} value={selectedValue} onChange={onChange} onBlur={onBlur} className="sr-only" tabIndex={-1} aria-hidden="true">
         {children}
       </select>
-      <ChevronDown
-        aria-hidden="true"
-        size={16}
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]"
-      />
-    </span>
+
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`${selectClass} flex w-full items-center justify-between gap-2 ${className || ""}`}
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-[color:var(--text-faint)] transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+4px)] z-50 grid w-full min-w-48 overflow-hidden rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]">
+          {options.map((option) => {
+            const active = option.value === selectedValue;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(option.value)}
+                className="flex items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] aria-selected:bg-[color:var(--surface-soft)] aria-selected:text-[color:var(--text-strong)]"
+              >
+                <span className="w-4 text-[color:var(--primary)] shrink-0">
+                  {active ? "✓" : ""}
+                </span>
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
 function AdminOption({ children, ...props }: React.OptionHTMLAttributes<HTMLOptionElement>) {
-  return (
-    <option
-      {...props}
-      className="bg-[color:var(--surface)] text-[color:var(--text-strong)] checked:bg-[color:var(--surface-soft)]"
-    >
-      {children}
-    </option>
-  );
+  // Now a simple pass-through, kept for backward compatibility with existing usage
+  return <option {...props}>{children}</option>;
 }
 
 function splitCsv(value: string) {

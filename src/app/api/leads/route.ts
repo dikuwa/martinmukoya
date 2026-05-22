@@ -8,6 +8,7 @@ import { sendLeadNotification, sendVisitorConfirmation } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCurrentSite, getSiteBySlug } from "@/lib/sites";
 import { leadSchema } from "@/lib/validation/content";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const leadSubmissionSchema = leadSchema.extend({
@@ -76,6 +77,18 @@ export async function POST(request: Request) {
     const lead = await db.lead.create({ data: { ...leadData, siteId: site?.id } });
     await invalidateTag(tags.leads);
     await invalidateTag(tags.dashboard);
+
+    // Create notification immediately so the bell icon shows it on next fetch
+    await createNotification({
+      siteId: site?.id ?? null,
+      type: "lead",
+      sourceId: lead.id,
+      title: lead.name,
+      detail: lead.projectGoal.slice(0, 120),
+      href: `/admin/leads/${lead.id}`,
+      createdAt: lead.createdAt
+    });
+
     await Promise.allSettled([
       trackServerEvent({
         eventType: "form_submitted",

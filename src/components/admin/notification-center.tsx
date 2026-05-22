@@ -59,10 +59,23 @@ export function NotificationCenter() {
     }
   }, []);
 
+  // ── Polling & visibility ──
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchNotifications, 15000); // Poll every 15s
+
+    // Also refetch when the tab becomes visible again (user switched back)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [fetchNotifications]);
 
   // Close dropdown when clicking outside
@@ -134,6 +147,21 @@ export function NotificationCenter() {
     }
   }, [data]);
 
+  const clearAll = useCallback(async () => {
+    const prevData = data;
+    // Optimistic update — clear everything
+    setData((prev) => {
+      if (!prev) return null;
+      return { ...prev, total: 0, totalRead: 0, hasRead: false, items: [] };
+    });
+    try {
+      await fetch("/api/admin/notifications?all=true", { method: "DELETE" });
+      await fetchNotifications();
+    } catch {
+      setData(prevData);
+    }
+  }, [data, fetchNotifications]);
+
   const handleItemClick = useCallback(
     (e: React.MouseEvent, item: NotificationItem) => {
       // Mark as read in background before navigating
@@ -149,7 +177,11 @@ export function NotificationCenter() {
     <div ref={dropdownRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          // Fetch fresh data whenever the bell is clicked
+          fetchNotifications();
+          setOpen(!open);
+        }}
         className={cn(
           "relative grid h-9 w-9 place-items-center rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]",
           open && "border-[color:var(--primary)]/40 bg-[color:var(--surface-soft)]"
@@ -197,16 +229,16 @@ export function NotificationCenter() {
                 </button>
               )}
 
-              {/* Clear read notifications */}
-              {data && data.hasRead && (
+              {/* Clear all notifications (seed data cleanup, bulk dismiss) */}
+              {data && (data.total > 0 || data.hasRead) && (
                 <button
                   type="button"
-                  onClick={clearRead}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[color:var(--text-faint)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
-                  title="Clear read notifications"
+                  onClick={clearAll}
+                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+                  title="Clear all notifications"
                 >
                   <Trash2 size={13} />
-                  <span className="hidden sm:inline">Clear read</span>
+                  <span className="hidden sm:inline">Clear all</span>
                 </button>
               )}
 
