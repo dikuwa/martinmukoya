@@ -13,7 +13,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "Projects",
-    description: site.pages.projects.metadataDescription
+    description: site.pages.projects.metadataDescription,
+    openGraph: {
+      title: `Projects | ${site.brandName}`,
+      description: site.pages.projects.metadataDescription,
+      url: "/projects"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Projects | ${site.brandName}`,
+      description: site.pages.projects.metadataDescription
+    }
   };
 }
 

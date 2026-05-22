@@ -14,8 +14,8 @@ const trustedOrigins = Array.from(
       "https://martinmukoya.com",
       "https://www.martinmukoya.com",
       "https://flextech-media.vercel.app",
-      "https://flextechmedia.com",
-      "https://www.flextechmedia.com"
+      "https://flextech-media.com",
+      "https://www.flextech-media.com"
     ].filter((origin): origin is string => Boolean(origin))
   )
 );

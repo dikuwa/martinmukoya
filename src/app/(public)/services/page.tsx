@@ -15,7 +15,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: "Services",
-    description: site.pages.services.metadataDescription
+    description: site.pages.services.metadataDescription,
+    openGraph: {
+      title: `Services | ${site.brandName}`,
+      description: site.pages.services.metadataDescription,
+      url: "/services"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Services | ${site.brandName}`,
+      description: site.pages.services.metadataDescription
+    }
   };
 }
 

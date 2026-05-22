@@ -23,17 +23,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
+  const pageTitle = site.slug === "flextech-media" ? "Digital Media Agency" : "Business Systems Developer";
+
   return {
-    title: site.brandName,
+    title: pageTitle,
     description: site.home.heroDescription,
     openGraph: {
-      title: site.brandName,
+      title: `${pageTitle} | ${site.brandName}`,
       description: site.home.heroDescription,
       images: [site.home.heroImage]
     },
     twitter: {
       card: "summary_large_image",
-      title: site.brandName,
+      title: `${pageTitle} | ${site.brandName}`,
       description: site.home.heroDescription,
       images: [site.home.heroImage]
     }

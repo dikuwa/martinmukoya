@@ -22,10 +22,7 @@ const interTight = Inter_Tight({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: "Martin Mukoya | Business Systems Developer",
-    template: "%s | Martin Mukoya"
-  },
+  title: "Martin Mukoya | Business Systems Developer",
   description:
     "A practical business-systems developer helping businesses increase bookings, automate work, and turn visitors into clients.",
   openGraph: {

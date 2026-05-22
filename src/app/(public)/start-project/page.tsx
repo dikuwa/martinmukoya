@@ -10,9 +10,21 @@ export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
+  const pageTitle = site.pages.startProject.eyebrow;
+
   return {
-    title: site.pages.startProject.eyebrow,
-    description: site.pages.startProject.metadataDescription
+    title: pageTitle,
+    description: site.pages.startProject.metadataDescription,
+    openGraph: {
+      title: `${pageTitle} | ${site.brandName}`,
+      description: site.pages.startProject.metadataDescription,
+      url: "/start-project"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${pageTitle} | ${site.brandName}`,
+      description: site.pages.startProject.metadataDescription
+    }
   };
 }
 

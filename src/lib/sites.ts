@@ -14,8 +14,8 @@ export const seedSites = [
   {
     name: "FlexTech Media",
     slug: FLEXTECH_SITE_SLUG,
-    primaryDomain: "flextechmedia.com",
-    aliases: ["www.flextechmedia.com", "flextech-media.localhost"]
+    primaryDomain: "flextech-media.com",
+    aliases: ["www.flextech-media.com", "flextech-media.localhost"]
   }
 ] as const;
 
