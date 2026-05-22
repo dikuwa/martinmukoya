@@ -12,6 +12,30 @@ const FORBIDDEN_RE = /\b(bomb|kill|terror|explosive|suicide|rape|child abuse)\b/
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
 function buildSystemPrompt(siteSlug?: string | null): string {
+  const baseLeadCapture = `
+LEAD CAPTURE RULES:
+When a visitor shows buying intent (e.g. asks about services, pricing, timeline, or wants to build something), start a conversational lead capture flow:
+
+1. First, ask their **name** — keep it warm and natural.
+2. Then ask for their **email or phone number** — let them choose which is more convenient.
+3. Ask what **service** they're interested in — reference the services below.
+4. Ask them to **briefly describe their project**.
+5. Ask about their **budget range** — list these options exactly:
+   • Under N\$15,000
+   • N\$15,000 – N\$50,000
+   • N\$50,000 – N\$100,000
+   • N\$100,000+
+   (The chat interface will show clickable budget cards when you ask about budget.)
+6. Optional: ask about **timeline** if relevant.
+
+Important lead capture rules:
+- Ask only ONE question at a time. Never ask for multiple details in one message.
+- Keep your tone warm and conversational, not like a form.
+- Once all required info (name, contact, service, description, budget) is collected, tell the visitor their request is being submitted and confirm the details they've shared.
+- Do NOT redirect visitors to a form or external page — handle everything right in this chat.
+- Once all required info is collected, a "Submit my project request" button will appear in the chat — the user clicks it to submit. Tell them to look for the submit button.
+`;
+
   if (siteSlug === "flextech-media") {
     return `You are the friendly website assistant for FlexTech Media, a digital media and technology agency in Namibia.
 Your job is to help visitors explore services, shape a campaign idea, or get them to the right person on the team.
@@ -35,7 +59,8 @@ Rules:
 - If the visitor wants pricing, timeline, a consultation, WhatsApp, or a human handover, ask for their email or point them to the Start Project form.
 - Ask at most one follow-up question at a time.
 - Keep replies under 120 words unless the visitor asks for detail.
-- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.`;
+- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.
+${baseLeadCapture}`;
   }
 
   return `You are the friendly website assistant for Martin Mukoya, a practical business-systems developer based in Namibia.
@@ -59,7 +84,8 @@ Rules:
 - If the visitor wants pricing, timeline, a consultation, WhatsApp, or to speak with Martin, ask for their email or point them to the Start Project form.
 - Ask at most one follow-up question at a time.
 - Keep replies under 120 words unless the visitor asks for detail.
-- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.`;
+- Use simple formatting: **bold** for emphasis, dashes for lists — keep it clean and scannable.
+${baseLeadCapture}`;
 }
 
 function fallbackAssistantReply(content: string, siteSlug?: string | null): string {
