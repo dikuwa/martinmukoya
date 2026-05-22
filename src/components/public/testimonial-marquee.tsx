@@ -130,16 +130,14 @@ function MarqueeRow({
   }, []);
 
   const handleDragMove = useCallback((clientX: number) => {
-    if (!isDragging || !rowRef.current) return;
+    if (!rowRef.current) return;
     const delta = clientX - dragStartX.current;
     posRef.current = dragStartPos.current + delta;
     rowRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
-  }, [isDragging]);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
-    setIsPaused(false);
-    // Re-sync transform (animation loop will take over)
     if (rowRef.current) {
       rowRef.current.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
     }
