@@ -60,6 +60,10 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   if (!project) {
     notFound();
   }
+  const liveUrl = project.liveUrl?.trim();
+  const githubUrl = project.githubUrl?.trim();
+  const showLiveUrl = Boolean(liveUrl && liveUrl !== "https://example.com" && liveUrl !== "https://example.com/");
+  const showGithubUrl = Boolean(githubUrl && githubUrl !== "https://github.com/");
   const schema = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
@@ -85,16 +89,20 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-[color:var(--text-muted)]">{project.description}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild>
-                  <a href={project.liveUrl} target="_blank" rel="noreferrer">
-                    Open Live Site <ArrowUpRight size={17} />
-                  </a>
-                </Button>
-                <Button asChild variant="secondary">
-                  <a href={project.githubUrl} target="_blank" rel="noreferrer">
-                    <Github size={17} /> View GitHub
-                  </a>
-                </Button>
+                {showLiveUrl ? (
+                  <Button asChild>
+                    <a href={liveUrl} target="_blank" rel="noopener noreferrer">
+                      Open Live Site <ArrowUpRight size={17} />
+                    </a>
+                  </Button>
+                ) : null}
+                {showGithubUrl ? (
+                  <Button asChild variant="secondary">
+                    <a href={githubUrl} target="_blank" rel="noopener noreferrer">
+                      <Github size={17} /> View GitHub
+                    </a>
+                  </Button>
+                ) : null}
               </div>
             </div>
           </Reveal>

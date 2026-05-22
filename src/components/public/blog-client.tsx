@@ -6,7 +6,7 @@ import type { PublicBlogPost } from "@/lib/public-content";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { TrackedLink } from "@/components/public/tracked-link";
 import { useMemo, useState } from "react";
 
 const flextechTagMap: Record<string, string> = {
@@ -48,11 +48,19 @@ function TagButton({
   );
 }
 
-function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: boolean }) {
+function BlogCard({ post, isFlexTech, siteSlug }: { post: PublicBlogPost; isFlexTech: boolean; siteSlug?: string }) {
   if (isFlexTech) {
     return (
-      <article className="group h-full overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--accent)]">
-        <Link href={`/blog/${post.slug}`} className="block">
+      <article className="group h-full overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5">
+        <TrackedLink
+          siteSlug={siteSlug}
+          eventType="blog_card_clicked"
+          eventPage={`/blog/${post.slug}`}
+          eventSource="blog_card_media"
+          eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
+          href={`/blog/${post.slug}`}
+          className="block"
+        >
           <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--surface-soft)]">
             <Image
               src={post.coverImage}
@@ -62,19 +70,33 @@ function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: bool
               sizes="(max-width: 768px) 100vw, 33vw"
             />
           </div>
-        </Link>
+        </TrackedLink>
         <div className="p-5">
           <Badge>{getDisplayTag(post.category, true)}</Badge>
           <h2 className="text-balance mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
-            <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+            <TrackedLink
+              siteSlug={siteSlug}
+              eventType="blog_card_clicked"
+              eventPage={`/blog/${post.slug}`}
+              eventSource="blog_card_title"
+              eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
+              href={`/blog/${post.slug}`}
+            >
+              {post.title}
+            </TrackedLink>
           </h2>
           <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{post.excerpt}</p>
-          <Link
+          <TrackedLink
+            siteSlug={siteSlug}
+            eventType="blog_cta_clicked"
+            eventPage={`/blog/${post.slug}`}
+            eventSource="blog_card_cta"
+            eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
             href={`/blog/${post.slug}`}
             className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[color:var(--accent)]"
           >
             Read article <ArrowRight size={16} />
-          </Link>
+          </TrackedLink>
         </div>
       </article>
     );
@@ -82,7 +104,15 @@ function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: bool
 
   return (
     <article className="group h-full overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-[color:var(--accent)]">
-      <Link href={`/blog/${post.slug}`} className="block">
+      <TrackedLink
+        siteSlug={siteSlug}
+        eventType="blog_card_clicked"
+        eventPage={`/blog/${post.slug}`}
+        eventSource="blog_card_media"
+        eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
+        href={`/blog/${post.slug}`}
+        className="block"
+      >
         <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--surface-soft)]">
           <Image
             src={post.coverImage}
@@ -92,19 +122,33 @@ function BlogCard({ post, isFlexTech }: { post: PublicBlogPost; isFlexTech: bool
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         </div>
-      </Link>
+      </TrackedLink>
       <div className="p-5">
         <Badge>{post.category}</Badge>
         <h2 className="text-balance mt-5 font-display text-2xl font-black text-[color:var(--text-strong)]">
-          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+          <TrackedLink
+            siteSlug={siteSlug}
+            eventType="blog_card_clicked"
+            eventPage={`/blog/${post.slug}`}
+            eventSource="blog_card_title"
+            eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
+            href={`/blog/${post.slug}`}
+          >
+            {post.title}
+          </TrackedLink>
         </h2>
         <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{post.excerpt}</p>
-        <Link
+        <TrackedLink
+          siteSlug={siteSlug}
+          eventType="blog_cta_clicked"
+          eventPage={`/blog/${post.slug}`}
+          eventSource="blog_card_cta"
+          eventMetadata={{ contentId: post.slug, contentType: "BlogPost" }}
           href={`/blog/${post.slug}`}
           className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[color:var(--accent)]"
         >
           Read article <ArrowRight size={16} />
-        </Link>
+        </TrackedLink>
       </div>
     </article>
   );
@@ -157,7 +201,7 @@ export function BlogClient({
       <div className="grid gap-5 md:grid-cols-3 mt-6">
         {displayedPosts.map((post, index) => (
           <Reveal key={post.slug} delay={isFlexTech ? 0 : index * 0.05}>
-            <BlogCard post={post} isFlexTech={isFlexTech} />
+            <BlogCard post={post} isFlexTech={isFlexTech} siteSlug={siteSlug} />
           </Reveal>
         ))}
       </div>

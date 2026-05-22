@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { trackEvent } from "@/lib/analytics-client";
 
 function detectLanguage(className?: string): string {
   if (!className) return "";
@@ -35,6 +36,12 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(codeText);
+      trackEvent({
+        eventType: "code_block_copied",
+        page: window.location.pathname,
+        source: "markdown_code_block",
+        metadata: { language: language || "code" }
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {

@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Bot, CalendarCheck, Check, MessageCircle, MonitorCog, Rocket, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -59,6 +60,7 @@ const serviceIcons = {
 };
 
 export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const cardRef = useRef<HTMLFormElement | null>(null);
@@ -139,6 +141,17 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   const selectedTimeline = useWatch({ control: form.control, name: "timeline" });
   const timelineFlexible = useWatch({ control: form.control, name: "timelineFlexible" });
   const otherSelected = selectedServices.includes("other");
+
+  useEffect(() => {
+    const serviceId = searchParams.get("service");
+    if (!serviceId || formStarted.current) return;
+    if (!site.services.some((service) => service.id === serviceId)) return;
+
+    form.setValue("selectedServices", [serviceId], {
+      shouldDirty: false,
+      shouldValidate: true
+    });
+  }, [form, searchParams, site.services]);
 
   useEffect(() => {
     if (previousStepRef.current === step) return;
@@ -241,7 +254,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg">
-            <a href={site.contact.whatsappHref} target="_blank" rel="noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", siteSlug: site.slug, page: "/start-project", source: "start_project_success" })}>
+            <a href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", siteSlug: site.slug, page: "/start-project", source: "start_project_success" })}>
               {site.finalCta.secondary} <MessageCircle size={18} />
             </a>
           </Button>

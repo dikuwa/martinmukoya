@@ -273,7 +273,7 @@ export default async function HomePage() {
                       eventSource="faq_contact"
                       href={site.contact.whatsappHref}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-3 text-xs font-bold text-[color:var(--text-normal)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10"
                     >
                       <MessageCircle size={14} /> Text on WhatsApp
@@ -330,7 +330,7 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
               <div
                 key={src}
                 className={cn(
-                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)]/30 shadow-[0_18px_40px_rgba(0,0,0,0.12)]",
+                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-violet-200/70 shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-colors dark:border-violet-300/50",
                   index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                 )}
                 style={{ animationDelay: `${0.18 + index * 0.055}s` }}
@@ -366,7 +366,7 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
             aria-label={`WhatsApp ${site.brandName}`}
             href={site.contact.whatsappHref}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-6 py-3 text-sm font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10"
           >
             <MessageCircle size={16} /> WhatsApp
@@ -378,19 +378,19 @@ function SocialLinks({ site }: { site: PublicSiteConfig }) {
 
   return (
     <div className="mt-8 flex items-center gap-3 text-[color:var(--text-muted)]">
-      <a aria-label="GitHub" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.github} target="_blank" rel="noreferrer">
+      <a aria-label="GitHub" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.github} target="_blank" rel="noopener noreferrer">
         <Github size={18} />
       </a>
-      <a aria-label="LinkedIn" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.linkedin} target="_blank" rel="noreferrer">
+      <a aria-label="LinkedIn" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.linkedin} target="_blank" rel="noopener noreferrer">
         <Linkedin size={18} />
       </a>
-      <a aria-label="Facebook" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.facebook} target="_blank" rel="noreferrer">
+      <a aria-label="Facebook" className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.facebook} target="_blank" rel="noopener noreferrer">
         <Facebook size={18} />
       </a>
       <TrackedAnchor siteSlug={site.slug} eventType="email_click" eventPage="/" eventSource="hero_socials" aria-label={`Email ${site.brandName}`} className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={`mailto:${site.contact.email}`}>
         <Mail size={18} />
       </TrackedAnchor>
-      <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/" eventSource="hero_socials" aria-label={`WhatsApp ${site.brandName}`} className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.whatsappHref} target="_blank" rel="noreferrer">
+      <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/" eventSource="hero_socials" aria-label={`WhatsApp ${site.brandName}`} className="rounded-full border border-[color:var(--border-subtle)] p-3 transition hover:text-[color:var(--text-strong)]" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer">
         <MessageCircle size={18} />
       </TrackedAnchor>
     </div>
@@ -414,12 +414,12 @@ function HeroCopy({ site, className = "" }: { site: PublicSiteConfig; className?
       </p>
       <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Button asChild size="lg" className="motion-sheen w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white shadow-[0_24px_60px_rgba(107,38,217,0.18)] transition hover:bg-[color:var(--primary-light)] sm:w-auto">
-          <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
+          <TrackedLink siteSlug={site.slug} eventType="book_project_clicked" eventPage="/" eventSource="hero_start_project" href="/start-project">
             {home.primaryCta} <ArrowRight size={18} />
           </TrackedLink>
         </Button>
         <Button asChild size="lg" variant="secondary" className="w-full rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-8 py-4 font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--primary)]/10 sm:w-auto">
-          <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
+          <TrackedLink siteSlug={site.slug} eventType="see_work_clicked" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
             {home.secondaryCta}
           </TrackedLink>
         </Button>
@@ -465,7 +465,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
         <Reveal delay={0.28} distance={16}>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Button asChild size="lg" className="motion-sheen group w-full rounded-[1rem] bg-[color:var(--primary)] px-8 py-4 font-semibold text-white transition hover:bg-[color:var(--primary-light)] sm:w-auto">
-            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_start_project" href="/start-project">
+            <TrackedLink siteSlug={site.slug} eventType="book_project_clicked" eventPage="/" eventSource="hero_start_project" href="/start-project">
               <span className="inline-flex items-center gap-2">
                 {home.primaryCta}
                 <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -473,7 +473,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
             </TrackedLink>
           </Button>
           <Button asChild size="lg" variant="secondary" className="w-full rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-8 py-4 font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10 sm:w-auto">
-            <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
+            <TrackedLink siteSlug={site.slug} eventType="see_work_clicked" eventPage="/" eventSource="hero_secondary" href={home.secondaryHref}>
               {home.secondaryCta}
             </TrackedLink>
           </Button>
@@ -487,7 +487,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
                 <div
                   key={src}
                   className={cn(
-                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-[color:var(--border-subtle)]/30 shadow-[0_18px_40px_rgba(0,0,0,0.12)]",
+                    "relative h-14 w-14 overflow-hidden rounded-full border-2 border-violet-200/70 shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-colors dark:border-violet-300/50",
                     index === 0 ? "z-30" : index === 4 ? "z-20" : "z-10"
                   )}
                   style={{ animationDelay: `${0.42 + index * 0.055}s` }}
@@ -522,7 +522,7 @@ function FlexTechHero({ site }: { site: PublicSiteConfig }) {
               aria-label={`WhatsApp ${site.brandName}`}
               href={site.contact.whatsappHref}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-[color:var(--primary)] bg-transparent px-6 py-3 text-sm font-semibold text-[color:var(--text-strong)] transition hover:bg-[color:var(--primary)]/10"
             >
               <MessageCircle size={16} /> WhatsApp

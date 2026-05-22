@@ -7,7 +7,7 @@ import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Bot, CalendarCheck, CheckCircle2, MonitorCog, ShoppingBag, XCircle } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { TrackedLink } from "@/components/public/tracked-link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -78,7 +78,7 @@ export default async function ServicesPage() {
           <Container className="grid gap-6">
             {site.services.map((service, index) => (
               <Reveal key={service.id} delay={index * 0.05}>
-                <article className="mx-auto max-w-4xl rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
+                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
                   {/* Top: icon + title + description */}
                   <div className="flex flex-col gap-4">
                     <div>
@@ -112,7 +112,16 @@ export default async function ServicesPage() {
                   {/* Bottom: CTA */}
                   <div className="mt-8 flex justify-center">
                     <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
-                      <Link href="/start-project">{page.ctaLabel} <ArrowRight size={16} /></Link>
+                      <TrackedLink
+                        siteSlug={site.slug}
+                        eventType="service_interest_clicked"
+                        eventPage="/services"
+                        eventSource="service_cta"
+                        eventMetadata={{ service: service.id }}
+                        href={`/start-project?service=${service.id}`}
+                      >
+                        {page.ctaLabel} <ArrowRight size={16} />
+                      </TrackedLink>
                     </Button>
                   </div>
                 </article>
@@ -123,7 +132,7 @@ export default async function ServicesPage() {
           <Container className="grid gap-6">
             {site.services.map((service, index) => (
               <Reveal key={service.id} delay={index * 0.05}>
-                <article className="mx-auto max-w-4xl overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/88 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-10">
+                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/88 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-10">
                   <div className="flex flex-col items-center text-center gap-4">
                     <div className="mb-2">
                       <ServiceIcon id={service.id} />
@@ -142,7 +151,16 @@ export default async function ServicesPage() {
 
                   <div className="mt-8 flex justify-center">
                     <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
-                      <Link href="/start-project">{page.ctaLabel} <ArrowRight size={16} /></Link>
+                      <TrackedLink
+                        siteSlug={site.slug}
+                        eventType="service_interest_clicked"
+                        eventPage="/services"
+                        eventSource="service_cta"
+                        eventMetadata={{ service: service.id }}
+                        href={`/start-project?service=${service.id}`}
+                      >
+                        {page.ctaLabel} <ArrowRight size={16} />
+                      </TrackedLink>
                     </Button>
                   </div>
                 </article>

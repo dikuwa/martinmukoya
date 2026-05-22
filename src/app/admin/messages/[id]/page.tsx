@@ -78,7 +78,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
             </Button>
             {whatsappHref ? (
               <Button asChild variant="secondary">
-                <a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a>
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer">WhatsApp</a>
               </Button>
             ) : null}
           </section>

@@ -2,12 +2,18 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics-client";
 
 export function CopyCodeButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copyCode() {
     await navigator.clipboard.writeText(code);
+    trackEvent({
+      eventType: "code_block_copied",
+      page: window.location.pathname,
+      source: "blog_code_block"
+    });
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   }

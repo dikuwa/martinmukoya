@@ -51,7 +51,8 @@ export async function POST(request: Request) {
     const ip = getClientIp(request);
     const limit = await rateLimit(`rate:analytics:${ip}`, { limit: 120, windowSeconds: 60 * 60 });
     if (!limit.success) {
-      return Response.json({ error: "Rate limit exceeded" }, { status: 429 });
+      // Analytics should never turn tracking pressure into a visitor-facing browser error.
+      return new Response(null, { status: 204 });
     }
 
     const data = await parseJson(request, analyticsEventSchema);

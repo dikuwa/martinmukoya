@@ -116,7 +116,7 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
             eventSource="top_bar"
             href={site.contact.whatsappHref}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className={cn(
               "grid h-8 w-8 place-items-center rounded-full border transition",
               isFlexTech
@@ -253,7 +253,7 @@ function Footer({ site }: { site: PublicSiteConfig }) {
                   </TrackedAnchor>
                 </li>
                 <li>
-                  <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="footer" href={site.contact.whatsappHref} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
+                  <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="footer" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
                     WhatsApp
                   </TrackedAnchor>
                 </li>
@@ -278,7 +278,7 @@ function Footer({ site }: { site: PublicSiteConfig }) {
             </p>
             <p className="text-xs text-[color:var(--text-faint)]">
               Designed by{" "}
-              <a href="https://martinmukoya.com" target="_blank" rel="noreferrer" className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
+              <a href="https://martinmukoya.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
                 Martin Mukoya
               </a>
             </p>
@@ -315,7 +315,7 @@ function Footer({ site }: { site: PublicSiteConfig }) {
           <TrackedAnchor siteSlug={site.slug} eventType="email_click" eventPage="global" eventSource="footer" href={`mailto:${site.contact.email}`} className="transition hover:text-[color:var(--text-strong)]">
             Email
           </TrackedAnchor>
-          <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="footer" href={site.contact.whatsappHref} target="_blank" rel="noreferrer" className="transition hover:text-[color:var(--text-strong)]">
+          <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="footer" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="transition hover:text-[color:var(--text-strong)]">
             WhatsApp
           </TrackedAnchor>
         </div>

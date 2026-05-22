@@ -131,7 +131,7 @@ export function ContactForm({ site }: { site: PublicSiteConfig }) {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild>
-            <a href={site.contact.whatsappHref} target="_blank" rel="noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", siteSlug: site.slug, page: "/contact", source: "contact_success" })}>
+            <a href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ eventType: "whatsapp_click", siteSlug: site.slug, page: "/contact", source: "contact_success" })}>
               {pageCopy.whatsappLabel} <MessageCircle size={16} />
             </a>
           </Button>

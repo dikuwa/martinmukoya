@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { trackEvent } from "@/lib/analytics-client";
 
 const whatsappHref = "https://wa.me/264818563005";
+const emailHref = {
+  "flextech-media": "mailto:info@flextech-media.com",
+  "martin-mukoya": "mailto:info@martinmukoya.com"
+};
 
 function siteAwareGreeting(slug: string) {
   if (slug === "flextech-media") {
@@ -59,6 +64,12 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
   async function handleSend(content: string) {
     if (!content.trim() || loading) return;
+    trackEvent({
+      eventType: "chatbot_message_sent",
+      siteSlug: siteSlugRef.current,
+      page: window.location.pathname,
+      source: "chatbot"
+    });
 
     const userMessageId = messageIdRef.current++;
     const userMessage = {
@@ -112,7 +123,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         }
       }
     } catch (err) {
-      console.error("chat error", err);
       setMessages((current) =>
         current.map((m) => (m.id === aiMessageId ? { ...m, text: err instanceof Error ? err.message : "The AI assistant is temporarily unavailable." } : m))
       );
@@ -176,9 +186,16 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
             </div>
             <div className="flex items-center gap-2">
               <a
+                href={emailHref[siteSlug as keyof typeof emailHref] ?? emailHref["martin-mukoya"]}
+                className="hidden rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/10 px-3 py-2 text-xs font-bold text-[color:var(--primary)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20 sm:inline-flex"
+                onClick={() => trackEvent({ eventType: "email_click", siteSlug, page: window.location.pathname, source: "chatbot_header" })}
+              >
+                Email
+              </a>
+              <a
                 href={whatsappHref}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="hidden rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/10 px-3 py-2 text-xs font-bold text-[color:var(--primary)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20 sm:inline-flex"
               >
                 {humanLabel}
@@ -271,7 +288,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     <Send size={16} />
                   </Button>
                 </div>
-                <a href={whatsappHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden">
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden">
                   Talk to {humanLabel} <ArrowUpRight size={13} />
                 </a>
               </div>
@@ -282,7 +299,18 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
       <Button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => setOpen((current) => {
+          const next = !current;
+          if (next) {
+            trackEvent({
+              eventType: "chatbot_opened",
+              siteSlug,
+              page: window.location.pathname,
+              source: "chatbot_launcher"
+            });
+          }
+          return next;
+        })}
         className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--primary)] text-white shadow-[0_18px_40px_rgba(107,38,217,0.24)] transition duration-200 hover:scale-[1.02]"
         aria-label={open ? "Close chat" : "Open chat"}
       >

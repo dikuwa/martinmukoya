@@ -60,8 +60,8 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       gallery: project.gallery.length > 0 ? project.gallery : [project.coverImage || "/assets/hero-images/webp/hero-image.webp"],
       techStack: project.techStack,
       services: project.services,
-      liveUrl: project.liveUrl || `/projects/${project.slug}`,
-      githubUrl: project.githubUrl || "https://github.com/",
+      liveUrl: project.liveUrl || "",
+      githubUrl: project.githubUrl || "",
       featured: project.featured
     }))
     : site.projects;

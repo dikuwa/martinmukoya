@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyCodeButton } from "@/components/copy-code-button";
+import { BlogMarkdown } from "@/components/public/blog-markdown";
 import { Reveal } from "@/components/public/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,9 +103,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
       <Section className="pt-0">
         <Container className="max-w-3xl">
           <article className="space-y-6 text-base leading-8 text-[color:var(--text-normal)]">
-            {post.content.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
+            <BlogMarkdown content={post.content.join("\n\n")} />
             <div className="overflow-hidden rounded-[calc(var(--radius,1rem))] border" style={{ backgroundColor: "var(--code-bg)", borderColor: "var(--code-border)" }}>
               <div className="flex items-center justify-between border-b px-5 py-3.5" style={{ backgroundColor: "var(--code-header-bg)", borderColor: "var(--code-border)" }}>
                 <span className="text-xs font-medium tracking-wide" style={{ color: "var(--code-muted)" }}>Example handover shape</span>

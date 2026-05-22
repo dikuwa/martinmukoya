@@ -47,10 +47,10 @@ export default async function ContactPage() {
           <div className="mt-8 grid gap-3">
             <ContactLink siteSlug={site.slug} icon={<Mail size={18} />} label={contact.email} href={`mailto:${contact.email}`} />
             <ContactLink siteSlug={site.slug} icon={<Phone size={18} />} label={contact.phone} href={contact.phoneHref} />
-            <ContactLink siteSlug={site.slug} icon={<MapPin size={18} />} label={contact.location} href="/contact" />
+            <ContactDetail icon={<MapPin size={18} />} label={contact.location} />
           </div>
           <Button asChild className="mt-7" variant="secondary">
-            <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/contact" eventSource="contact_page_cta" href={contact.whatsappHref} target="_blank" rel="noreferrer">
+            <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/contact" eventSource="contact_page_cta" href={contact.whatsappHref} target="_blank" rel="noopener noreferrer">
               <MessageCircle size={17} /> {page.whatsappLabel}
             </TrackedAnchor>
           </Button>
@@ -73,5 +73,14 @@ function ContactLink({ icon, label, href, siteSlug }: { icon: React.ReactNode; l
       <span className="text-[color:var(--primary)]">{icon}</span>
       {label}
     </TrackedAnchor>
+  );
+}
+
+function ContactDetail({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white/[0.04] p-4 text-sm font-bold text-[color:var(--text-strong)]">
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--primary)]/12 text-[color:var(--primary)]">{icon}</span>
+      {label}
+    </div>
   );
 }

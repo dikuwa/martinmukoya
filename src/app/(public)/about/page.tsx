@@ -290,7 +290,7 @@ class System {
                   </TrackedLink>
                 </Button>
                 <Button asChild size="lg" variant="secondary">
-                  <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/about" eventSource="about_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noreferrer">
+                  <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="/about" eventSource="about_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer">
                     <MessageCircle size={18} /> WhatsApp Martin
                   </TrackedAnchor>
                 </Button>

@@ -132,7 +132,7 @@ export default async function ChatSessionDetailPage({ params }: PageProps) {
                 ) : null}
                 {leadWhatsappHref ? (
                   <Button asChild variant="secondary">
-                    <a href={leadWhatsappHref} target="_blank" rel="noreferrer">WhatsApp</a>
+                    <a href={leadWhatsappHref} target="_blank" rel="noopener noreferrer">WhatsApp</a>
                   </Button>
                 ) : null}
               </>

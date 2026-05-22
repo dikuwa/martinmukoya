@@ -32,7 +32,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
                     <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="global" eventSource="final_cta_start_project" href="/start-project">{site.finalCta.primary}</TrackedLink>
                   </Button>
                   <Button asChild size="lg" variant="secondary">
-                    <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="final_cta_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noreferrer">{site.finalCta.secondary}</TrackedAnchor>
+                    <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="final_cta_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer">{site.finalCta.secondary}</TrackedAnchor>
                   </Button>
                 </div>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-[color:var(--text-faint)]">
@@ -74,7 +74,7 @@ export function FinalCTA({ site }: { site: PublicSiteConfig }) {
                 <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="global" eventSource="final_cta_start_project" href="/start-project">{site.finalCta.primary}</TrackedLink>
               </Button>
               <Button asChild size="lg" variant="secondary">
-                <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="final_cta_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noreferrer">{site.finalCta.secondary}</TrackedAnchor>
+                <TrackedAnchor siteSlug={site.slug} eventType="whatsapp_click" eventPage="global" eventSource="final_cta_whatsapp" href={site.contact.whatsappHref} target="_blank" rel="noopener noreferrer">{site.finalCta.secondary}</TrackedAnchor>
               </Button>
             </div>
           </div>
