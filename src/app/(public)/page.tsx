@@ -249,7 +249,7 @@ export default async function HomePage() {
               <Reveal className="lg:sticky lg:top-32">
                 <div className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-8 shadow-[0_8px_30px_rgba(107,38,217,0.08)]">
                   <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)] ring-2 ring-[color:var(--primary)]/20 lg:mx-0">
-                    <Image src="/assets/FAQs/FAQ.webp" alt="" fill className="object-cover" sizes="64px" />
+                    <Image src="/assets/FAQs/FAQ.webp" alt="" fill className="object-contain p-1.5" sizes="64px" />
                   </div>
                   <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">Got a question? Let&rsquo;s chat.</h3>
                   <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">
