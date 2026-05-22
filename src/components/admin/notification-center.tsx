@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Inbox, MessageSquareText, Users, ExternalLink, X, CheckCheck, Trash2, Loader2 } from "lucide-react";
+import {
+  Bell,
+  Inbox,
+  MessageSquareText,
+  Users,
+  ExternalLink,
+  X,
+  CheckCheck,
+  Trash2,
+  Loader2,
+  Filter,
+} from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +28,9 @@ type NotificationItem = {
   detail: string;
   href: string;
   createdAt: string;
+  siteId: string | null;
+  siteSlug: string | null;
+  siteName: string | null;
 };
 
 type NotificationData = {
@@ -25,12 +39,20 @@ type NotificationData = {
   totalRead: number;
   counts: { leads: number; messages: number; chats: number };
   items: NotificationItem[];
+  sites: Array<{ slug: string; name: string }>;
 };
+
+type SiteFilter = "all" | "martin-mukoya" | "flextech-media";
 
 const typeConfig = {
   lead: { icon: Users, label: "Lead", color: "text-[color:var(--primary)]" },
   message: { icon: Inbox, label: "Message", color: "text-[color:var(--accent)]" },
-  chat: { icon: MessageSquareText, label: "Chat", color: "text-[color:var(--primary-light)]" }
+  chat: { icon: MessageSquareText, label: "Chat", color: "text-[color:var(--primary-light)]" },
+};
+
+const siteLabels: Record<string, { label: string; color: string }> = {
+  "martin-mukoya": { label: "Martin Mukoya", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+  "flextech-media": { label: "FlexTech Media", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
 };
 
 function timeAgo(dateStr: string): string {
@@ -49,26 +71,41 @@ export function NotificationCenter() {
   const [data, setData] = useState<NotificationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dismissing, setDismissing] = useState<Set<string>>(new Set());
+  const [siteFilter, setSiteFilter] = useState<SiteFilter>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const siteFilterRef = useRef<SiteFilter>(siteFilter);
+  const sitesRef = useRef<Array<{ slug: string; name: string }>>([]);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/notifications");
-      if (res.ok) {
-        setData(await res.json());
+  // Keep refs in sync with state
+  siteFilterRef.current = siteFilter;
+
+  const fetchNotifications = useCallback(
+    async (filter?: SiteFilter) => {
+      const f = filter ?? siteFilterRef.current;
+      try {
+        const res = await fetch(`/api/admin/notifications?site=${f}`);
+        if (res.ok) {
+          const json: NotificationData = await res.json();
+          if (json.sites?.length > 0) {
+            sitesRef.current = json.sites;
+          }
+          setData(json);
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      // Silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   /**
    * Lightweight count poll — runs every 5 seconds.
-   * Updates the badge total/counts and triggers a full data refresh
-   * immediately when new notifications arrive so the dropdown always
-   * has real items when opened.
+   * Always returns total across ALL sites for the badge.
+   * Triggers a full data refresh when new notifications arrive.
    */
   const fetchCount = useCallback(async () => {
     try {
@@ -76,16 +113,12 @@ export function NotificationCenter() {
       if (res.ok) {
         const json: CountData = await res.json();
 
-        // Check if the total went up since the last poll
         let totalIncreased = false;
         setData((prev) => {
           if (prev) {
             totalIncreased = json.total > prev.total;
             return { ...prev, total: json.total, counts: json.counts };
           }
-          // No full data yet but count endpoint has items — create
-          // a skeleton entry. Full data will arrive from the triggered
-          // fetchNotifications() below.
           totalIncreased = json.total > 0;
           if (json.total > 0) {
             return {
@@ -93,14 +126,13 @@ export function NotificationCenter() {
               counts: json.counts,
               items: [],
               hasRead: false,
-              totalRead: 0
+              totalRead: 0,
+              sites: sitesRef.current,
             };
           }
           return null;
         });
 
-        // When total increases, eagerly pull full data so the dropdown
-        // has real items when the user opens it.
         if (totalIncreased) {
           fetchNotifications();
         }
@@ -114,12 +146,9 @@ export function NotificationCenter() {
   useEffect(() => {
     fetchNotifications();
 
-    // Lightweight count poll every 5s for real-time badge updates
     const countInterval = setInterval(fetchCount, 5000);
-    // Full-data sync poll every 30s to keep items fresh
-    const fullInterval = setInterval(fetchNotifications, 30000);
+    const fullInterval = setInterval(() => fetchNotifications(), 30000);
 
-    // Refetch when the tab becomes visible again
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
         fetchCount();
@@ -133,51 +162,71 @@ export function NotificationCenter() {
       clearInterval(fullInterval);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [fetchNotifications, fetchCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setFilterOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    // Small delay to avoid immediate close from the toggle click
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [filterOpen]);
+
   // ── Actions ─────────────────────────────────────────────────
 
-  const markAsRead = useCallback(async (id: string) => {
-    setDismissing((prev) => new Set(prev).add(id));
-    const prevData = data;
-    // Optimistically remove from local state
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        total: Math.max(0, prev.total - 1),
-        items: prev.items.filter((item) => item.id !== id)
-      };
-    });
-    try {
-      const res = await fetch(`/api/admin/notifications/${id}`, { method: "PATCH" });
-      if (!res.ok) throw new Error("Failed to mark as read");
-    } catch {
-      // Revert optimistic update on failure
-      setData(prevData);
-    } finally {
-      setDismissing((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
+  const markAsRead = useCallback(
+    async (id: string) => {
+      setDismissing((prev) => new Set(prev).add(id));
+      const prevData = data;
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          total: Math.max(0, prev.total - 1),
+          items: prev.items.filter((item) => item.id !== id),
+        };
       });
-    }
-  }, [data]);
+      try {
+        const res = await fetch(`/api/admin/notifications/${id}`, { method: "PATCH" });
+        if (!res.ok) throw new Error("Failed to mark as read");
+      } catch {
+        setData(prevData);
+      } finally {
+        setDismissing((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    },
+    [data]
+  );
 
   const markAllAsRead = useCallback(async () => {
-    // Optimistic update
     setData((prev) => {
       if (!prev) return prev;
       return { ...prev, total: 0, totalRead: prev.totalRead + prev.total, hasRead: true, items: [] };
@@ -192,7 +241,6 @@ export function NotificationCenter() {
 
   const clearRead = useCallback(async () => {
     const prevData = data;
-    // Optimistic update
     setData((prev) => {
       if (!prev) return prev;
       return { ...prev, totalRead: 0, hasRead: false };
@@ -205,8 +253,9 @@ export function NotificationCenter() {
   }, [data]);
 
   const clearAll = useCallback(async () => {
+    if (!window.confirm("Clear all notifications? This cannot be undone.")) return;
+
     const prevData = data;
-    // Optimistic update — clear everything
     setData((prev) => {
       if (!prev) return null;
       return { ...prev, total: 0, totalRead: 0, hasRead: false, items: [] };
@@ -220,13 +269,29 @@ export function NotificationCenter() {
   }, [data, fetchNotifications]);
 
   const handleItemClick = useCallback(
-    (e: React.MouseEvent, item: NotificationItem) => {
-      // Mark as read in background before navigating
+    (_e: React.MouseEvent, item: NotificationItem) => {
       fetch(`/api/admin/notifications/${item.id}`, { method: "PATCH" }).catch(() => {});
       setOpen(false);
     },
     []
   );
+
+  // ── Filter change ──
+  const handleFilterChange = useCallback(
+    (filter: SiteFilter) => {
+      setSiteFilter(filter);
+      setFilterOpen(false);
+      setLoading(true);
+      fetchNotifications(filter);
+    },
+    [fetchNotifications]
+  );
+
+  const filterOptions: Array<{ value: SiteFilter; label: string }> = [
+    { value: "all", label: "All Sites" },
+    { value: "martin-mukoya", label: "Martin Mukoya" },
+    { value: "flextech-media", label: "FlexTech Media" },
+  ];
 
   const totalUnread = data?.total ?? 0;
 
@@ -235,9 +300,9 @@ export function NotificationCenter() {
       <button
         type="button"
         onClick={() => {
-          // Fetch fresh data whenever the bell is clicked
           fetchNotifications();
           setOpen(!open);
+          setFilterOpen(false);
         }}
         className={cn(
           "relative grid h-9 w-9 place-items-center rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]",
@@ -245,72 +310,153 @@ export function NotificationCenter() {
         )}
         aria-label={`Notifications${totalUnread > 0 ? `, ${totalUnread} unread` : ""}`}
       >
-        <Bell size={16} />          {totalUnread > 0 && (
-            <span
-              key={totalUnread}
-              className="absolute -right-0.5 -top-0.5 grid min-w-[18px] animate-badge-pop place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[10px] font-black leading-[18px] text-white"
-            >
-              {totalUnread > 99 ? "99+" : totalUnread}
-            </span>
-          )}
+        <Bell size={16} />
+        {totalUnread > 0 && (
+          <span
+            key={totalUnread}
+            className="absolute -right-0.5 -top-0.5 grid min-w-[18px] animate-badge-pop place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[10px] font-black leading-[18px] text-white"
+          >
+            {totalUnread > 99 ? "99+" : totalUnread}
+          </span>
+        )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[380px] origin-top-right animate-in rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)] shadow-[var(--shadow-lg)] backdrop-blur-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[420px] origin-top-right animate-in rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)] shadow-[var(--shadow-lg)] backdrop-blur-xl">
           {/* ── Header ── */}
           <div className="flex items-center justify-between gap-2 border-b border-[color:var(--border-subtle)] px-4 py-3">
             <div className="min-w-0">
               <h3 className="text-sm font-black text-[color:var(--text-strong)]">Notifications</h3>
               {data && (
                 <p className="truncate text-xs text-[color:var(--text-faint)]">
-                  {data.counts.leads > 0 && `${data.counts.leads} lead${data.counts.leads > 1 ? "s" : ""}`}
-                  {data.counts.leads > 0 && (data.counts.messages > 0 || data.counts.chats > 0) && " · "}
-                  {data.counts.messages > 0 && `${data.counts.messages} message${data.counts.messages > 1 ? "s" : ""}`}
-                  {data.counts.messages > 0 && data.counts.chats > 0 && " · "}
-                  {data.counts.chats > 0 && `${data.counts.chats} chat${data.counts.chats > 1 ? "s" : ""}`}
-                  {data.total === 0 && data.totalRead > 0 && `${data.totalRead} read`}
-                  {data.total === 0 && data.totalRead === 0 && !loading && "All caught up"}
+                  {data.total > 0
+                    ? [
+                        data.counts.leads > 0 && `${data.counts.leads} lead${data.counts.leads > 1 ? "s" : ""}`,
+                        data.counts.messages > 0 && `${data.counts.messages} message${data.counts.messages > 1 ? "s" : ""}`,
+                        data.counts.chats > 0 && `${data.counts.chats} chat${data.counts.chats > 1 ? "s" : ""}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : data.totalRead > 0
+                      ? `${data.totalRead} read`
+                      : !loading
+                        ? "All caught up"
+                        : ""}
                 </p>
               )}
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
+              {/* Site filter */}
+              <div ref={filterRef} className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFilterOpen(!filterOpen);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-bold text-[color:var(--text-faint)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]",
+                    siteFilter !== "all" && "text-[color:var(--primary)]"
+                  )}
+                  title={`Filter: ${siteFilter === "all" ? "All Sites" : siteFilter === "martin-mukoya" ? "Martin Mukoya" : "FlexTech Media"}`}
+                  aria-label="Filter by site"
+                >
+                  <Filter size={13} />
+                </button>
+
+                {filterOpen && (
+                  <div className="absolute right-0 top-full z-[60] mt-1 w-44 origin-top-right rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)] py-1 shadow-[var(--shadow-lg)]">
+                    {filterOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleFilterChange(option.value)}
+                        className={cn(
+                          "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-semibold transition",
+                          siteFilter === option.value
+                            ? "bg-[color:var(--surface-soft)] text-[color:var(--primary)]"
+                            : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            option.value === "all"
+                              ? "bg-[color:var(--text-faint)]"
+                              : option.value === "martin-mukoya"
+                                ? "bg-blue-500"
+                                : "bg-emerald-500"
+                          )}
+                        />
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Mark all as read */}
               {data && data.total > 0 && (
                 <button
                   type="button"
                   onClick={markAllAsRead}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[color:var(--primary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary-light)]"
+                  className="flex items-center rounded-md px-1.5 py-1 text-[color:var(--primary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary-light)]"
                   title="Mark all as read"
+                  aria-label="Mark all as read"
                 >
-                  <CheckCheck size={13} />
-                  <span className="hidden sm:inline">Mark all read</span>
+                  <CheckCheck size={14} />
                 </button>
               )}
 
-              {/* Clear all notifications (seed data cleanup, bulk dismiss) */}
+              {/* Clear all / trash */}
               {data && (data.total > 0 || data.hasRead) && (
                 <button
                   type="button"
-                  onClick={clearAll}
-                  className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
-                  title="Clear all notifications"
+                  onClick={data.total > 0 ? clearAll : clearRead}
+                  className="flex items-center rounded-md px-1.5 py-1 text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+                  title={data.total > 0 ? "Clear all notifications" : "Clear read notifications"}
+                  aria-label={data.total > 0 ? "Clear all notifications" : "Clear read notifications"}
                 >
-                  <Trash2 size={13} />
-                  <span className="hidden sm:inline">Clear all</span>
+                  <Trash2 size={14} />
                 </button>
               )}
 
               <Link
                 href="/admin"
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[color:var(--text-faint)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+                className="flex items-center rounded-md px-1.5 py-1 text-[color:var(--text-faint)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
                 onClick={() => setOpen(false)}
-                title="View all in dashboard"
+                title="Dashboard"
+                aria-label="Go to dashboard"
               >
-                <ExternalLink size={13} />
+                <ExternalLink size={14} />
               </Link>
             </div>
           </div>
+
+          {/* ── Filter indicator ── */}
+          {siteFilter !== "all" && (
+            <div className="flex items-center gap-1.5 border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/50 px-4 py-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--text-faint)]">
+                Showing:
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold leading-tight",
+                  siteLabels[siteFilter]?.color ?? "bg-[color:var(--surface)] text-[color:var(--text-muted)]"
+                )}
+              >
+                {siteLabels[siteFilter]?.label ?? siteFilter}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("all")}
+                className="ml-auto text-[10px] font-bold text-[color:var(--primary)] hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {/* ── Items ── */}
           <div className="max-h-[400px] overflow-y-auto">
@@ -324,7 +470,11 @@ export function NotificationCenter() {
               <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                 <Bell size={24} className="text-[color:var(--text-faint)]" />
                 <p className="text-sm font-semibold text-[color:var(--text-muted)]">
-                  {data?.totalRead && data.totalRead > 0 ? "All notifications read" : "No new notifications"}
+                  {data?.totalRead && data.totalRead > 0
+                    ? "All notifications read"
+                    : siteFilter !== "all"
+                      ? `No notifications for ${siteLabels[siteFilter]?.label ?? siteFilter}`
+                      : "No new notifications"}
                 </p>
                 <p className="text-xs text-[color:var(--text-faint)]">
                   {data?.totalRead && data.totalRead > 0
@@ -338,6 +488,7 @@ export function NotificationCenter() {
                   const config = typeConfig[item.type];
                   const Icon = config.icon;
                   const isDismissing = dismissing.has(item.id);
+                  const siteInfo = item.siteSlug ? siteLabels[item.siteSlug] : null;
 
                   return (
                     <div
@@ -347,7 +498,7 @@ export function NotificationCenter() {
                       <Link
                         href={item.href}
                         onClick={(e) => handleItemClick(e, item)}
-                        className="grid gap-1.5 px-4 py-3"
+                        className="grid gap-1 px-4 py-3"
                         aria-label={`${config.label}: ${item.title}`}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -356,11 +507,20 @@ export function NotificationCenter() {
                             <span className="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--text-faint)]">
                               {config.label}
                             </span>
+                            {/* Site label pill */}
+                            {siteInfo && (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-tight tracking-wide",
+                                  siteInfo.color
+                                )}
+                              >
+                                {siteInfo.label}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[11px] text-[color:var(--text-faint)]">
-                              {timeAgo(item.createdAt)}
-                            </span>
+                            <span className="text-[11px] text-[color:var(--text-faint)]">{timeAgo(item.createdAt)}</span>
                           </div>
                         </div>
                         <p className="truncate text-sm font-bold text-[color:var(--text-strong)]">{item.title}</p>
@@ -381,11 +541,7 @@ export function NotificationCenter() {
                         )}
                         aria-label={`Dismiss ${config.label.toLowerCase()} notification`}
                       >
-                        {isDismissing ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <X size={14} />
-                        )}
+                        {isDismissing ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
                       </button>
                     </div>
                   );
