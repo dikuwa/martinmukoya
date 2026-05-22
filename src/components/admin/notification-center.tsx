@@ -65,24 +65,50 @@ export function NotificationCenter() {
   }, []);
 
   /**
-   * Lightweight count poll — runs every 5 seconds without the sync overhead.
-   * Only updates the counts/total fields; full data is fetched on click.
+   * Lightweight count poll — runs every 5 seconds.
+   * Updates the badge total/counts and triggers a full data refresh
+   * immediately when new notifications arrive so the dropdown always
+   * has real items when opened.
    */
   const fetchCount = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/notifications/count");
       if (res.ok) {
         const json: CountData = await res.json();
-        setData((prev) =>
-          prev
-            ? { ...prev, total: json.total, counts: json.counts }
-            : null
-        );
+
+        // Check if the total went up since the last poll
+        let totalIncreased = false;
+        setData((prev) => {
+          if (prev) {
+            totalIncreased = json.total > prev.total;
+            return { ...prev, total: json.total, counts: json.counts };
+          }
+          // No full data yet but count endpoint has items — create
+          // a skeleton entry. Full data will arrive from the triggered
+          // fetchNotifications() below.
+          totalIncreased = json.total > 0;
+          if (json.total > 0) {
+            return {
+              total: json.total,
+              counts: json.counts,
+              items: [],
+              hasRead: false,
+              totalRead: 0
+            };
+          }
+          return null;
+        });
+
+        // When total increases, eagerly pull full data so the dropdown
+        // has real items when the user opens it.
+        if (totalIncreased) {
+          fetchNotifications();
+        }
       }
     } catch {
       // Silently fail
     }
-  }, []);
+  }, [fetchNotifications]);
 
   // ── Polling & visibility ──
   useEffect(() => {
@@ -219,12 +245,14 @@ export function NotificationCenter() {
         )}
         aria-label={`Notifications${totalUnread > 0 ? `, ${totalUnread} unread` : ""}`}
       >
-        <Bell size={16} />
-        {totalUnread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[10px] font-black leading-[18px] text-white">
-            {totalUnread > 99 ? "99+" : totalUnread}
-          </span>
-        )}
+        <Bell size={16} />          {totalUnread > 0 && (
+            <span
+              key={totalUnread}
+              className="absolute -right-0.5 -top-0.5 grid min-w-[18px] animate-badge-pop place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[10px] font-black leading-[18px] text-white"
+            >
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
       </button>
 
       {open && (

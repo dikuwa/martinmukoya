@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentSite } from "@/lib/sites";
+import { syncNotifications } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Lightweight count endpoint — no sync, just returns the unread total.
+ * Lightweight count endpoint — returns just the unread total and
+ * per-type breakdown. Runs syncNotifications() to back-fill any
+ * notifications that were missed due to transient errors.
+ *
  * Poll this frequently (every 5s) from the notification center for
- * real-time badge updates without the overhead of full sync + item fetch.
+ * real-time badge updates.
  */
 export async function GET() {
   try {
-    const site = await getCurrentSite();
+    const site = await syncNotifications();
     const siteFilter = site ? { siteId: site.id } : {};
 
     const [total, counts] = await Promise.all([
@@ -19,8 +22,8 @@ export async function GET() {
       db.notification.groupBy({
         by: ["type"],
         where: { ...siteFilter, read: false },
-        _count: true
-      })
+        _count: true,
+      }),
     ]);
 
     const countMap: Record<string, number> = { leads: 0, messages: 0, chats: 0 };
@@ -32,7 +35,10 @@ export async function GET() {
 
     return NextResponse.json({ total, counts: countMap });
   } catch (error) {
-    console.error("Notifications count error:", error);
-    return NextResponse.json({ total: 0, counts: { leads: 0, messages: 0, chats: 0 } }, { status: 500 });
+    console.error("[notifications/count] Error:", error);
+    return NextResponse.json(
+      { total: 0, counts: { leads: 0, messages: 0, chats: 0 } },
+      { status: 500 }
+    );
   }
 }
