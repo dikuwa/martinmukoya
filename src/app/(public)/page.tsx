@@ -223,13 +223,9 @@ export default async function HomePage() {
             )}
           </Reveal>
           {site.slug === "flextech-media" ? (
-            <Reveal className="relative mx-auto w-full max-w-[420px] rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-8 shadow-[0_30px_80px_rgba(107,38,217,0.12)] dark:bg-[color:var(--surface)]">
-              <div className="rounded-[24px] bg-gradient-to-br from-[color:var(--surface-soft)]/90 via-[color:var(--primary)]/10 to-transparent p-8 dark:from-[color:var(--surface)]/80 dark:via-[color:var(--primary)]/10">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--primary)]">Campaign-ready systems</p>
-                <h3 className="text-balance mt-4 text-3xl font-black text-[color:var(--text-strong)]">Designed to support the work after launch.</h3>
-                <p className="mt-4 text-sm leading-7 text-[color:var(--text-normal)] dark:text-[color:var(--text-muted)]">
-                  From lead capture and booking flows to follow-up structure and operational clarity, every build is designed to stay useful as the business evolves.
-                </p>
+            <Reveal className="relative mx-auto w-full max-w-[420px] overflow-hidden rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] shadow-[0_30px_80px_rgba(107,38,217,0.12)] dark:bg-[color:var(--surface)]">
+              <div className="relative aspect-[4/5] w-full">
+                <Image src="/assets/about/analytics.png" alt="Analytics dashboard overview" fill className="object-cover" sizes="420px" />
               </div>
             </Reveal>
           ) : (
