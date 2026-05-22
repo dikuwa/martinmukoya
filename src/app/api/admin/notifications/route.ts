@@ -128,6 +128,9 @@ export async function PATCH() {
 /**
  * Delete all read notifications (default) or all notifications (?all=true)
  * across ALL sites.
+ *
+ * Also acknowledges the source records so syncNotifications() won't
+ * re-create the deleted notifications on the next GET.
  */
 export async function DELETE(request: Request) {
   try {
@@ -136,11 +139,54 @@ export async function DELETE(request: Request) {
 
     const where = clearAll ? {} : { read: true };
 
+    // Fetch notifications to be deleted so we can acknowledge source records
+    const toDelete = await db.notification.findMany({
+      where,
+      select: { type: true, sourceId: true },
+    });
+
+    if (toDelete.length > 0) {
+      // Group by type to update source records in bulk
+      const leadIds = toDelete.filter((n) => n.type === "lead").map((n) => n.sourceId);
+      const msgIds = toDelete.filter((n) => n.type === "message").map((n) => n.sourceId);
+      const chatIds = toDelete.filter((n) => n.type === "chat").map((n) => n.sourceId);
+
+      // Acknowledge source records so syncNotifications doesn't re-create them
+      const updates: Promise<unknown>[] = [];
+      if (leadIds.length > 0) {
+        updates.push(
+          db.lead.updateMany({
+            where: { id: { in: leadIds }, status: "NEW" },
+            data: { status: "REVIEWING" },
+          })
+        );
+      }
+      if (msgIds.length > 0) {
+        updates.push(
+          db.contactMessage.updateMany({
+            where: { id: { in: msgIds }, status: "NEW" },
+            data: { status: "READ" },
+          })
+        );
+      }
+      if (chatIds.length > 0) {
+        updates.push(
+          db.chatSession.updateMany({
+            where: { id: { in: chatIds }, handedToHuman: true },
+            data: { handedToHuman: false },
+          })
+        );
+      }
+
+      await Promise.all(updates);
+    }
+
+    // Now delete the notification records
     const result = await db.notification.deleteMany({ where });
 
     await invalidateTag(tags.notifications);
 
-    return NextResponse.json({ deleted: result.count });
+    return NextResponse.json({ deleted: result.count, acknowledged: toDelete.length });
   } catch (error) {
     console.error("[notifications] DELETE error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

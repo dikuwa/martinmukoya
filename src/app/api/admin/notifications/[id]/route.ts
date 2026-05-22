@@ -36,6 +36,9 @@ export async function PATCH(
 
 /**
  * Delete a single notification.
+ *
+ * Also acknowledges the source record so syncNotifications() won't
+ * re-create it on the next GET.
  */
 export async function DELETE(
   _request: Request,
@@ -48,6 +51,24 @@ export async function DELETE(
 
     if (!notification) {
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
+    }
+
+    // Acknowledge the source record so syncNotifications won't re-create it
+    if (notification.type === "lead") {
+      await db.lead.updateMany({
+        where: { id: notification.sourceId, status: "NEW" },
+        data: { status: "REVIEWING" },
+      });
+    } else if (notification.type === "message") {
+      await db.contactMessage.updateMany({
+        where: { id: notification.sourceId, status: "NEW" },
+        data: { status: "READ" },
+      });
+    } else if (notification.type === "chat") {
+      await db.chatSession.updateMany({
+        where: { id: notification.sourceId, handedToHuman: true },
+        data: { handedToHuman: false },
+      });
     }
 
     await db.notification.delete({ where: { id } });
