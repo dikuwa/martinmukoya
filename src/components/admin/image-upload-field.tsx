@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useRef, useState } from "react";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { ImagePlus, Loader2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -43,9 +43,7 @@ export function ImageUploadField({
       onChange(payload.url);
       toast.success("Image uploaded");
     } catch (error) {
-      toast.error("Image not uploaded", {
-        description: error instanceof Error ? error.message : "Please try again."
-      });
+      toast.error("Image not uploaded — " + (error instanceof Error ? error.message : "Please try again."));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

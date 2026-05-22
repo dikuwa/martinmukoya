@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Check, ChevronDown, MessageCircle, Send } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics-client";
@@ -93,15 +93,16 @@ export function ContactForm({ site }: { site: PublicSiteConfig }) {
         metadata: { inquiryType: values.inquiryType, preferredContact: values.preferredContact }
       });
 
-      toast.success("Message sent", {
-        description: pageCopy.successToast
-      });
+      toast.success(
+        <div>
+          <div className="font-semibold">Message sent</div>
+          <div className="text-sm opacity-85 mt-0.5">{pageCopy.successToast}</div>
+        </div>
+      );
       setSubmitted(true);
       form.reset();
     } catch (error) {
-      toast.error("Message not sent", {
-        description: error instanceof Error ? error.message : "Please try again in a moment."
-      });
+      toast.error(error instanceof Error ? error.message : "Message not sent — Please try again in a moment.");
     }
   }
 

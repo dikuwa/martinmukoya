@@ -16,8 +16,8 @@ type NotificationInput = {
  * or the sync fallback).
  */
 export async function createNotification(input: NotificationInput) {
-  await db.notification
-    .create({
+  try {
+    await db.notification.create({
       data: {
         siteId: input.siteId,
         type: input.type,
@@ -28,8 +28,12 @@ export async function createNotification(input: NotificationInput) {
         createdAt: input.createdAt,
         read: false
       }
-    })
-    .catch(() => {
-      // Ignore unique constraint violations (type + sourceId already exists)
     });
+  } catch (error) {
+    // Ignore unique constraint violations (type + sourceId already exists),
+    // log everything else so we can debug silent failures.
+    if (error instanceof Error && !error.message.includes("Unique constraint")) {
+      console.error("createNotification error:", error);
+    }
+  }
 }

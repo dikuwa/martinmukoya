@@ -5,6 +5,11 @@ import { Bell, Inbox, MessageSquareText, Users, ExternalLink, X, CheckCheck, Tra
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+type CountData = {
+  total: number;
+  counts: { leads: number; messages: number; chats: number };
+};
+
 type NotificationItem = {
   id: string;
   type: "lead" | "message" | "chat";
@@ -59,24 +64,50 @@ export function NotificationCenter() {
     }
   }, []);
 
+  /**
+   * Lightweight count poll — runs every 5 seconds without the sync overhead.
+   * Only updates the counts/total fields; full data is fetched on click.
+   */
+  const fetchCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/notifications/count");
+      if (res.ok) {
+        const json: CountData = await res.json();
+        setData((prev) =>
+          prev
+            ? { ...prev, total: json.total, counts: json.counts }
+            : null
+        );
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   // ── Polling & visibility ──
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000); // Poll every 15s
 
-    // Also refetch when the tab becomes visible again (user switched back)
+    // Lightweight count poll every 5s for real-time badge updates
+    const countInterval = setInterval(fetchCount, 5000);
+    // Full-data sync poll every 30s to keep items fresh
+    const fullInterval = setInterval(fetchNotifications, 30000);
+
+    // Refetch when the tab becomes visible again
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
+        fetchCount();
         fetchNotifications();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(countInterval);
+      clearInterval(fullInterval);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, fetchCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

@@ -10,7 +10,7 @@ import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { z } from "zod";
 
 const leadStatuses = ["NEW", "REVIEWING", "CONTACTED", "QUALIFIED", "WON", "LOST", "ARCHIVED"] as const;

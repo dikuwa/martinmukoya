@@ -11,10 +11,10 @@ import { ArrowLeft, ArrowRight, Bot, CalendarCheck, Check, MessageCircle, Monito
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { z } from "zod";
 
-const budgets = ["Under N$15k", "N$15k - N$50k", "N$50k - N$100k", "N$100k+"] as const;
+const budgets = ["Under N$15,000", "N$15,000 – N$50,000", "N$50,000 – N$100,000", "N$100,000+"] as const;
 const timelines = ["ASAP within 1 month", "1-3 months", "3-6 months", "6+ months"] as const;
 
 const wizardSchema = z
@@ -226,15 +226,16 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
         }
       });
 
-      toast.success("Project request sent", {
-        description: `${result.parsed.name}, ${site.slug === "flextech-media" ? "FlexTech will review this and follow up with a practical next step." : "I’ll review this and follow up with a practical next step."}`
-      });
+      toast.success(
+        <div>
+          <div className="font-semibold">Project request sent</div>
+          <div className="text-sm opacity-85 mt-0.5">{result.parsed.name}, {site.slug === "flextech-media" ? "FlexTech will review this and follow up with a practical next step." : "I’ll review this and follow up with a practical next step."}</div>
+        </div>
+      );
       setSubmitted(true);
       form.reset();
     } catch (error) {
-      toast.error("Request not sent", {
-        description: error instanceof Error ? error.message : "Please try again in a moment."
-      });
+      toast.error(error instanceof Error ? error.message : "Request not sent — Please try again in a moment.");
     }
   }
 
