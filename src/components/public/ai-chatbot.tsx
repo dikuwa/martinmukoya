@@ -2,99 +2,130 @@
 
 import { Button } from "@/components/ui/button";
 import { BudgetSelector, type BudgetOption } from "@/components/public/budget-selector";
-import { ArrowUpRight, CheckCircle, Loader2, MessageCircle, Send, X } from "lucide-react";
+import { ServiceSelector } from "@/components/public/service-selector";
+import { TimelineSelector, type TimelineOption } from "@/components/public/timeline-selector";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  CheckCircle,
+  Mail,
+  MessageCircle,
+  Send,
+  User,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { trackEvent } from "@/lib/analytics-client";
 
 const whatsappHref = "https://wa.me/264818563005";
-const emailHref = {
+const emailHref: Record<string, string> = {
   "flextech-media": "mailto:info@flextech-media.com",
-  "martin-mukoya": "mailto:info@martinmukoya.com"
+  "martin-mukoya": "mailto:info@martinmukoya.com",
 };
 
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const PHONE_RE = /(?:\+264|0)\s*[1-9]\d{1,2}\s*\d{3,7}/;
 
-type LeadCaptureFields = {
-  name: string;
-  email: string;
-  phone: string;
-  service: string;
-  description: string;
+type BookingStep = "NONE" | "SERVICES" | "BUDGET" | "TIMELINE" | "CONTACT" | "REVIEW" | "SUBMITTED";
+
+type BookingData = {
+  services: string[];
+  customServiceDetails: string;
   budget: string;
   budgetLabel: string;
   timeline: string;
+  timelineLabel: string;
+  timelineFlexible: boolean;
+  name: string;
+  email: string;
+  phone: string;
   preferredContact: "EMAIL" | "PHONE" | "WHATSAPP";
+  company: string;
+  description: string;
   conversationSummary: string;
 };
 
-const initialLeadCapture: LeadCaptureFields = {
-  name: "",
-  email: "",
-  phone: "",
-  service: "",
-  description: "",
+const initialBookingData: BookingData = {
+  services: [],
+  customServiceDetails: "",
   budget: "",
   budgetLabel: "",
   timeline: "",
+  timelineLabel: "",
+  timelineFlexible: false,
+  name: "",
+  email: "",
+  phone: "",
   preferredContact: "EMAIL",
+  company: "",
+  description: "",
   conversationSummary: "",
 };
 
-/** Keywords in an AI response that hint at which field the AI is asking about. */
-function detectAiTopic(text: string): string | null {
-  const lower = text.toLowerCase();
-  if (/\byour name\b|\bwhat should i call you\b|\bmay i ask your name\b|\bfirst.*name\b/i.test(lower)) return "name";
-  if (/\b(email|phone|contact|reach you|best way to)\b/.test(lower)) return "contact";
-  if (/\b(service|building|looking for|type of project|what.*need|what.*want)\b/.test(lower)) return "service";
-  if (/\b(describe|tell me about|briefly describe|explain.*project|what does.*project)\b/.test(lower)) return "description";
-  if (/\b(budget|range|spending|afford|N\$|cost|price range|budget range)\b/.test(lower)) return "budget";
-  if (/\b(timeline|deadline|how soon|timeframe|how quickly)\b/.test(lower)) return "timeline";
-  return null;
-}
-
-/** Check if a user message shows buying/project intent. */
-function hasBuyingIntent(text: string): boolean {
-  const lower = text.toLowerCase();
-  return (
-    /\b(website|app|build|create|develop|need.*help|service|quote|cost|price|budget|ecommerce|booking|dashboard|automation|ai|campaign|design|landing page|project|system|platform|store|shop|i want|i need|can you|how much|looking for)\b/.test(lower)
-  );
-}
+const serviceLabels: Record<string, string> = {
+  "web-applications": "Web Applications",
+  "booking-systems": "Booking Systems",
+  ecommerce: "E-commerce",
+  "ai-automations": "AI Automations",
+  other: "Other",
+};
 
 function siteAwareGreeting(slug: string) {
   if (slug === "flextech-media") {
     return {
       title: "Campaign assistant",
       subtitle: "Fast guidance before handoff",
-      initial: "👋 Hi! I'm the FlexTech project assistant. I can help you understand our services, shape a campaign brief, or find the fastest way to speak with the team.",
-      humanLabel: "Team"
+      initial:
+        "👋 Hi! I'm the FlexTech project assistant. I can help you understand our services, shape a campaign brief, or find the fastest way to speak with the team.",
+      humanLabel: "Team",
     };
   }
   return {
     title: "Project assistant",
     subtitle: "Fast guidance before handoff",
-    initial: "👋 Hi! I can help you choose a service, shape a brief, or find the quickest way to reach Martin.",
-    humanLabel: "Human"
+    initial:
+      "👋 Hi! I can help you choose a service, shape a brief, or find the quickest way to reach Martin.",
+    humanLabel: "Human",
   };
+}
+
+const servicesValueLabel: Record<string, string> = {
+  "web-applications": "Web Applications",
+  "booking-systems": "Booking Systems",
+  ecommerce: "E-commerce",
+  "ai-automations": "AI Automations",
+  other: "Other",
+};
+
+/** Check if a user message shows buying/project intent. */
+function hasBuyingIntent(text: string): boolean {
+  const lower = text.toLowerCase();
+  return /\b(website|app|build|create|develop|need.*help|service|quote|cost|price|budget|ecommerce|booking|dashboard|automation|ai|campaign|design|landing page|project|system|platform|store|shop|i want|i need|can you|how much|looking for|start a project|book|choose a service)\b/.test(lower);
 }
 
 export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Array<{ id: number; author: string; text: string; time: string }>>(() => [
-    { id: 1, author: "AI", text: siteAwareGreeting(siteSlug).initial, time: "Now" }
+  const [messages, setMessages] = useState<
+    Array<{ id: number; author: string; text: string; time: string }>
+  >(() => [
+    {
+      id: 1,
+      author: "AI",
+      text: siteAwareGreeting(siteSlug).initial,
+      time: "Now",
+    },
   ]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // ── Lead capture state ──
-  const [leadCapture, setLeadCapture] = useState<LeadCaptureFields>(initialLeadCapture);
-  const [leadCaptureActive, setLeadCaptureActive] = useState(false);
-  const [lastAiTopic, setLastAiTopic] = useState<string | null>(null);
-  const [showBudgetCards, setShowBudgetCards] = useState(false);
+  // ── Booking state ──
+  const [bookingStep, setBookingStep] = useState<BookingStep>("NONE");
+  const [bookingData, setBookingData] = useState<BookingData>(initialBookingData);
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadError, setLeadError] = useState(false);
 
   const siteSlugRef = useRef(siteSlug);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -102,109 +133,233 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageIdRef = useRef(2);
   const hasConversationStarted = messages.length > 1;
+  const bookingStepRef = useRef(bookingStep);
+  const leadSubmittingRef = useRef(false);
+  const loadingRef = useRef(false);
 
+  bookingStepRef.current = bookingStep;
+  leadSubmittingRef.current = leadSubmitting;
+  loadingRef.current = loading;
+
+  const humanLabel = useMemo(
+    () => siteAwareGreeting(siteSlug).humanLabel,
+    [siteSlug]
+  );
+
+  // ── Service name helper ──
+  const selectedServiceNames = useMemo(() => {
+    return bookingData.services
+      .map((s) => servicesValueLabel[s] ?? s)
+      .join(", ");
+  }, [bookingData.services]);
+
+  // ── Copy greeting for the start page ──
   const greeting = useMemo(() => siteAwareGreeting(siteSlug), [siteSlug]);
-  const humanLabel = greeting.humanLabel;
 
+  // ── Quick replies ──
   const quickReplies = useMemo(
     () => [
       "Choose a service",
-      "Project timeline",
+      "Ask a question",
       "Budget guidance",
-      `Talk to ${humanLabel}`
+      `Talk to ${humanLabel}`,
     ],
     [humanLabel]
   );
 
-  function adjustTextareaHeight(target: HTMLTextAreaElement) {
-    target.style.height = "auto";
-    target.style.height = `${Math.min(target.scrollHeight, 168)}px`;
-  }
+  // ── Start booking flow from a quick reply ──
+  const startBooking = useCallback(() => {
+    // Add user message
+    const userMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: userMsgId,
+        author: "You",
+        text: "Choose a service",
+        time: "Now",
+      },
+    ]);
 
-  // ── Extract field from user message based on current AI topic ──
-  function extractField(content: string): Partial<LeadCaptureFields> {
-    const update: Partial<LeadCaptureFields> = {};
+    // Add AI message with service selector
+    const aiMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: aiMsgId,
+        author: "AI",
+        text:
+          "Great choice! Let's start with what you need built.\n\n**What service are you looking for?** You can pick more than one.",
+        time: "Now",
+      },
+    ]);
 
-    // Always check for email and phone regardless of topic
-    const emailMatch = content.match(EMAIL_RE);
-    if (emailMatch) {
-      update.email = emailMatch[0];
-      update.preferredContact = "EMAIL";
+    setBookingStep("SERVICES");
+  }, []);
+
+  // ── Handle service selection ──
+  const handleServicesDone = useCallback(() => {
+    // Check if "Other" is selected but no custom details
+    if (
+      bookingData.services.includes("other") &&
+      bookingData.customServiceDetails.trim().length === 0
+    ) {
+      return; // Require custom details for "Other"
     }
 
-    const phoneMatch = content.match(PHONE_RE);
-    if (phoneMatch) {
-      update.phone = phoneMatch[0].trim();
-      if (!update.preferredContact) update.preferredContact = "PHONE";
-    }
+    if (bookingData.services.length === 0) return; // At least one required
 
-    // If we have a detected topic, classify the main content
-    if (lastAiTopic === "name" && !leadCapture.name) {
-      // Take the first meaningful part of the message as the name
-      const cleaned = content.replace(EMAIL_RE, "").replace(PHONE_RE, "").trim();
-      const words = cleaned.split(/\s+/).filter(Boolean);
-      if (words.length <= 4) {
-        update.name = cleaned.slice(0, 60);
-      }
-    }
+    const userMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: userMsgId,
+        author: "You",
+        text: `I need help with: ${selectedServiceNames}`,
+        time: "Now",
+      },
+    ]);
 
-    if (lastAiTopic === "service" && !leadCapture.service) {
-      update.service = content.replace(EMAIL_RE, "").replace(PHONE_RE, "").trim().slice(0, 100);
-    }
+    const aiMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: aiMsgId,
+        author: "AI",
+        text:
+          `**${selectedServiceNames}** — great choices! Those are right up our alley.\n\nNow, **what budget range are you considering?** This helps us tailor the solution to your needs.`,
+        time: "Now",
+      },
+    ]);
 
-    if (lastAiTopic === "description" && !leadCapture.description) {
-      update.description = content.replace(EMAIL_RE, "").replace(PHONE_RE, "").trim().slice(0, 500);
-    }
+    setBookingStep("BUDGET");
+  }, [bookingData.services, bookingData.customServiceDetails, selectedServiceNames]);
 
-    if (lastAiTopic === "timeline" && !leadCapture.timeline) {
-      update.timeline = content.replace(EMAIL_RE, "").replace(PHONE_RE, "").trim().slice(0, 100);
-    }
+  // ── Handle budget selection ──
+  const handleBudgetSelect = useCallback(
+    (option: BudgetOption) => {
+      setBookingData((prev) => ({
+        ...prev,
+        budget: option.value,
+        budgetLabel: option.label,
+      }));
 
-    // Generic fallback: if no specific topic but we see buying intent
-    if (!lastAiTopic || lastAiTopic === "contact") {
-      const cleaned = content.replace(EMAIL_RE, "").replace(PHONE_RE, "").trim();
-      if (!leadCapture.name && cleaned.length > 0 && cleaned.split(/\s+/).length <= 4) {
-        update.name = cleaned.slice(0, 60);
-      }
-    }
+      const msgId = messageIdRef.current++;
+      setMessages((current) => [
+        ...current,
+        {
+          id: msgId,
+          author: "You",
+          text: `My budget is ${option.label}`,
+          time: "Now",
+        },
+      ]);
 
-    return update;
-  }
+      const aiMsgId = messageIdRef.current++;
+      setMessages((current) => [
+        ...current,
+        {
+          id: aiMsgId,
+          author: "AI",
+          text: `${option.label} — noted! That gives us a good sense of scope.\n\nNow, **when are you looking to get started?**`,
+          time: "Now",
+        },
+      ]);
 
-  // ── Check if enough fields collected to submit ──
-  const canSubmitLead = useMemo(() => {
-    return (
-      leadCaptureActive &&
-      leadCapture.name.length > 0 &&
-      (leadCapture.email.length > 0 || leadCapture.phone.length > 0) &&
-      leadCapture.service.length > 0 &&
-      leadCapture.description.length > 0 &&
-      leadCapture.budget.length > 0
-    );
-  }, [leadCaptureActive, leadCapture.name, leadCapture.email, leadCapture.phone, leadCapture.service, leadCapture.description, leadCapture.budget]);
+      setBookingStep("TIMELINE");
+    },
+    []
+  );
 
-  // ── Submit lead to backend ──
-  const submitLead = useCallback(async () => {
-    if (leadSubmittingRef.current || leadSubmittedRef.current) return;
+  // ── Handle timeline selection ──
+  const handleTimelineSelect = useCallback((option: TimelineOption) => {
+    setBookingData((prev) => ({
+      ...prev,
+      timeline: option.value,
+      timelineLabel: option.label,
+      timelineFlexible: option.value === "flexible",
+    }));
+
+    const msgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: msgId,
+        author: "You",
+        text: `Timeline: ${option.label}`,
+        time: "Now",
+      },
+    ]);
+
+    const aiMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: aiMsgId,
+        author: "AI",
+        text:
+          `**${option.label}** — perfect, we'll keep that in mind.\n\nAlmost done! Just need a few contact details so we can follow up with you.`,
+        time: "Now",
+      },
+    ]);
+
+    setBookingStep("CONTACT");
+  }, []);
+
+  // ── Handle contact form submission ──
+  const handleContactDone = useCallback(() => {
+    const { name, email, phone, description } = bookingData;
+    if (!name.trim()) return;
+    if (!email.trim() && !phone.trim()) return;
+    if (!description.trim()) return;
+
+    const msgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: msgId,
+        author: "You",
+        text: `Name: ${name}\nEmail: ${email || "—"}\nPhone: ${phone || "—"}\nCompany: ${bookingData.company || "—"}\nProject: ${description.slice(0, 100)}${description.length > 100 ? "..." : ""}`,
+        time: "Now",
+      },
+    ]);
+
+    setBookingStep("REVIEW");
+  }, [bookingData]);
+
+  // ── Submit lead ──
+  const submitBooking = useCallback(async () => {
+    if (leadSubmittingRef.current) return;
+    leadSubmittingRef.current = true;
     setLeadSubmitting(true);
 
-    try {
-      // Build conversation summary from messages
-      const conversationSummary = messages
-        .slice(1) // Skip greeting
-        .filter((m) => m.author === "You")
-        .map((m) => m.text)
-        .slice(-5)
-        .join(" | ");
+    const conversationSummary = messages
+      .filter((m) => m.author === "You")
+      .map((m) => m.text)
+      .slice(-8)
+      .join(" | ");
 
+    try {
       const res = await fetch("/api/chatbot/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...leadCapture,
-          siteSlug: siteSlugRef.current,
-          conversationSummary: conversationSummary || leadCapture.description,
+          name: bookingData.name,
+          email: bookingData.email,
+          phone: bookingData.phone,
+          service: selectedServiceNames,
+          description: bookingData.description,
+          budget: bookingData.budget,
+          budgetLabel: bookingData.budgetLabel,
+          timeline: bookingData.timelineLabel,
+          preferredContact: bookingData.preferredContact,
+          businessName: bookingData.company || undefined,
+          conversationSummary,
           sessionId,
+          siteSlug: siteSlugRef.current,
+          services: bookingData.services,
+          customServiceDetails: bookingData.customServiceDetails || undefined,
+          timelineFlexible: bookingData.timelineFlexible,
         }),
       });
 
@@ -214,15 +369,16 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       }
 
       setLeadSubmitted(true);
+      setBookingStep("SUBMITTED");
+      setLeadError(false);
 
-      // Add confirmation message
       const confirmMsgId = messageIdRef.current++;
       setMessages((current) => [
         ...current,
         {
           id: confirmMsgId,
           author: "AI",
-          text: `✅ Thanks, **${leadCapture.name}**! Your project request has been submitted successfully.\n\nHere's a summary of what you shared:\n- **Service:** ${leadCapture.service}\n- **Budget:** ${leadCapture.budgetLabel}\n- **Description:** ${leadCapture.description}\n\nThe team will review your request and get back to you soon. In the meantime, feel free to ask any other questions!`,
+          text: `✅ Thanks, **${bookingData.name}**! Your project request has been submitted successfully.\n\nHere's a quick recap:\n- **Services:** ${selectedServiceNames}\n- **Budget:** ${bookingData.budgetLabel}\n- **Timeline:** ${bookingData.timelineLabel}\n- **Contact:** ${bookingData.email || bookingData.phone}\n\nOur team will review your request and get back to you soon. In the meantime, feel free to ask any other questions!`,
           time: "Now",
         },
       ]);
@@ -233,8 +389,11 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         page: window.location.pathname,
         source: "chatbot",
       });
-    } catch (err) {
-      // Add error message
+    } catch {
+      setLeadError(true);
+      setLeadSubmitting(false);
+      leadSubmittingRef.current = false;
+
       const errorMsgId = messageIdRef.current++;
       setMessages((current) => [
         ...current,
@@ -246,30 +405,114 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         },
       ]);
     } finally {
+      // Always reset submitting state — the catch block already handles error-specific UI
       setLeadSubmitting(false);
+      leadSubmittingRef.current = false;
     }
-  }, [leadCapture, leadSubmitting, leadSubmitted, messages, sessionId]);
+  }, [bookingData, selectedServiceNames, messages, sessionId, leadError]);
 
-  // ── Refs to avoid stale closures ──
-  const leadCaptureRef = useRef(leadCapture);
-  const lastAiTopicRef = useRef<string | null>(null);
-  const leadCaptureActiveRef = useRef(false);
-  const leadSubmittedRef = useRef(false);
-  const leadSubmittingRef = useRef(false);
-  const loadingRef = useRef(false);
+  // ── Back button handler ──
+  const goBack = useCallback(() => {
+    switch (bookingStep) {
+      case "BUDGET":
+        setBookingStep("SERVICES");
+        break;
+      case "TIMELINE":
+        setBookingStep("BUDGET");
+        break;
+      case "CONTACT":
+        setBookingStep("TIMELINE");
+        break;
+      case "REVIEW":
+        setBookingStep("CONTACT");
+        break;
+      default:
+        setBookingStep("NONE");
+    }
+  }, [bookingStep]);
 
-  // Keep refs in sync with state
-  leadCaptureRef.current = leadCapture;
-  lastAiTopicRef.current = lastAiTopic;
-  leadCaptureActiveRef.current = leadCaptureActive;
-  leadSubmittedRef.current = leadSubmitted;
-  leadSubmittingRef.current = leadSubmitting;
-  loadingRef.current = loading;
+  // ── Cancel booking ──
+  const cancelBooking = useCallback(() => {
+    setBookingStep("NONE");
+    setBookingData(initialBookingData);
+    setLeadSubmitted(false);
+    setLeadError(false);
+    setLeadSubmitting(false);
 
-  // ── Send message to AI API (reusable by handleSend and budget select) ──
+    const aiMsgId = messageIdRef.current++;
+    setMessages((current) => [
+      ...current,
+      {
+        id: aiMsgId,
+        author: "AI",
+        text: "No problem! Feel free to ask me anything about our services, or come back to start a project whenever you're ready.",
+        time: "Now",
+      },
+    ]);
+  }, []);
+
+  // ── Handle sending a normal chat message ──
+  async function handleSend(content: string) {
+    if (!content.trim() || loadingRef.current) return;
+
+    trackEvent({
+      eventType: "chatbot_message_sent",
+      siteSlug: siteSlugRef.current,
+      page: window.location.pathname,
+      source: "chatbot",
+    });
+
+    const userMessageId = messageIdRef.current++;
+    const userMessage = {
+      id: userMessageId,
+      author: "You",
+      text: content,
+      time: "Now",
+    };
+    setMessages((current) => [...current, userMessage]);
+    setDraft("");
+    setLoading(true);
+
+    // ── Handle quick reply shortcuts ──
+    const lower = content.toLowerCase();
+
+    if (lower === "choose a service") {
+      setDraft("");
+      startBooking();
+      setLoading(false);
+      return;
+    }
+
+    if (lower === "budget guidance") {
+      setDraft("");
+      // Send to AI for normal chat response about budgets
+      await sendToApi(
+        content,
+        "Tell me about your budget ranges and pricing options for your services.",
+        () => setLoading(false)
+      );
+      return;
+    }
+
+    if (lower.startsWith("talk to")) {
+      setDraft("");
+      // Start a light booking flow for handover
+      startBooking();
+      setLoading(false);
+      return;
+    }
+
+    // Normal chat: send to AI API
+    await sendToApi(content, content, () => setLoading(false));
+  }
+
+  // ── Send to AI API ──
   const sendToApi = useCallback(
-    async (content: string, aiMsgCallback?: () => void) => {
-      // React calls the updater synchronously, so aiMessageId is set immediately
+    async (
+      displayContent: string,
+      apiContent: string,
+      cb?: () => void
+    ) => {
       let aiMessageId: number;
       setMessages((current) => {
         aiMessageId = messageIdRef.current++;
@@ -284,7 +527,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            content,
+            content: apiContent,
             sessionId,
             siteSlug: siteSlugRef.current,
           }),
@@ -306,14 +549,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let done = false;
-        let fullAssistantText = "";
+        let fullText = "";
 
         while (!done) {
           const { value, done: d } = await reader.read();
           done = !!d;
           if (value) {
             const chunk = decoder.decode(value);
-            fullAssistantText += chunk;
+            fullText += chunk;
             const id = aiMessageId!;
             setMessages((current) =>
               current.map((m) =>
@@ -322,22 +565,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
             );
           }
         }
-
-        // After AI response, detect topic for next user message
-        if (leadCaptureActiveRef.current && !leadSubmittedRef.current) {
-          const topic = detectAiTopic(fullAssistantText);
-          setLastAiTopic(topic);
-
-          // Show budget cards if budget topic detected and no budget yet
-          if (
-            topic === "budget" &&
-            !leadCaptureRef.current.budget
-          ) {
-            setShowBudgetCards(true);
-          }
-        }
-
-        aiMsgCallback?.();
       } catch (err) {
         const id = aiMessageId!;
         setMessages((current) =>
@@ -353,192 +580,157 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
               : m
           )
         );
+      } finally {
+        cb?.();
       }
     },
     [sessionId]
   );
 
-  // ── Handle budget selection ──
-  const handleBudgetSelect = useCallback(
-    (option: BudgetOption) => {
-      // Update state and ref synchronously so sendToApi sees latest budget
-      leadCaptureRef.current = {
-        ...leadCaptureRef.current,
-        budget: option.value,
-        budgetLabel: option.label,
-      };
-      setLeadCapture((prev) => ({
-        ...prev,
-        budget: option.value,
-        budgetLabel: option.label,
-      }));
-      setShowBudgetCards(false);
+  // ── Automation: quick reply click handler ──
+  const handleQuickReply = useCallback(
+    (reply: string) => {
+      if (reply === "Choose a service") {
+        startBooking();
+        return;
+      }
 
-      const budgetMsg = `My budget range is ${option.label}`;
+      if (reply.startsWith("Talk to")) {
+        startBooking();
+        return;
+      }
 
-      // Add the budget message to the chat
-      const budgetMsgId = messageIdRef.current++;
-      setMessages((current) => [
-        ...current,
-        {
-          id: budgetMsgId,
-          author: "You",
-          text: budgetMsg,
-          time: "Now",
-        },
-      ]);
-
-      // Set loading to prevent overlapping sends, then send to AI API
-      setLoading(true);
-      sendToApi(budgetMsg, () => {
-        setLoading(false);
-      });
-
-      trackEvent({
-        eventType: "chatbot_budget_selected",
-        siteSlug: siteSlugRef.current,
-        page: window.location.pathname,
-        source: "chatbot",
-        metadata: { budget: option.value },
-      });
+      // For "Ask a question" or "Budget guidance", send to normal chat
+      handleSend(reply);
     },
-    [sendToApi]
+    [startBooking]
   );
 
-  // ── Handle sending a message ──
-  async function handleSend(content: string) {
-    if (!content.trim() || loadingRef.current) return;
-
-    trackEvent({
-      eventType: "chatbot_message_sent",
-      siteSlug: siteSlugRef.current,
-      page: window.location.pathname,
-      source: "chatbot"
-    });
-
-    // Detect buying intent to activate lead capture
-    if (!leadCaptureActiveRef.current && !leadSubmittedRef.current && hasBuyingIntent(content)) {
-      setLeadCaptureActive(true);
-    }
-
-    // Extract fields from user message if lead capture is active
-    if (leadCaptureActiveRef.current && !leadSubmittedRef.current) {
-      const extracted = extractField(content);
-      if (Object.keys(extracted).length > 0) {
-        setLeadCapture((prev) => ({ ...prev, ...extracted }));
-      }
-    }
-
-    const userMessageId = messageIdRef.current++;
-    const userMessage = {
-      id: userMessageId,
-      author: "You",
-      text: content,
-      time: "Now"
-    };
-
-    setMessages((current) => [...current, userMessage]);
-    setDraft("");
-    setLoading(true);
-
-    await sendToApi(content, () => {
-      setLoading(false);
-    });
-  }
-
-  // ── Resubmit lead if user clicks retry on error ──
-  const handleRetrySubmit = useCallback(() => {
-    // Update refs synchronously so submitLead's guard check passes
-    leadSubmittedRef.current = false;
-    leadSubmittingRef.current = false;
-    setLeadSubmitted(false);
+  // ── Retry submit ──
+  const handleRetry = useCallback(() => {
+    setLeadError(false);
     setLeadSubmitting(false);
-    submitLead();
-  }, [submitLead]);
+    submitBooking();
+  }, [submitBooking]);
 
+  // ── Effects ──
   useEffect(() => {
     if (textareaRef.current) {
-      adjustTextareaHeight(textareaRef.current);
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 168)}px`;
     }
   }, [draft, open]);
 
   useEffect(() => {
     if (!open) return;
-
     transcriptRef.current?.scrollTo({
       top: transcriptRef.current.scrollHeight,
-      behavior: "smooth"
+      behavior: "smooth",
     });
-  }, [messages, loading, open]);
+  }, [messages, loading, open, bookingStep]);
 
   useEffect(() => {
     if (!open) return;
-
     const handleOutsideClick = (event: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     };
-
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
+      if (event.key === "Escape") setOpen(false);
     };
-
     document.addEventListener("mousedown", handleOutsideClick);
     document.addEventListener("keydown", handleEscape);
-
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
+  const isInBooking = bookingStep !== "NONE" && bookingStep !== "SUBMITTED";
+
   return (
     <div className="fixed bottom-24 right-6 z-[60] flex flex-col items-end gap-3 lg:bottom-6">
       {open && (
-        <div ref={panelRef} className="flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(100vw-2rem,23rem)] flex-col overflow-hidden rounded-[26px] border border-[color:var(--primary)]/20 bg-[color:var(--background-elevated)]/95 shadow-[0_24px_70px_rgba(107,38,217,0.14)] backdrop-blur-xl lg:max-h-[min(42rem,calc(100vh-7rem))]">
+        <div
+          ref={panelRef}
+          className="flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(100vw-2rem,23rem)] flex-col overflow-hidden rounded-[26px] border border-[color:var(--primary)]/20 bg-[color:var(--background-elevated)]/95 shadow-[0_24px_70px_rgba(107,38,217,0.14)] backdrop-blur-xl lg:max-h-[min(42rem,calc(100vh-7rem))]"
+        >
+          {/* ── Header ── */}
           <div className="flex items-center justify-between gap-3 border-b border-[color:var(--primary)]/15 px-4 py-3.5">
             <div className="flex items-center gap-3">
+              {isInBooking && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft size={16} />
+                </button>
+              )}
               <div className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
                 <MessageCircle size={18} />
               </div>
               <div>
-                <p className="text-sm font-bold text-[color:var(--text-strong)]">{greeting.title}</p>
-                <p className="mt-0.5 text-xs text-[color:var(--text-muted)]">{greeting.subtitle}</p>
+                <p className="text-sm font-bold text-[color:var(--text-strong)]">
+                  {greeting.title}
+                </p>
+                <p className="mt-0.5 text-xs text-[color:var(--text-muted)]">
+                  {greeting.subtitle}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <a
-                href={emailHref[siteSlug as keyof typeof emailHref] ?? emailHref["martin-mukoya"]}
-                className="hidden rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/10 px-3 py-2 text-xs font-bold text-[color:var(--primary)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20 sm:inline-flex"
-                onClick={() => trackEvent({ eventType: "email_click", siteSlug, page: window.location.pathname, source: "chatbot_header" })}
+                href={
+                  emailHref[siteSlug] ?? emailHref["martin-mukoya"]
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary)]"
+                aria-label="Send us an email"
+                title="Email"
+                onClick={() =>
+                  trackEvent({
+                    eventType: "email_click",
+                    siteSlug,
+                    page: window.location.pathname,
+                    source: "chatbot_header",
+                  })
+                }
               >
-                Email
+                <Mail size={16} />
               </a>
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/10 px-3 py-2 text-xs font-bold text-[color:var(--primary)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20 sm:inline-flex"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary)]"
+                aria-label={`Talk to ${humanLabel} on WhatsApp`}
+                title={`Talk to ${humanLabel}`}
               >
-                {humanLabel}
+                <User size={16} />
               </a>
-              <Button
+              <button
                 type="button"
                 onClick={() => setOpen(false)}
-                variant="secondary"
-                className="h-10 w-10 rounded-full p-0 text-[color:var(--text-strong)] shadow-none hover:text-[color:var(--primary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
                 aria-label="Close chat"
+                title="Close"
               >
                 <X size={17} />
-              </Button>
+              </button>
             </div>
           </div>
 
+          {/* ── Chat Transcript ── */}
           <div className="flex min-h-0 flex-1 flex-col">
-            <div ref={transcriptRef} className="chat-transcript min-h-[13rem] flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            <div
+              ref={transcriptRef}
+              className="chat-transcript min-h-[13rem] flex-1 space-y-3 overflow-y-auto px-4 py-4"
+            >
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -549,103 +741,493 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   }
                 >
                   <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
-                    <span>{message.author === "AI" ? "Assistant" : "You"}</span>
+                    <span>
+                      {message.author === "AI" ? "Assistant" : "You"}
+                    </span>
                     <span>{message.time}</span>
                   </div>
                   {message.author === "AI" ? (
                     <div className="mt-2 text-sm leading-6">
-                      <MarkdownRenderer content={message.text} isUser={false} />
+                      <MarkdownRenderer
+                        content={message.text}
+                        isUser={false}
+                      />
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm leading-6 wrap-break-word text-[color:var(--text-strong)]">
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 break-words text-[color:var(--text-strong)]">
                       {message.text}
                     </p>
                   )}
-                  {message.id === 1 && !hasConversationStarted ? (
+
+                  {/* ═══ Quick replies on start page ═══ */}
+                  {message.id === 1 && !hasConversationStarted && bookingStep === "NONE" && (
                     <div className="mt-4 grid grid-cols-2 gap-1.5">
                       {quickReplies.map((reply) => (
                         <button
                           key={reply}
                           type="button"
-                          onClick={() => handleSend(reply)}
+                          onClick={() => handleQuickReply(reply)}
                           className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2.5 py-2 text-[10px] font-black leading-tight text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--text-strong)]"
                         >
                           {reply}
                         </button>
                       ))}
                     </div>
-                  ) : null}
+                  )}
                 </div>
               ))}
 
-              {/* ── Budget selector cards ── */}
-              {showBudgetCards && !leadSubmitted && (
+              {/* ═══ Step 1: Service Selector ═══ */}
+              {bookingStep === "SERVICES" && (
+                <div className="chat-bubble chat-bubble--assistant">
+                  <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                    <span>Choose your services</span>
+                  </div>
+                  <div className="mt-2">
+                    <ServiceSelector
+                      selected={bookingData.services}
+                      onSelect={(values) =>
+                        setBookingData((prev) => ({
+                          ...prev,
+                          services: values,
+                        }))
+                      }
+                      onCustomDetails={(details) =>
+                        setBookingData((prev) => ({
+                          ...prev,
+                          customServiceDetails: details,
+                        }))
+                      }
+                      customDetails={bookingData.customServiceDetails}
+                      disabled={leadSubmitting}
+                    />
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={cancelBooking}
+                        className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleServicesDone}
+                        disabled={
+                          bookingData.services.length === 0 ||
+                          (bookingData.services.includes("other") &&
+                            bookingData.customServiceDetails.trim().length ===
+                              0)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[color:var(--primary)]/15 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-[color:var(--primary)]/25 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                        <ArrowUpRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ═══ Step 2: Budget Selector ═══ */}
+              {bookingStep === "BUDGET" && (
                 <div className="chat-bubble chat-bubble--assistant">
                   <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
                     <span>Budget</span>
+                    <span className="text-[color:var(--text-faint)]">
+                      Optional
+                    </span>
                   </div>
                   <div className="mt-2">
                     <p className="mb-3 text-sm font-semibold text-[color:var(--text-strong)]">
-                      Select your budget range:
+                      What budget range are you considering?
                     </p>
                     <BudgetSelector
-                      selected={leadCapture.budget}
+                      selected={bookingData.budget}
                       onSelect={handleBudgetSelect}
                       disabled={leadSubmitting}
                     />
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setBookingStep("SERVICES")}
+                        className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleBudgetSelect({
+                            value: "not-specified",
+                            label: "Not specified",
+                            description: "Skip budget for now",
+                          })
+                        }
+                        className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                      >
+                        Skip
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Submit button ── */}
-              {canSubmitLead && !leadSubmitted && !leadSubmitting && !showBudgetCards && (
-                <div className="flex justify-center pt-1">
-                  <button
-                    type="button"
-                    onClick={submitLead}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[color:var(--primary)]/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-[color:var(--primary)]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
-                  >
-                    <CheckCircle size={18} />
-                    Submit my project request
-                  </button>
-                </div>
-              )}
-
-              {/* ── Submitting loader ── */}
-              {leadSubmitting && (
-                <div className="flex justify-center pt-1">
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)]/80 px-5 py-3 text-sm font-bold text-white">
-                    <Loader2 size={18} className="animate-spin" />
-                    Submitting...
+              {/* ═══ Step 3: Timeline Selector ═══ */}
+              {bookingStep === "TIMELINE" && (
+                <div className="chat-bubble chat-bubble--assistant">
+                  <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                    <span>Timeline</span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="mb-3 text-sm font-semibold text-[color:var(--text-strong)]">
+                      When would you like to get started?
+                    </p>
+                    <TimelineSelector
+                      selected={bookingData.timeline}
+                      onSelect={handleTimelineSelect}
+                      disabled={leadSubmitting}
+                    />
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setBookingStep("BUDGET")}
+                        className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                      >
+                        Back
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Retry on error ── */}
-              {leadSubmitted && messages[messages.length - 1]?.text.includes("could not save") && (
-                <div className="flex justify-center pt-1">
-                  <button
-                    type="button"
-                    onClick={handleRetrySubmit}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--destructive)] px-5 py-3 text-sm font-bold text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10"
-                  >
-                    Try again
-                  </button>
+              {/* ═══ Step 4: Contact Form ═══ */}
+              {bookingStep === "CONTACT" && (
+                <div className="chat-bubble chat-bubble--assistant">
+                  <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                    <span>Your details</span>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {/* Name */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Name <span className="text-[color:var(--primary)]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={bookingData.name}
+                        onChange={(e) =>
+                          setBookingData((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="Your name"
+                        className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] transition focus:border-[color:var(--primary)]/50 focus:shadow-[0_0_0_4px_rgba(107,38,217,0.10)] focus:outline-none placeholder:text-[color:var(--text-faint)]"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Email{" "}
+                        <span className="text-[color:var(--text-faint)]">
+                          (or phone/WhatsApp)
+                        </span>
+                      </label>
+                      <input
+                        type="email"
+                        value={bookingData.email}
+                        onChange={(e) =>
+                          setBookingData((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
+                        placeholder="your@email.com"
+                        className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] transition focus:border-[color:var(--primary)]/50 focus:shadow-[0_0_0_4px_rgba(107,38,217,0.10)] focus:outline-none placeholder:text-[color:var(--text-faint)]"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Phone / WhatsApp
+                      </label>
+                      <input
+                        type="tel"
+                        value={bookingData.phone}
+                        onChange={(e) =>
+                          setBookingData((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
+                        placeholder="+264 81 234 5678"
+                        className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] transition focus:border-[color:var(--primary)]/50 focus:shadow-[0_0_0_4px_rgba(107,38,217,0.10)] focus:outline-none placeholder:text-[color:var(--text-faint)]"
+                      />
+                    </div>
+
+                    {/* Preferred contact */}
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Preferred contact method
+                      </label>
+                      <div className="flex gap-2">
+                        {(["EMAIL", "PHONE", "WHATSAPP"] as const).map(
+                          (method) => (
+                            <button
+                              key={method}
+                              type="button"
+                              onClick={() =>
+                                setBookingData((prev) => ({
+                                  ...prev,
+                                  preferredContact: method,
+                                }))
+                              }
+                              className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                                bookingData.preferredContact === method
+                                  ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-[color:var(--primary)]"
+                                  : "border-[color:var(--border-subtle)] text-[color:var(--text-muted)] hover:border-[color:var(--primary)]/30"
+                              }`}
+                            >
+                              {method === "EMAIL"
+                                ? "Email"
+                                : method === "PHONE"
+                                  ? "Phone"
+                                  : "WhatsApp"}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Company */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Company / Organisation{" "}
+                        <span className="text-[color:var(--text-faint)]">
+                          (optional)
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={bookingData.company}
+                        onChange={(e) =>
+                          setBookingData((prev) => ({
+                            ...prev,
+                            company: e.target.value,
+                          }))
+                        }
+                        placeholder="Your company"
+                        className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] transition focus:border-[color:var(--primary)]/50 focus:shadow-[0_0_0_4px_rgba(107,38,217,0.10)] focus:outline-none placeholder:text-[color:var(--text-faint)]"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-[color:var(--text-muted)]">
+                        Project description{" "}
+                        <span className="text-[color:var(--primary)]">*</span>
+                      </label>
+                      <textarea
+                        value={bookingData.description}
+                        onChange={(e) =>
+                          setBookingData((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="Briefly describe what you want to build..."
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] transition focus:border-[color:var(--primary)]/50 focus:shadow-[0_0_0_4px_rgba(107,38,217,0.10)] focus:outline-none placeholder:text-[color:var(--text-faint)]"
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setBookingStep("TIMELINE")}
+                        className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleContactDone}
+                        disabled={
+                          !bookingData.name.trim() ||
+                          (!bookingData.email.trim() &&
+                            !bookingData.phone.trim()) ||
+                          !bookingData.description.trim()
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[color:var(--primary)]/15 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-[color:var(--primary)]/25 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Review
+                        <ArrowUpRight size={13} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {loading ? (
+              {/* ═══ Step 5: Review & Submit ═══ */}
+              {bookingStep === "REVIEW" && (
+                <div className="chat-bubble chat-bubble--assistant">
+                  <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                    <span>Review your request</span>
+                  </div>
+                  <div className="mt-2 space-y-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-[color:var(--text-faint)]">
+                        Services
+                      </span>
+                      <span className="font-bold text-right text-[color:var(--text-strong)]">
+                        {selectedServiceNames}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[color:var(--text-faint)]">
+                        Budget
+                      </span>
+                      <span className="font-bold text-right text-[color:var(--text-strong)]">
+                        {bookingData.budgetLabel || "Not specified"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[color:var(--text-faint)]">
+                        Timeline
+                      </span>
+                      <span className="font-bold text-right text-[color:var(--text-strong)]">
+                        {bookingData.timelineLabel}
+                      </span>
+                    </div>
+                    <div className="border-t border-[color:var(--border-subtle)] pt-2">
+                      <span className="text-[color:var(--text-faint)]">
+                        Name
+                      </span>
+                      <span className="ml-2 font-bold text-[color:var(--text-strong)]">
+                        {bookingData.name}
+                      </span>
+                    </div>
+                    {(bookingData.email || bookingData.phone) && (
+                      <div>
+                        <span className="text-[color:var(--text-faint)]">
+                          Contact
+                        </span>
+                        <span className="ml-2 text-[color:var(--text-strong)]">
+                          {bookingData.email || bookingData.phone}
+                          {bookingData.preferredContact && (
+                            <span className="ml-1 text-[10px] text-[color:var(--text-faint)]">
+                              via {bookingData.preferredContact.toLowerCase()}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {bookingData.company && (
+                      <div>
+                        <span className="text-[color:var(--text-faint)]">
+                          Company
+                        </span>
+                        <span className="ml-2 text-[color:var(--text-strong)]">
+                          {bookingData.company}
+                        </span>
+                      </div>
+                    )}
+                    <div className="border-t border-[color:var(--border-subtle)] pt-2">
+                      <span className="text-[color:var(--text-faint)]">
+                        Project
+                      </span>
+                      <p className="mt-0.5 text-xs leading-5 text-[color:var(--text-strong)]">
+                        {bookingData.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setBookingStep("CONTACT")}
+                      className="text-xs font-medium text-[color:var(--text-faint)] transition hover:text-[color:var(--text-muted)]"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={submitBooking}
+                      disabled={leadSubmitting}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[color:var(--primary)]/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-[color:var(--primary)]/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {leadSubmitting ? (
+                        <>
+                          <svg
+                            className="h-4 w-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                          </svg>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={18} />
+                          Submit my project request
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Retry on error */}
+                  {leadError && (
+                    <div className="mt-2 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={handleRetry}
+                        className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--destructive)] px-5 py-3 text-sm font-bold text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Typing indicator ── */}
+              {loading && (
                 <div className="chat-bubble chat-bubble--assistant chat-bubble--typing">
                   <span className="flex items-center gap-2">
                     <span className="typing-dot" />
-                    <span className="typing-dot" style={{ animationDelay: "120ms" }} />
-                    <span className="typing-dot" style={{ animationDelay: "240ms" }} />
+                    <span
+                      className="typing-dot"
+                      style={{ animationDelay: "120ms" }}
+                    />
+                    <span
+                      className="typing-dot"
+                      style={{ animationDelay: "240ms" }}
+                    />
                   </span>
-                  <span className="text-sm lowercase text-[color:var(--text-muted)]">typing</span>
+                  <span className="ml-1 text-sm lowercase text-[color:var(--text-muted)]">
+                    typing
+                  </span>
                 </div>
-              ) : null}
+              )}
             </div>
 
+            {/* ── Input area ── */}
             <div className="rounded-b-[26px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-4">
               <div>
                 <div className="chat-composer-shell flex min-w-0 items-end gap-2 rounded-[18px] border border-transparent bg-[color:var(--surface-soft)] px-3 py-2 transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[color:var(--primary)]/35 focus-within:shadow-[0_0_0_4px_rgba(107,38,217,0.10)]">
@@ -654,7 +1236,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     value={draft}
                     onChange={(event) => {
                       setDraft(event.target.value);
-                      adjustTextareaHeight(event.target);
+                      event.target.style.height = "auto";
+                      event.target.style.height = `${Math.min(event.target.scrollHeight, 168)}px`;
                     }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
@@ -662,15 +1245,30 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                         handleSend(draft);
                       }
                     }}
-                    placeholder="Ask about scope, budget, or timeline"
+                    placeholder={
+                      isInBooking
+                        ? "Type a message or skip..."
+                        : "Ask about scope, budget, or timeline"
+                    }
                     rows={1}
                     className="chat-composer-textarea max-h-[10.5rem] min-h-[2.75rem] min-w-0 flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent py-3 text-sm leading-6 text-[color:var(--text-strong)] shadow-none outline-none ring-0 focus:border-transparent focus:shadow-none focus:outline-none focus:ring-0 focus:ring-transparent focus-visible:border-transparent focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-transparent placeholder:text-[color:var(--text-faint)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   />
-                  <Button type="button" onClick={() => handleSend(draft)} className="h-10 w-10 rounded-full p-0 text-sm" disabled={loading || !draft.trim()} aria-label="Send message">
+                  <button
+                    type="button"
+                    onClick={() => handleSend(draft)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface)] hover:text-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-30"
+                    disabled={loading || !draft.trim()}
+                    aria-label="Send message"
+                  >
                     <Send size={16} />
-                  </Button>
+                  </button>
                 </div>
-                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden">
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden"
+                >
                   Talk to {humanLabel} <ArrowUpRight size={13} />
                 </a>
               </div>
@@ -679,26 +1277,31 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         </div>
       )}
 
-      <Button
+      {/* ── Launcher button ── */}
+      <button
         type="button"
-        onClick={() => setOpen((current) => {
-          const next = !current;
-          if (next) {
-            trackEvent({
-              eventType: "chatbot_opened",
-              siteSlug,
-              page: window.location.pathname,
-              source: "chatbot_launcher"
-            });
-          }
-          return next;
-        })}
+        onClick={() =>
+          setOpen((current) => {
+            const next = !current;
+            if (next) {
+              trackEvent({
+                eventType: "chatbot_opened",
+                siteSlug,
+                page: window.location.pathname,
+                source: "chatbot_launcher",
+              });
+            }
+            return next;
+          })
+        }
         className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--primary)] text-white shadow-[0_18px_40px_rgba(107,38,217,0.24)] transition duration-200 hover:scale-[1.02]"
         aria-label={open ? "Close chat" : "Open chat"}
       >
         <MessageCircle size={24} />
-        <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border border-white/20 bg-white text-[10px] font-bold text-[color:var(--primary)]">AI</span>
-      </Button>
+        <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border border-white/20 bg-white text-[10px] font-bold text-[color:var(--primary)]">
+          AI
+        </span>
+      </button>
     </div>
   );
 }

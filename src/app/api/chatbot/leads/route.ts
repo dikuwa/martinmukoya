@@ -22,6 +22,9 @@ const chatbotLeadSchema = z.object({
   businessName: z.string().trim().optional().or(z.literal("")),
   conversationSummary: z.string().trim().optional().or(z.literal("")),
   sessionId: z.string().trim().optional(),
+  services: z.array(z.string()).optional(),
+  customServiceDetails: z.string().trim().optional().or(z.literal("")),
+  timelineFlexible: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -65,16 +68,48 @@ export async function POST(request: Request) {
     const serviceType = inferServiceType(parsed.service);
 
     // Build a human-readable project goal from the collected fields
+    const servicesFormatted =
+      parsed.services && parsed.services.length > 0
+        ? parsed.services
+            .map((s: string) => {
+              const labels: Record<string, string> = {
+                "web-applications": "Web Applications",
+                "booking-systems": "Booking Systems",
+                ecommerce: "E-commerce",
+                "ai-automations": "AI Automations",
+                other: "Other",
+              };
+              return labels[s] ?? s;
+            })
+            .join(", ")
+        : parsed.service;
+
     const projectGoal = [
-      `Service: ${parsed.service}`,
+      `Services: ${servicesFormatted}`,
+      parsed.customServiceDetails
+        ? `Custom: ${parsed.customServiceDetails}`
+        : null,
       parsed.budgetLabel ? `Budget: ${parsed.budgetLabel}` : null,
       parsed.timeline ? `Timeline: ${parsed.timeline}` : null,
+      parsed.timelineFlexible ? "(flexible)" : null,
     ]
       .filter(Boolean)
       .join(". ");
 
     // Use email as placeholder if only phone was provided
     const email = parsed.email || `chatbot-${Date.now()}@lead.local`;
+
+    // Build internal notes: include custom service details + conversation summary
+    const notesParts: string[] = [];
+    if (parsed.customServiceDetails) {
+      notesParts.push(`Custom service details: ${parsed.customServiceDetails}`);
+    }
+    if (parsed.timelineFlexible) {
+      notesParts.push("Timeline: flexible");
+    }
+    if (parsed.conversationSummary) {
+      notesParts.push(`Conversation summary: ${parsed.conversationSummary}`);
+    }
 
     // Insert the lead
     const lead = await db.lead.create({
@@ -85,16 +120,14 @@ export async function POST(request: Request) {
         phone: parsed.phone || null,
         company: parsed.businessName || null,
         serviceType,
-        budgetRange: parsed.budget || parsed.budgetLabel || null,
+        budgetRange: parsed.budgetLabel || parsed.budget || null,
         timeline: parsed.timeline || null,
         projectGoal: projectGoal.slice(0, 300),
         message: parsed.description,
         source: "chatbot",
         preferredContact: parsed.preferredContact,
         status: "NEW",
-        internalNotes: parsed.conversationSummary
-          ? `Conversation summary: ${parsed.conversationSummary}`
-          : null,
+        internalNotes: notesParts.length > 0 ? notesParts.join("\n") : null,
       },
     });
 
@@ -118,12 +151,28 @@ export async function POST(request: Request) {
     await invalidateTag(tags.dashboard);
 
     // Create notification
+    const servicesLabel =
+      parsed.services && parsed.services.length > 0
+        ? parsed.services
+            .map((s: string) => {
+              const labels: Record<string, string> = {
+                "web-applications": "Web Applications",
+                "booking-systems": "Booking Systems",
+                ecommerce: "E-commerce",
+                "ai-automations": "AI Automations",
+                other: "Other",
+              };
+              return labels[s] ?? s;
+            })
+            .join(", ")
+        : parsed.service;
+
     await createNotification({
       siteId: site?.id ?? null,
       type: "lead",
       sourceId: lead.id,
       title: parsed.name,
-      detail: `Chatbot lead — ${parsed.service}${parsed.budgetLabel ? `, ${parsed.budgetLabel}` : ""}`,
+      detail: `Chatbot lead — ${servicesLabel}${parsed.budgetLabel ? `, ${parsed.budgetLabel}` : ""}`,
       href: `/admin/leads/${lead.id}`,
       createdAt: lead.createdAt,
     });
