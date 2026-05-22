@@ -84,6 +84,7 @@ model Site {
   chatSessions    ChatSession[]
   analyticsEvents AnalyticsEvent[]
   settings        SiteSetting[]
+  notifications   Notification[]
 
   @@index([slug])
   @@index([primaryDomain])
@@ -309,6 +310,23 @@ model ChatMessage {
   session   ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  siteId    String?
+  type      String    // "lead" | "message" | "chat"
+  sourceId  String    // ID of the source record
+  title     String
+  detail    String
+  href      String
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  site      Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  @@unique([type, sourceId])
+  @@index([siteId, read, createdAt])
 }
 
 model AnalyticsEvent {

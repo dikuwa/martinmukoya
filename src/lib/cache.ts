@@ -12,7 +12,8 @@ export const tags = {
   chatSessions: "chat-sessions",
   analytics: "analytics",
   settings: "settings",
-  dashboard: "dashboard"
+  dashboard: "dashboard",
+  notifications: "notifications"
 } as const;
 
 export function getRedis() {

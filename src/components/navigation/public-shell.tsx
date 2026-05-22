@@ -145,16 +145,16 @@ function PrimaryNav({ site }: { site: PublicSiteConfig }) {
         : "border-[color:var(--border-subtle)] bg-[color:var(--background)]/82"
     )}>
       <Container className="flex h-[72px] items-center justify-between gap-6">
-        <Link href="/" className={cn("flex items-center gap-3 font-display font-black", isFlexTech ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-strong)]")}>              <span className="relative block h-16 w-16 overflow-hidden rounded-full md:h-20 md:w-20">
+        <Link href="/" className={cn("flex items-center gap-3 font-display font-black", isFlexTech ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-strong)]")}>              <span className="relative block h-11 w-11 overflow-hidden rounded-full md:h-12 md:w-12">
                 {isFlexTech ? (
                   <>
-                    <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain" sizes="(max-width: 768px) 48px, 56px" priority />
-                    <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain" sizes="(max-width: 768px) 48px, 56px" priority />
+                    <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain" sizes="(max-width: 768px) 44px, 48px" priority />
+                    <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain" sizes="(max-width: 768px) 44px, 48px" priority />
                   </>
                 ) : (
                   <>
-                    <Image src="/assets/logos/logo-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain opacity-80 brightness-90 scale-[1.42] translate-y-[18%]" sizes="(max-width: 768px) 48px, 56px" priority />
-                    <Image src="/assets/logos/logo-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain scale-[1.42] translate-y-[18%]" sizes="(max-width: 768px) 48px, 56px" priority />
+                    <Image src="/assets/logos/logo-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain opacity-80 brightness-90" sizes="(max-width: 768px) 44px, 48px" priority />
+                    <Image src="/assets/logos/logo-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain" sizes="(max-width: 768px) 44px, 48px" priority />
                   </>
                 )}
               </span>
