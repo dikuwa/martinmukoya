@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { PageHeader } from "@/components/ui/page-header";
+import type { ReactNode } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { StatusPill } from "@/components/admin/status-pill";
-import { ArrowUpRight, BarChart3, MessageCircle, MousePointerClick, Newspaper, Rocket, UsersRound } from "lucide-react";
+import { ArrowUpRight, BarChart3, Inbox, LayoutDashboard, MessageCircle, MousePointerClick, Newspaper, Rocket, UsersRound } from "lucide-react";
 
 type RecentItem = {
   title: string;
@@ -14,16 +14,21 @@ type RecentItem = {
   tone?: "neutral" | "success" | "warning" | "accent";
 };
 
-function RecentPanel({ title, items, empty }: { title: string; items: RecentItem[]; empty: string }) {
+function RecentPanel({ title, icon, items, empty }: { title: string; icon: ReactNode; items: RecentItem[]; empty: string }) {
   return (
-    <section className="rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)]">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">{title}</h2>
-        <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[color:var(--text-faint)]">{items.length} recent</span>
+    <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
+          {icon}
+        </div>
+        <div>
+          <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">{title}</h2>
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[color:var(--text-faint)]">{items.length} recent</p>
+        </div>
       </div>
-      <div className="mt-4 divide-y divide-[color:var(--border-subtle)] overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)]">
+      <div className="divide-y divide-[color:var(--border-subtle)] overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)]">
         {items.length === 0 ? (
-          <p className="bg-[color:var(--surface)] p-4 text-sm text-[color:var(--text-muted)]">
+          <p className="bg-[color:var(--surface)] p-4 text-sm leading-6 text-[color:var(--text-muted)]">
             {empty}
           </p>
         ) : (
@@ -99,24 +104,48 @@ export default async function AdminPage() {
 
   return (
     <div className="grid gap-8">
-      <PageHeader
-        eyebrow="Admin overview"
-        title="Portfolio operations"
-        description="Manage content, leads, analytics signals, chat handovers, and site settings from one protected workspace."
-        actions={
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-5 border-b border-[color:var(--border-subtle)] pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-3xl">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.12)] text-[color:var(--primary)]">
+              <LayoutDashboard size={15} />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--text-faint)]">
+              Admin overview
+            </span>
+          </div>
+          <h1 className="text-balance font-display text-3xl font-black tracking-normal text-[color:var(--text-strong)] md:text-5xl">
+            Portfolio operations
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-[color:var(--text-muted)]">
+            Manage content, leads, analytics signals, chat handovers, and site settings from one protected workspace.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           <Button asChild>
             <Link href="/admin/projects/new">New Project</Link>
           </Button>
-        }
-      />
-      <section className="rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)]">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">Snapshot</h2>
-            <p className="mt-1 text-sm text-[color:var(--text-muted)]">Key signals for content, leads, and conversion intent.</p>
+        </div>
+      </div>
+
+      {/* ── Snapshot section ── */}
+      <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
+              <BarChart3 size={14} className="text-[color:var(--primary)]" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">Snapshot</h2>
+              <p className="text-xs leading-5 text-[color:var(--text-muted)]">Key signals for content, leads, and conversion intent.</p>
+            </div>
           </div>
-          <Button asChild size="sm" variant="secondary">
-            <Link href="/admin/analytics">View analytics</Link>
+          <Button asChild size="sm" variant="secondary" className="rounded-[10px]">
+            <Link href="/admin/analytics">
+              <BarChart3 size={14} />
+              View analytics
+            </Link>
           </Button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
@@ -129,10 +158,27 @@ export default async function AdminPage() {
           <StatCard label="Conversion" value={conversionRate} detail="Leads / CTA" visual={<BarChart3 size={18} />} />
         </div>
       </section>
+
+      {/* ── Recent panels ── */}
       <div className="grid gap-5 xl:grid-cols-3">
-        <RecentPanel title="Recent leads" items={leadItems} empty="No leads have arrived yet." />
-        <RecentPanel title="Recent messages" items={messageItems} empty="No contact messages have arrived yet." />
-        <RecentPanel title="Recent chat sessions" items={chatItems} empty="No AI chat sessions have been recorded yet." />
+        <RecentPanel
+          title="Recent leads"
+          icon={<UsersRound size={14} className="text-[color:var(--primary)]" />}
+          items={leadItems}
+          empty="No leads have arrived yet."
+        />
+        <RecentPanel
+          title="Recent messages"
+          icon={<Inbox size={14} className="text-[color:var(--primary)]" />}
+          items={messageItems}
+          empty="No contact messages have arrived yet."
+        />
+        <RecentPanel
+          title="Recent chat sessions"
+          icon={<MessageCircle size={14} className="text-[color:var(--primary)]" />}
+          items={chatItems}
+          empty="No AI chat sessions have been recorded yet."
+        />
       </div>
     </div>
   );
