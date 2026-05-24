@@ -5,6 +5,7 @@ import { Container, Section } from "@/components/ui/container";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import type { Metadata } from "next";
+import { webPageSchema } from "@/lib/schema";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -15,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageTitle,
     description: site.pages.startProject.metadataDescription,
+    alternates: { canonical: "/start-project" },
     openGraph: {
       title: `${pageTitle} | ${site.brandName}`,
       description: site.pages.startProject.metadataDescription,
@@ -33,8 +35,20 @@ export default async function StartProjectPage() {
   const site = getPublicSiteConfig(currentSite?.slug);
   const page = site.pages.startProject;
 
+  const breadcrumbSchema = webPageSchema({
+    name: (page.eyebrow) + " | " + site.brandName,
+    description: page.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Start Project", url: "/start-project" }
+    ],
+    url: "/start-project"
+  });
+
   return (
-    <Section className="relative overflow-hidden bg-[color:var(--background-elevated)] pb-12 pt-12 lg:pb-16 lg:pt-16">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <Section className="relative overflow-hidden bg-[color:var(--background-elevated)] pb-12 pt-12 lg:pb-16 lg:pt-16">
       <Container>
         <Reveal className="mx-auto max-w-5xl text-center">
           <Badge>{page.eyebrow}</Badge>
@@ -50,5 +64,6 @@ export default async function StartProjectPage() {
         </Reveal>
       </Container>
     </Section>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { webPageSchema } from "@/lib/schema";
 import { Reveal } from "@/components/public/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,9 +77,21 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     keywords: project.techStack.join(", ")
   };
 
+  const breadcrumbSchema = webPageSchema({
+    name: `${project.title} | ${site.brandName}`,
+    description: project.summary,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Projects", url: "/projects" },
+      { name: project.title, url: `/projects/${project.slug}` }
+    ],
+    url: `/projects/${project.slug}`
+  });
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Section className="pb-12">
         <Container>
           <Reveal>
@@ -145,7 +158,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           <Reveal className="grid gap-4 sm:grid-cols-2">
             {project.gallery.map((image, index) => (
               <div key={`${project.slug}-gallery-${image}-${index}`} className="relative aspect-[16/10] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
-                <Image src={image} alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+                <Image src={image} alt={`${project.title} project screenshot ${index + 1}`} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
               </div>
             ))}
           </Reveal>

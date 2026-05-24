@@ -13,6 +13,8 @@ import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
 import { mergeSiteOverrides } from "@/lib/site-overrides";
+import { breadcrumbSchema } from "@/lib/schema";
+import { absoluteUrl, siteUrl } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target, Zap } from "lucide-react";
@@ -29,9 +31,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: pageTitle,
     description: site.home.heroDescription,
+    alternates: { canonical: "/" },
     openGraph: {
       title: `${pageTitle} | ${site.brandName}`,
       description: site.home.heroDescription,
+      url: "/",
       images: [site.home.heroImage]
     },
     twitter: {
@@ -52,8 +56,53 @@ export default async function HomePage() {
   const featuredProjects = content.featuredProjects;
   const testimonials = content.testimonials;
 
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": site.slug === "flextech-media" ? "Organization" : "Person",
+    "@id": `${siteUrl}/#${site.slug === "flextech-media" ? "organization" : "person"}`,
+    name: site.brandName,
+    url: siteUrl,
+    ...(site.slug === "flextech-media"
+      ? {
+          foundingDate: "2024",
+          description: home.heroDescription,
+          contactPoint: {
+            "@type": "ContactPoint",
+            email: site.contact.email,
+            telephone: site.contact.phone,
+            contactType: "sales"
+          },
+          sameAs: [
+            site.contact.facebook,
+            site.contact.github
+          ].filter(Boolean)
+        }
+      : {
+          email: site.contact.email,
+          telephone: site.contact.phone,
+          jobTitle: "Business Systems Developer",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Windhoek",
+            addressCountry: "NA"
+          },
+          image: site.home.heroImage ? absoluteUrl(site.home.heroImage) : undefined,
+          sameAs: [
+            site.contact.github,
+            site.contact.linkedin,
+            site.contact.facebook
+          ].filter(Boolean)
+        })
+  };
+
+  const homeBreadcrumb = breadcrumbSchema([
+    { name: "Home", url: "/" }
+  ]);
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeBreadcrumb) }} />
       <Section className={cn("motion-hero-stage relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20", site.slug === "flextech-media" ? "bg-[color:var(--background)]" : "") }>
         {site.slug !== "flextech-media" && (
           <Image

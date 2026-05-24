@@ -10,6 +10,7 @@ import { getCurrentSite } from "@/lib/sites";
 import { ArrowRight, Bot, CalendarCheck, MessageCircle, MonitorCog } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
+import { webPageSchema } from "@/lib/schema";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -18,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "About",
     description: site.pages.about.metadataDescription,
+    alternates: { canonical: "/about" },
     openGraph: {
       title: `About | ${site.brandName}`,
       description: site.pages.about.metadataDescription,
@@ -41,8 +43,19 @@ export default async function AboutPage() {
     return <FlexTechAboutPage />;
   }
 
+  const breadcrumbSchema = webPageSchema({
+    name: "About | " + site.brandName,
+    description: site.pages.about.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "About", url: "/about" }
+    ],
+    url: "/about"
+  });
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {/* ─── 1. HERO ─── */}
       <Section className="relative overflow-hidden pb-12 pt-14 lg:pb-20 lg:pt-20">
         {/* Subtle map background */}

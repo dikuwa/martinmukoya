@@ -8,6 +8,7 @@ import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
+import { webPageSchema } from "@/lib/schema";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Contact",
     description: site.pages.contact.metadataDescription,
+    alternates: { canonical: "/contact" },
     openGraph: {
       title: `Contact | ${site.brandName}`,
       description: site.pages.contact.metadataDescription,
@@ -35,8 +37,20 @@ export default async function ContactPage() {
   const contact = site.contact;
   const page = site.pages.contact;
 
+  const breadcrumbSchema = webPageSchema({
+    name: "Contact | " + site.brandName,
+    description: page.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Contact", url: "/contact" }
+    ],
+    url: "/contact"
+  });
+
   return (
-    <Section>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <Section>
       <Container className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
         <Reveal>
           <SectionHeading
@@ -62,6 +76,7 @@ export default async function ContactPage() {
         </Reveal>
       </Container>
     </Section>
+    </>
   );
 }
 

@@ -1,3 +1,4 @@
+import { webPageSchema } from "@/lib/schema";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,6 +43,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
       url: `/blog/${post.slug}`,
       type: "article",
       publishedTime: post.publishedAt,
+      authors: [site.brandName],
       images: [post.coverImage]
     },
     twitter: {
@@ -78,9 +80,21 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
     mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`)
   };
 
+  const breadcrumbSchema = webPageSchema({
+    name: `${post.title} | ${site.brandName}`,
+    description: post.excerpt,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Blog", url: "/blog" },
+      { name: post.title, url: `/blog/${post.slug}` }
+    ],
+    url: `/blog/${post.slug}`
+  });
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Section className="pb-12">
         <Container className="max-w-4xl">
           <Reveal>
@@ -96,7 +110,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
         </Container>
         <Container className="mt-10">
           <Reveal className="relative aspect-[16/8] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
-            <Image src={post.coverImage} alt="" fill priority className="object-cover" sizes="100vw" />
+            <Image src={post.coverImage} alt={post.title + " — cover image"} fill priority className="object-cover" sizes="100vw" />
           </Reveal>
         </Container>
       </Section>

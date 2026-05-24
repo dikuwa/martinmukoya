@@ -6,6 +6,7 @@ import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
+import { webPageSchema } from "@/lib/schema";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Blog",
     description: site.pages.blog.metadataDescription,
+    alternates: { canonical: "/blog" },
     openGraph: {
       title: `Blog | ${site.brandName}`,
       description: site.pages.blog.metadataDescription,
@@ -35,8 +37,19 @@ export default async function BlogPage() {
   const page = site.pages.blog;
   const isFlexTech = site.slug === "flextech-media";
 
+  const breadcrumbSchema = webPageSchema({
+    name: "Blog | " + site.brandName,
+    description: page.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Blog", url: "/blog" }
+    ],
+    url: "/blog"
+  });
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Section className={cn("pb-10", isFlexTech && "pb-8")}>
         <Container>
           <Reveal>

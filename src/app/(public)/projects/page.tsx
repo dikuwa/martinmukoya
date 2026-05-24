@@ -5,6 +5,7 @@ import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
+import { webPageSchema } from "@/lib/schema";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Projects",
     description: site.pages.projects.metadataDescription,
+    alternates: { canonical: "/projects" },
     openGraph: {
       title: `Projects | ${site.brandName}`,
       description: site.pages.projects.metadataDescription,
@@ -33,8 +35,19 @@ export default async function ProjectsPage() {
   const content = await getPublicContent(site, currentSite?.id);
   const page = site.pages.projects;
 
+  const breadcrumbSchema = webPageSchema({
+    name: "Projects | " + site.brandName,
+    description: page.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Projects", url: "/projects" }
+    ],
+    url: "/projects"
+  });
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Section className="pb-10">
         <Container>
           <Reveal>

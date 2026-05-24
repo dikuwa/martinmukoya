@@ -5,6 +5,7 @@ import { Container, Section } from "@/components/ui/container";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
+import { serviceSchema, webPageSchema } from "@/lib/schema";
 import { ArrowRight, Bot, CalendarCheck, CheckCircle2, MonitorCog, ShoppingBag, XCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { TrackedLink } from "@/components/public/tracked-link";
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Services",
     description: site.pages.services.metadataDescription,
+    alternates: { canonical: "/services" },
     openGraph: {
       title: `Services | ${site.brandName}`,
       description: site.pages.services.metadataDescription,
@@ -35,8 +37,33 @@ export default async function ServicesPage() {
   const page = site.pages.services;
   const isFlexTech = site.slug === "flextech-media";
 
+  const breadcrumbSchema = webPageSchema({
+    name: "Services | " + site.brandName,
+    description: page.metadataDescription,
+    breadcrumbs: [
+      { name: "Home", url: "/" },
+      { name: "Services", url: "/services" }
+    ],
+    url: "/services"
+  });
+
+  const serviceSchemas = site.services.map((service) =>
+    serviceSchema({
+      name: service.title,
+      description: service.summary,
+      providerName: site.brandName,
+      providerType: isFlexTech ? "Organization" : "Person",
+      url: `/services#${service.id}`,
+      areaServed: "Namibia"
+    })
+  );
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      {serviceSchemas.map((s, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(s) }} />
+      ))}
       <Section className={cn("pb-12", isFlexTech && "pb-8")}>
         <Container>
           <Reveal>
