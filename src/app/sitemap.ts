@@ -1,14 +1,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { blogPosts, projects } from "@/lib/site-data";
-import { canonicalUrl, FLEXTECH_SITE_SLUG, PRIMARY_SITE_SLUG } from "@/lib/seo";
-
-function detectSlugFromHost(host: string | null): string {
-  const h = host?.split(":")[0]?.toLowerCase() ?? "";
-  if (h.includes(FLEXTECH_SITE_SLUG)) return FLEXTECH_SITE_SLUG;
-  if (h.includes("localhost") || h.includes("127.0.0.1")) return PRIMARY_SITE_SLUG;
-  return PRIMARY_SITE_SLUG;
-}
+import { canonicalUrl, detectSlugFromHost } from "@/lib/seo";
 
 const publicRoutes = ["/", "/projects", "/services", "/about", "/blog", "/contact", "/faq", "/start-project"];
 

@@ -42,6 +42,13 @@ export function getSiteBaseUrl(siteSlug?: string | null) {
   return siteBaseUrls[siteSlug || PRIMARY_SITE_SLUG] ?? siteUrl;
 }
 
+export function detectSlugFromHost(host: string | null): string {
+  const h = host?.split(":")[0]?.toLowerCase() ?? "";
+  if (h.includes(FLEXTECH_SITE_SLUG)) return FLEXTECH_SITE_SLUG;
+  if (h.includes("localhost") || h.includes("127.0.0.1")) return PRIMARY_SITE_SLUG;
+  return PRIMARY_SITE_SLUG;
+}
+
 export function canonicalUrl(path = "/", siteSlug?: string | null) {
   return new URL(normalizePath(path), `${getSiteBaseUrl(siteSlug)}/`).toString();
 }
