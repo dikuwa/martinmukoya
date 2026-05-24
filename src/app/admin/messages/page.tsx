@@ -7,10 +7,18 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { ContactMessageStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { Mail, MessageSquare, Globe } from "lucide-react";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; status?: string; category?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
+
+function statusTone(status: string): "neutral" | "success" | "warning" | "accent" {
+  if (status === "NEW") return "accent";
+  if (status === "REPLIED") return "success";
+  if (status === "ARCHIVED") return "warning";
+  return "neutral";
+}
 
 async function MessagesTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -47,12 +55,39 @@ async function MessagesTable({ searchParams }: PageProps) {
         }
       />
       <AdminTable items={items} empty="No messages found." editHref={(item) => `/admin/messages/${item.id}`} actionLabel="Open" columns={[
-        { header: "Sender", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.name}</p><p className="text-xs text-[color:var(--text-muted)]">{item.email}</p></div> },
-        { header: "Site", cell: (item) => item.site?.name ?? "-" },
-        { header: "Type", cell: (item) => item.inquiryType ?? "General" },
-        { header: "Message", cell: (item) => <span className="line-clamp-2 whitespace-normal">{item.message}</span> },
-        { header: "Status", cell: (item) => <StatusPill tone={item.status === "NEW" ? "accent" : "neutral"}>{item.status}</StatusPill> },
-        { header: "Reply", cell: (item) => <Button asChild size="sm" variant="secondary"><a href={`mailto:${item.email}`}>Email</a></Button> }
+        { header: "Sender", cell: (item) => (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+              {item.name.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-[color:var(--text-strong)]">{item.name}</p>
+              <p className="truncate text-xs text-[color:var(--text-muted)]">{item.email}</p>
+            </div>
+          </div>
+        )},
+        { header: "Site", cell: (item) => item.site ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+            <Globe size={12} />
+            {item.site.name}
+          </span>
+        ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+        { header: "Type", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+            <MessageSquare size={14} className="text-[color:var(--text-faint)]" />
+            {item.inquiryType ?? "General"}
+          </span>
+        )},
+        { header: "Message", cell: (item) => <span className="line-clamp-2 whitespace-normal text-sm text-[color:var(--text-muted)]">{item.message}</span> },
+        { header: "Status", cell: (item) => <StatusPill tone={statusTone(item.status)}>{item.status}</StatusPill> },
+        { header: "Reply", cell: (item) => (
+          <Button asChild size="sm" variant="secondary" className="rounded-[10px]">
+            <a href={`mailto:${item.email}`} className="inline-flex items-center gap-1.5">
+              <Mail size={13} />
+              Email
+            </a>
+          </Button>
+        )}
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/messages" />
     </>
@@ -62,7 +97,10 @@ async function MessagesTable({ searchParams }: PageProps) {
 export default function AdminMessagesPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Messages" description="Contact form submissions and direct inquiries." />
+      <PageHeader
+        title="Messages"
+        description="Contact form submissions and direct inquiries."
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <MessagesTable {...props} />
