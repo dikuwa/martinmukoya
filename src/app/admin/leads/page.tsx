@@ -7,11 +7,39 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LeadStatus, ServiceType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { Globe, Target, Wallet, MessageSquare, Building2, Mail } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; status?: string; serviceType?: string; budget?: string; source?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
+
+const statusStyles: Record<string, "accent" | "success" | "neutral" | "warning"> = {
+  NEW: "accent",
+  REVIEWING: "neutral",
+  CONTACTED: "neutral",
+  QUALIFIED: "success",
+  WON: "success",
+  LOST: "warning",
+  ARCHIVED: "warning"
+};
+
+function statusTone(status: string): "accent" | "success" | "neutral" | "warning" {
+  return statusStyles[status] ?? "neutral";
+}
+
+function serviceIcon(type: string) {
+  switch (type) {
+    case "ECOMMERCE": return <Wallet size={14} className="text-[color:var(--text-faint)]" />;
+    case "BOOKING_SYSTEM": return <MessageSquare size={14} className="text-[color:var(--text-faint)]" />;
+    case "AI_AUTOMATION": return <Target size={14} className="text-[color:var(--text-faint)]" />;
+    default: return <Building2 size={14} className="text-[color:var(--text-faint)]" />;
+  }
+}
+
+function formatServiceLabel(type: string) {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 async function LeadsTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -53,13 +81,54 @@ async function LeadsTable({ searchParams }: PageProps) {
         }
       />
       <AdminTable items={items} empty="No leads found." editHref={(item) => `/admin/leads/${item.id}`} actionLabel="Open" columns={[
-        { header: "Lead", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.name}</p><p className="text-xs text-[color:var(--text-muted)]">{item.email}</p></div> },
-        { header: "Site", cell: (item) => item.site?.name ?? "-" },
-        { header: "Service", cell: (item) => item.serviceType },
-        { header: "Budget", cell: (item) => item.budgetRange ?? "-" },
-        { header: "Status", cell: (item) => <StatusPill tone={item.status === "NEW" ? "accent" : item.status === "WON" ? "success" : "neutral"}>{item.status}</StatusPill> },
-        { header: "Source", cell: (item) => item.source },
-        { header: "Quick contact", cell: (item) => <Button asChild size="sm" variant="secondary"><Link href={`mailto:${item.email}`}>Email</Link></Button> }
+        { header: "Lead", cell: (item) => (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+              {item.name.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-[color:var(--text-strong)]">{item.name}</p>
+              <p className="truncate text-xs text-[color:var(--text-muted)]">{item.email}</p>
+              {item.company ? (
+                <p className="truncate text-xs text-[color:var(--text-faint)]">{item.company}</p>
+              ) : null}
+            </div>
+          </div>
+        )},
+        { header: "Site", cell: (item) => item.site ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+            <Globe size={12} />
+            {item.site.name}
+          </span>
+        ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+        { header: "Service", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+            {serviceIcon(item.serviceType)}
+            {formatServiceLabel(item.serviceType)}
+          </span>
+        )},
+        { header: "Budget", cell: (item) => (
+          <span className="whitespace-nowrap text-sm font-semibold text-[color:var(--text-normal)]">
+            {item.budgetRange ?? <span className="text-xs text-[color:var(--text-faint)]">—</span>}
+          </span>
+        )},
+        { header: "Status", cell: (item) => <StatusPill tone={statusTone(item.status)}>{item.status}</StatusPill> },
+        { header: "Source", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm text-[color:var(--text-muted)]">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-[5px] bg-[color:var(--surface-soft)] text-[10px] font-bold text-[color:var(--text-faint)] uppercase">
+              {item.source.charAt(0)}
+            </span>
+            {item.source}
+          </span>
+        )},
+        { header: "Quick contact", cell: (item) => (
+          <Button asChild size="sm" variant="secondary" className="rounded-[10px]">
+            <Link href={`mailto:${item.email}`} className="inline-flex items-center gap-1.5">
+              <Mail size={13} />
+              Email
+            </Link>
+          </Button>
+        )}
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/leads" />
     </>
