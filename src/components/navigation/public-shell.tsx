@@ -145,11 +145,11 @@ function PrimaryNav({ site }: { site: PublicSiteConfig }) {
         : "border-[color:var(--border-subtle)] bg-[color:var(--background)]/82"
     )}>
       <Container className="flex h-[72px] items-center justify-between gap-6">
-        <Link href="/" className={cn("flex items-center gap-3 font-display font-black", isFlexTech ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-strong)]")}>              <span className={cn("relative block overflow-hidden", isFlexTech ? "h-12 w-40 sm:w-44 md:h-14 md:w-52" : "h-11 w-11 rounded-full md:h-12 md:w-12")}>
+        <Link href="/" className={cn("flex items-center gap-3 font-display font-black", isFlexTech ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-strong)]")}>              <span className={cn("relative block overflow-hidden", isFlexTech ? "h-11 w-36 sm:w-40 md:h-12 md:w-48" : "h-11 w-11 rounded-full md:h-12 md:w-12")}>
                 {isFlexTech ? (
                   <>
-                    <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain object-left" sizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 208px" priority />
-                    <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain object-left" sizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 208px" priority />
+                    <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain object-left" sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, 192px" priority />
+                    <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain object-left" sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, 192px" priority />
                   </>
                 ) : (
                   <>
