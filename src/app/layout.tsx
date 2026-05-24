@@ -3,6 +3,7 @@ import { Inter, Inter_Tight } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { absoluteUrl, siteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -95,7 +96,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <ThemeProvider>
           <QueryProvider>
-            {children}
+            <PostHogProvider>
+              {children}
+            </PostHogProvider>
             <Toaster
               position="top-right"
               toastOptions={{
