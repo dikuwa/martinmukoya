@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
+import { mergeSiteOverrides } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target, Zap } from "lucide-react";
@@ -44,7 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await mergeSiteOverrides(getPublicSiteConfig(currentSite?.slug), currentSite?.slug);
   const home = site.home;
 
   const content = await getPublicContent(site, currentSite?.id);

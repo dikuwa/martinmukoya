@@ -287,18 +287,39 @@ async function main() {
     }))
   });
 
-  const settings: Array<{ key: string; value: Prisma.InputJsonValue }> = [
-    { key: "availability", value: { available: true, label: "Available for new projects" } },
-    { key: "contact", value: { email: "info@martinmukoya.com", phone: "+264 81 8563 005", whatsapp: "https://wa.me/264818563005", location: "Windhoek, Namibia" } },
-    { key: "socials", value: { github: "https://github.com/", linkedin: "https://linkedin.com/", facebook: "https://facebook.com/" } },
-    { key: "homepage", value: { headline: "I build practical systems that turn visitors into clients.", cta: "Start Your Project" } }
+  const siteSettings: Array<{ key: string; value: Prisma.InputJsonValue }> = [
+    { key: "contact.email", value: "info@martinmukoya.com" },
+    { key: "contact.phone", value: "+264 81 8563 005" },
+    { key: "availability", value: "Available for new projects" },
+    { key: "hero.title", value: "I build practical systems that turn visitors into clients." },
+    { key: "footer.description", value: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need cleaner leads and smoother operations." },
+    { key: "footer.copyright", value: "Built for practical business systems." }
   ];
 
-  for (const setting of settings) {
+  for (const setting of siteSettings) {
     await db.siteSetting.upsert({
       where: { siteId_key: { siteId: martinSite.id, key: setting.key } },
       update: { value: setting.value },
-      create: { ...setting, siteId: martinSite.id }
+      create: { siteId: martinSite.id, key: setting.key, value: setting.value }
+    });
+  }
+
+  // Also seed the matching settings for FlexTech Media so the admin filter works
+  const flextechSettings: Array<{ key: string; value: Prisma.InputJsonValue }> = [
+    { key: "contact.email", value: "info@flextech-media.com" },
+    { key: "contact.phone", value: "+264 81 8563 005" },
+    { key: "availability", value: "Booking new projects" },
+    { key: "hero.title", value: "I build systems that help businesses turn traffic into paying clients." },
+    { key: "footer.description", value: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need clearer leads and smoother operations." },
+    { key: "footer.company", value: "Reg. No. CC/2024/00337 · ERF 234, SILVER AVENUE, TAMARISKIA, SWAKOPMUND" },
+    { key: "footer.copyright", value: "Built for brands that move with intent." }
+  ];
+
+  for (const setting of flextechSettings) {
+    await db.siteSetting.upsert({
+      where: { siteId_key: { siteId: flextechSite.id, key: setting.key } },
+      update: { value: setting.value },
+      create: { siteId: flextechSite.id, key: setting.key, value: setting.value }
     });
   }
 
