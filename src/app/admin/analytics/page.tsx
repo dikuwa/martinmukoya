@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { Suspense } from "react";
+import { BarChart3, Globe, Monitor, MousePointerClick, TrendingUp, Users, ExternalLink, Calendar } from "lucide-react";
+import { Suspense, type ReactNode } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; status?: string; source?: string; site?: string; range?: string; page?: string }> };
 const PAGE_SIZE = 10;
@@ -27,13 +28,18 @@ function getRangeStart(range?: string) {
   return date;
 }
 
-function AnalyticsBars({ title, items }: { title: string; items: BarItem[] }) {
+function AnalyticsBarCard({ title, icon, items }: { title: string; icon: ReactNode; items: BarItem[] }) {
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
     <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
-      <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">{title}</h2>
-      <div className="mt-5 grid gap-4">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
+          {icon}
+        </div>
+        <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">{title}</h2>
+      </div>
+      <div className="grid gap-4">
         {items.length === 0 ? (
           <p className="text-sm text-[color:var(--text-muted)]">No data yet.</p>
         ) : (
@@ -44,7 +50,10 @@ function AnalyticsBars({ title, items }: { title: string; items: BarItem[] }) {
                 <span>{item.value}</span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
-                <div className="h-full rounded-full bg-[color:var(--primary)]" style={{ width: `${Math.max(6, (item.value / max) * 100)}%` }} />
+                <div
+                  className="h-full rounded-full bg-[color:var(--primary)] transition-all"
+                  style={{ width: `${Math.max(6, (item.value / max) * 100)}%` }}
+                />
               </div>
             </div>
           ))
@@ -54,17 +63,32 @@ function AnalyticsBars({ title, items }: { title: string; items: BarItem[] }) {
   );
 }
 
-function TrendBars({ items }: { items: BarItem[] }) {
+function TrendChart({ items }: { items: BarItem[] }) {
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
     <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)] xl:col-span-2">
-      <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">Conversion trend</h2>
-      <div className="mt-5 flex h-32 items-end gap-2">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
+          <TrendingUp size={14} className="text-[color:var(--primary)]" />
+        </div>
+        <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">Conversion trend</h2>
+      </div>
+      <div className="flex h-32 items-end gap-2">
         {items.map((item) => (
-          <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div className="w-full rounded-t-[8px] bg-[color:var(--primary-light)]" style={{ height: `${Math.max(8, (item.value / max) * 100)}%` }} />
-            <span className="w-full truncate text-center text-[10px] font-bold text-[color:var(--text-faint)]">{item.label}</span>
+          <div key={item.label} className="group relative flex min-w-0 flex-1 flex-col items-center gap-2">
+            <div
+              className="w-full rounded-t-[6px] bg-gradient-to-t from-[color:var(--primary)] to-[color:var(--primary-light)] transition-all hover:opacity-80"
+              style={{ height: `${Math.max(8, (item.value / max) * 100)}%` }}
+            />
+            <span className="w-full truncate text-center text-[10px] font-bold text-[color:var(--text-faint)]">
+              {item.label}
+            </span>
+            {item.value > 0 && (
+              <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-black text-[color:var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100">
+                {item.value}
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -125,14 +149,14 @@ async function AnalyticsSummary({ range, site }: { range?: string; site?: string
   });
 
   return (
-    <div className="grid gap-5 xl:grid-cols-4">
-      <AnalyticsBars title="Events" items={eventTypes.map((item) => ({ label: item.eventType, value: item._count._all }))} />
-      <AnalyticsBars title="Top pages" items={topPages.map((item) => ({ label: item.page ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBars title="Sources" items={sources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBars title="Devices" items={devices.map((item) => ({ label: item.device ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBars title="CTA performance" items={ctaSources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBars title="Lead sources" items={leadSources.map((item) => ({ label: item.source, value: item._count._all }))} />
-      <TrendBars items={trend} />
+    <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+      <AnalyticsBarCard title="Events" icon={<BarChart3 size={14} className="text-[color:var(--primary)]" />} items={eventTypes.map((item) => ({ label: item.eventType, value: item._count._all }))} />
+      <AnalyticsBarCard title="Top pages" icon={<ExternalLink size={14} className="text-[color:var(--primary)]" />} items={topPages.map((item) => ({ label: item.page ?? "Unknown", value: item._count._all }))} />
+      <AnalyticsBarCard title="Sources" icon={<Globe size={14} className="text-[color:var(--primary)]" />} items={sources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
+      <AnalyticsBarCard title="Devices" icon={<Monitor size={14} className="text-[color:var(--primary)]" />} items={devices.map((item) => ({ label: item.device ?? "Unknown", value: item._count._all }))} />
+      <AnalyticsBarCard title="CTA performance" icon={<MousePointerClick size={14} className="text-[color:var(--primary)]" />} items={ctaSources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
+      <AnalyticsBarCard title="Lead sources" icon={<Users size={14} className="text-[color:var(--primary)]" />} items={leadSources.map((item) => ({ label: item.source, value: item._count._all }))} />
+      <TrendChart items={trend} />
     </div>
   );
 }
@@ -176,12 +200,46 @@ async function AnalyticsTable({ searchParams }: PageProps) {
         }
       />
       <AdminTable items={items} empty="No events found." editHref={(item) => `/admin/analytics/${item.id}`} actionLabel="Open" columns={[
-        { header: "Event", cell: (item) => <span className="font-bold text-[color:var(--text-strong)]">{item.eventType}</span> },
-        { header: "Site", cell: (item) => item.site?.name ?? item.siteSlug ?? "-" },
-        { header: "Page", cell: (item) => item.page ?? "-" },
-        { header: "Source", cell: (item) => item.source ?? "-" },
-        { header: "Device", cell: (item) => item.device ?? "-" },
-        { header: "Time", cell: (item) => item.createdAt.toLocaleString() }
+        { header: "Event", cell: (item) => (
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(107,38,217,0.08)] text-xs font-bold text-[color:var(--primary)]">
+              {item.eventType.charAt(0).toUpperCase()}
+            </span>
+            <span className="font-bold text-[color:var(--text-strong)]">{item.eventType}</span>
+          </div>
+        ) },
+        { header: "Site", cell: (item) => item.site ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+            <Globe size={11} />
+            {item.site.name}
+          </span>
+        ) : (
+          <span className="text-xs text-[color:var(--text-faint)]">{item.siteSlug ?? "—"}</span>
+        ) },
+        { header: "Page", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+            <ExternalLink size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+            <span className="line-clamp-1">{item.page ?? "—"}</span>
+          </span>
+        ) },
+        { header: "Source", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-muted)]">
+            <Globe size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+            {item.source ?? "—"}
+          </span>
+        ) },
+        { header: "Device", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-muted)]">
+            <Monitor size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+            {item.device ?? "—"}
+          </span>
+        ) },
+        { header: "Time", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--text-muted)]">
+            <Calendar size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+            {item.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
+        ) }
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/analytics" />
     </>

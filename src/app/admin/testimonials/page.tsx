@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { Globe, Star, Plus, Quote, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; published?: string; featured?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
+
+function clientInitial(name: string) {
+  return (name ?? "T").charAt(0).toUpperCase();
+}
 
 async function TestimonialsTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -46,11 +51,49 @@ async function TestimonialsTable({ searchParams }: PageProps) {
         }
       />
       <AdminTable items={items} empty="No testimonials found." editHref={(item) => `/admin/testimonials/${item.id}/edit`} actionLabel="Edit" columns={[
-        { header: "Client", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.clientName}</p><p className="text-xs text-[color:var(--text-muted)]">{item.company}</p></div> },
-        { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
-        { header: "Quote", cell: (item) => <span className="line-clamp-2 whitespace-normal">{item.quote}</span> },
-        { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> },
-        { header: "Featured", cell: (item) => item.featured ? <StatusPill tone="accent">Featured</StatusPill> : <StatusPill>Normal</StatusPill> }
+        { header: "Client", cell: (item) => (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+              {clientInitial(item.clientName)}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-[color:var(--text-strong)]">{item.clientName}</p>
+              <p className="truncate text-xs text-[color:var(--text-muted)]">{item.company ?? "—"}</p>
+            </div>
+          </div>
+        ) },
+        { header: "Sites", cell: (item) => item.sites.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {item.sites.map((site) => (
+              <span key={site.slug} className="inline-flex items-center gap-1 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+                <Globe size={11} />
+                {site.name}
+              </span>
+            ))}
+          </div>
+        ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+        { header: "Quote", cell: (item) => (
+          <span className="inline-flex items-start gap-1.5 line-clamp-2 whitespace-normal text-sm italic leading-relaxed text-[color:var(--text-muted)]">
+            <Quote size={14} className="mt-0.5 shrink-0 rotate-180 text-[color:var(--text-faint)]" />
+            {item.quote}
+          </span>
+        ) },
+        { header: "Status", cell: (item) => (
+          <StatusPill tone={item.published ? "success" : "warning"}>
+            {item.published ? "Published" : "Draft"}
+          </StatusPill>
+        ) },
+        { header: "", cell: (item) => item.featured ? (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--accent)]">
+            <Sparkles size={14} />
+            Featured
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-faint)]">
+            <Star size={14} />
+            Standard
+          </span>
+        ), className: "w-28" }
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/testimonials" />
     </>
@@ -60,7 +103,18 @@ async function TestimonialsTable({ searchParams }: PageProps) {
 export default function AdminTestimonialsPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Testimonials" description="Manage published social proof and featured client quotes." actions={<Button asChild><Link href="/admin/testimonials/new">New Testimonial</Link></Button>} />
+      <PageHeader
+        title="Testimonials"
+        description="Manage published social proof and featured client quotes."
+        actions={
+          <Button asChild>
+            <Link href="/admin/testimonials/new">
+              <Plus size={16} />
+              New Testimonial
+            </Link>
+          </Button>
+        }
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <TestimonialsTable {...props} />

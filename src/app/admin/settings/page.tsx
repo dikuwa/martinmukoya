@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { Globe, Plus, Clock, Database } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; site?: string }> };
+
+function settingInitial(key: string) {
+  return (key ?? "S").charAt(0).toUpperCase();
+}
 
 async function SettingsTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -29,10 +34,43 @@ async function SettingsTable({ searchParams }: PageProps) {
         filters={<SelectFilter name="site" label="Site" value={params.site} options={[{ label: "All sites", value: "all" }, ...sites.map((site) => ({ label: site.name, value: site.slug }))]} />}
       />
       <AdminTable items={items} empty="No settings found." editHref={(item) => `/admin/settings/${item.id}/edit`} actionLabel="Edit" columns={[
-        { header: "Key", cell: (item) => <span className="font-bold text-[color:var(--text-strong)]">{item.key}</span> },
-        { header: "Site", cell: (item) => item.site?.name ?? "Global" },
-        { header: "Value", cell: (item) => <code className="line-clamp-2 whitespace-normal text-xs text-[color:var(--text-muted)]">{JSON.stringify(item.value)}</code> },
-        { header: "Updated", cell: (item) => item.updatedAt.toLocaleDateString() }
+        { header: "Key", cell: (item) => (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+              {settingInitial(item.key)}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-bold text-[color:var(--text-strong)]">{item.key}</p>
+              <p className="truncate text-xs text-[color:var(--text-muted)]">
+                {typeof item.value === "string" ? item.value.slice(0, 60) : JSON.stringify(item.value).slice(0, 60)}
+                {(typeof item.value === "string" ? item.value.length : JSON.stringify(item.value).length) > 60 ? "…" : ""}
+              </p>
+            </div>
+          </div>
+        ) },
+        { header: "Site", cell: (item) => item.site ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+            <Globe size={11} />
+            {item.site.name}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(107,38,217,0.06)] px-2.5 py-1 text-xs font-semibold text-[color:var(--text-faint)]">
+            <Globe size={11} />
+            Global
+          </span>
+        ) },
+        { header: "Type", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+            <Database size={14} className="shrink-0 text-[color:var(--text-faint)]" />
+            {Array.isArray(item.value) ? "Array" : typeof item.value === "object" && item.value !== null ? "Object" : typeof item.value === "boolean" ? "Boolean" : typeof item.value === "number" ? "Number" : "String"}
+          </span>
+        ) },
+        { header: "Updated", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--text-muted)]">
+            <Clock size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+            {item.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </span>
+        ) }
       ]} />
     </>
   );
@@ -41,7 +79,18 @@ async function SettingsTable({ searchParams }: PageProps) {
 export default function AdminSettingsPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Settings" description="Manage availability, contact details, social links, and homepage copy." actions={<Button asChild><Link href="/admin/settings/new">New Setting</Link></Button>} />
+      <PageHeader
+        title="Settings"
+        description="Manage availability, contact details, social links, and homepage copy."
+        actions={
+          <Button asChild>
+            <Link href="/admin/settings/new">
+              <Plus size={16} />
+              New Setting
+            </Link>
+          </Button>
+        }
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <SettingsTable {...props} />

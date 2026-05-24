@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
-import { Plus } from "lucide-react";
+import { Globe, FolderKanban, Plus, Sparkles, Eye } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -19,6 +19,10 @@ const SERVICE_OPTIONS = [
   { label: "AI Automations & Integrations", value: "AI Automations & Integrations" }
 ];
 const PAGE_SIZE = 10;
+
+function projectInitial(title: string) {
+  return (title ?? "P").charAt(0).toUpperCase();
+}
 
 async function ProjectsTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -67,11 +71,55 @@ async function ProjectsTable({ searchParams }: PageProps) {
         editHref={(item) => `/admin/projects/${item.id}/edit`}
         actionLabel="Edit"
         columns={[
-          { header: "Project", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.title}</p><p className="text-xs text-[color:var(--text-muted)]">{item.slug}</p></div> },
-          { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
-          { header: "Industry", cell: (item) => item.industry ?? "General" },
-          { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> },
-          { header: "Featured", cell: (item) => item.featured ? <StatusPill tone="accent">Featured</StatusPill> : <StatusPill>Normal</StatusPill> }
+          { header: "Project", cell: (item) => (
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+                {projectInitial(item.title)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-bold text-[color:var(--text-strong)]">{item.title}</p>
+                <p className="truncate text-xs text-[color:var(--text-muted)]">{item.slug}</p>
+                {item.industry ? <p className="truncate text-xs text-[color:var(--text-faint)]">{item.industry}</p> : null}
+              </div>
+            </div>
+          )},
+          { header: "Sites", cell: (item) => item.sites.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {item.sites.map((site) => (
+                <span key={site.slug} className="inline-flex items-center gap-1 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+                  <Globe size={11} />
+                  {site.name}
+                </span>
+              ))}
+            </div>
+          ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+          { header: "Service", cell: (item) => (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+              <FolderKanban size={14} className="shrink-0 text-[color:var(--text-faint)]" />
+              {item.services[0] ?? "General"}
+            </span>
+          )},
+          { header: "Status", cell: (item) => (
+            <StatusPill tone={item.published ? "success" : "warning"}>
+              {item.published ? "Published" : "Draft"}
+            </StatusPill>
+          )},
+          { header: "", cell: (item) => item.featured ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--accent)]">
+              <Sparkles size={14} />
+              Featured
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-faint)]">
+              <Eye size={14} />
+              Standard
+            </span>
+          ), className: "w-28" },
+          { header: "Updated", cell: (item) => (
+            <span className="whitespace-nowrap text-sm text-[color:var(--text-muted)]">
+              {item.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          )}
         ]}
       />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/projects" />

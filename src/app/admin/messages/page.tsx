@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { ContactMessageStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { stripMarkdown } from "@/lib/utils";
 import { Mail, MessageSquare, Globe } from "lucide-react";
 import { Suspense } from "react";
 
@@ -78,7 +79,7 @@ async function MessagesTable({ searchParams }: PageProps) {
             {item.inquiryType ?? "General"}
           </span>
         )},
-        { header: "Message", cell: (item) => <span className="line-clamp-2 whitespace-normal text-sm text-[color:var(--text-muted)]">{item.message}</span> },
+        { header: "Message", cell: (item) => <span className="line-clamp-2 whitespace-normal text-sm text-[color:var(--text-muted)]">{stripMarkdown(item.message)}</span> },
         { header: "Status", cell: (item) => <StatusPill tone={statusTone(item.status)}>{item.status}</StatusPill> },
         { header: "Reply", cell: (item) => (
           <Button asChild size="sm" variant="secondary" className="rounded-[10px]">

@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { Globe, FileQuestion, Plus, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; category?: string; published?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
+
+function faqInitial(question: string) {
+  return (question ?? "F").charAt(0).toUpperCase();
+}
 
 async function FaqsTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -47,10 +52,44 @@ async function FaqsTable({ searchParams }: PageProps) {
         }
       />
       <AdminTable items={items} empty="No FAQs found." editHref={(item) => `/admin/faqs/${item.id}/edit`} actionLabel="Edit" columns={[
-        { header: "Question", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.question}</p><p className="text-xs text-[color:var(--text-muted)]">{item.category}</p></div> },
-        { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
-        { header: "Answer", cell: (item) => <span className="line-clamp-2 whitespace-normal">{item.answer}</span> },
-        { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> }
+        { header: "Question", cell: (item) => (
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+              {faqInitial(item.question)}
+            </span>
+            <div className="min-w-0">
+              <p className="line-clamp-1 font-bold text-[color:var(--text-strong)]">{item.question}</p>
+              {item.category ? <p className="text-xs text-[color:var(--text-muted)]">{item.category}</p> : null}
+            </div>
+          </div>
+        ) },
+        { header: "Sites", cell: (item) => item.sites.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {item.sites.map((site) => (
+              <span key={site.slug} className="inline-flex items-center gap-1 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+                <Globe size={11} />
+                {site.name}
+              </span>
+            ))}
+          </div>
+        ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+        { header: "Answer", cell: (item) => (
+          <span className="inline-flex items-start gap-1.5 line-clamp-2 whitespace-normal text-sm text-[color:var(--text-muted)]">
+            <HelpCircle size={14} className="mt-0.5 shrink-0 text-[color:var(--text-faint)]" />
+            {item.answer}
+          </span>
+        ) },
+        { header: "Status", cell: (item) => (
+          <StatusPill tone={item.published ? "success" : "warning"}>
+            {item.published ? "Published" : "Draft"}
+          </StatusPill>
+        ) },
+        { header: "Order", cell: (item) => (
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+            <FileQuestion size={14} className="shrink-0 text-[color:var(--text-faint)]" />
+            #{item.sortOrder}
+          </span>
+        ) }
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/faqs" />
     </>
@@ -60,7 +99,18 @@ async function FaqsTable({ searchParams }: PageProps) {
 export default function AdminFaqsPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="FAQs" description="Edit pricing, process, support, hosting, AI, and ecommerce answers." actions={<Button asChild><Link href="/admin/faqs/new">New FAQ</Link></Button>} />
+      <PageHeader
+        title="FAQs"
+        description="Edit pricing, process, support, hosting, AI, and ecommerce answers."
+        actions={
+          <Button asChild>
+            <Link href="/admin/faqs/new">
+              <Plus size={16} />
+              New FAQ
+            </Link>
+          </Button>
+        }
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <FaqsTable {...props} />

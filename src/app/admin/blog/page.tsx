@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { Globe, Newspaper, Plus, Clock } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; published?: string; category?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
+
+function postInitial(title: string) {
+  return (title ?? "B").charAt(0).toUpperCase();
+}
 
 async function BlogTable({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -52,11 +57,45 @@ async function BlogTable({ searchParams }: PageProps) {
         editHref={(item) => `/admin/blog/${item.id}/edit`}
         actionLabel="Edit"
         columns={[
-          { header: "Post", cell: (item) => <div><p className="font-bold text-[color:var(--text-strong)]">{item.title}</p><p className="text-xs text-[color:var(--text-muted)]">{item.slug}</p></div> },
-          { header: "Sites", cell: (item) => item.sites.map((site) => site.name).join(", ") || "-" },
-          { header: "Category", cell: (item) => item.category ?? "Uncategorized" },
-          { header: "Status", cell: (item) => <StatusPill tone={item.published ? "success" : "warning"}>{item.published ? "Published" : "Draft"}</StatusPill> },
-          { header: "Updated", cell: (item) => item.updatedAt.toLocaleDateString() }
+          { header: "Post", cell: (item) => (
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+                {postInitial(item.title)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-bold text-[color:var(--text-strong)]">{item.title}</p>
+                <p className="truncate text-xs text-[color:var(--text-muted)]">{item.slug}</p>
+                {item.excerpt ? <p className="line-clamp-1 text-xs text-[color:var(--text-faint)]">{item.excerpt}</p> : null}
+              </div>
+            </div>
+          )},
+          { header: "Sites", cell: (item) => item.sites.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {item.sites.map((site) => (
+                <span key={site.slug} className="inline-flex items-center gap-1 rounded-full bg-[rgba(107,38,217,0.08)] px-2.5 py-1 text-xs font-semibold text-[color:var(--primary)]">
+                  <Globe size={11} />
+                  {site.name}
+                </span>
+              ))}
+            </div>
+          ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
+          { header: "Category", cell: (item) => (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
+              <Newspaper size={14} className="shrink-0 text-[color:var(--text-faint)]" />
+              {item.category ?? "Uncategorized"}
+            </span>
+          )},
+          { header: "Status", cell: (item) => (
+            <StatusPill tone={item.published ? "success" : "warning"}>
+              {item.published ? "Published" : "Draft"}
+            </StatusPill>
+          )},
+          { header: "Updated", cell: (item) => (
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--text-muted)]">
+              <Clock size={13} className="shrink-0 text-[color:var(--text-faint)]" />
+              {item.updatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          )}
         ]}
       />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/blog" />
@@ -67,7 +106,18 @@ async function BlogTable({ searchParams }: PageProps) {
 export default function AdminBlogPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Blog" description="Manage SEO posts, drafts, tags, categories, and cover images." actions={<Button asChild><Link href="/admin/blog/new">New Post</Link></Button>} />
+      <PageHeader
+        title="Blog"
+        description="Manage SEO posts, drafts, tags, categories, and cover images."
+        actions={
+          <Button asChild>
+            <Link href="/admin/blog/new">
+              <Plus size={16} />
+              New Post
+            </Link>
+          </Button>
+        }
+      />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <BlogTable {...props} />

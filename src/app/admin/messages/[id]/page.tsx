@@ -5,6 +5,7 @@ import { DeleteButton } from "@/components/admin/delete-button";
 import { StatusPill } from "@/components/admin/status-pill";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
+import { stripMarkdown } from "@/lib/utils";
 import { Calendar, Clock, Globe, Inbox, Mail, MessageSquare, MessageCircle, Phone, User, ArrowLeft, ExternalLink } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -117,7 +118,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
           {/* Message body */}
           <div className="p-5">
             <div className="rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-5">
-              <p className="whitespace-pre-wrap leading-7 text-[color:var(--text-strong)]">{message.message}</p>
+              <p className="whitespace-pre-wrap leading-7 text-[color:var(--text-strong)]">{stripMarkdown(message.message)}</p>
             </div>
           </div>
         </section>
