@@ -4,6 +4,7 @@ import { DeleteButton } from "@/components/admin/delete-button";
 import { LeadStatusForm } from "@/components/admin/simple-forms";
 import { StatusPill } from "@/components/admin/status-pill";
 import { Button } from "@/components/ui/button";
+import { stripMarkdown } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
 
@@ -49,7 +50,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
             <div><dt className="font-bold text-[color:var(--text-faint)]">Source</dt><dd>{lead.source}</dd></div>
             <div><dt className="font-bold text-[color:var(--text-faint)]">Received</dt><dd>{lead.createdAt.toLocaleString()}</dd></div>
             <div><dt className="font-bold text-[color:var(--text-faint)]">Goal</dt><dd>{lead.projectGoal}</dd></div>
-            <div><dt className="font-bold text-[color:var(--text-faint)]">Message</dt><dd className="mt-2 whitespace-pre-wrap rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4 leading-7 text-[color:var(--text-strong)]">{lead.message}</dd></div>
+            <div><dt className="font-bold text-[color:var(--text-faint)]">Message</dt><dd className="mt-2 whitespace-pre-wrap rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4 leading-7 text-[color:var(--text-strong)]">{stripMarkdown(lead.message ?? "")}</dd></div>
           </dl>
         </section>
         <aside className="grid gap-5 self-start">

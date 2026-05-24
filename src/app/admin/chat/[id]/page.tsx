@@ -5,7 +5,7 @@ import { ChatSessionStatusForm } from "@/components/admin/simple-forms";
 import { StatusPill } from "@/components/admin/status-pill";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
-import { cn } from "@/lib/utils";
+import { cn, stripMarkdown } from "@/lib/utils";
 import { Bot, MessageCircle, Clock, Calendar, MessageSquare, Globe, Hash, User, Mail, Phone, ExternalLink } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -204,7 +204,7 @@ export default async function ChatSessionDetailPage({ params }: PageProps) {
                           })}
                         </time>
                       </div>
-                      <p className="whitespace-pre-wrap text-[color:var(--text-strong)]">{message.content}</p>
+                      <p className="whitespace-pre-wrap text-[color:var(--text-strong)]">{stripMarkdown(message.content)}</p>
                     </div>
                   </article>
                 );

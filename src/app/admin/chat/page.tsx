@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
+import { stripMarkdown } from "@/lib/utils";
 import { Globe, MessageCircle, User } from "lucide-react";
 import { Suspense } from "react";
 
@@ -91,7 +92,7 @@ async function ChatTable({ searchParams }: PageProps) {
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-normal)]">
               <MessageCircle size={14} className="shrink-0 text-[color:var(--text-faint)]" />
               <span className="line-clamp-2 whitespace-normal text-sm text-[color:var(--text-muted)]">
-                {item.summary ?? item.messages[0]?.content ?? "No summary yet"}
+                {stripMarkdown(item.summary ?? item.messages[0]?.content ?? "No summary yet")}
               </span>
             </span>
           )},
