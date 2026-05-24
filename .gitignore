@@ -9,3 +9,4 @@ coverage/
 pnpm-lock.yaml
 .DS_Store
 src/generated/prisma/
+.vercel
