@@ -427,7 +427,7 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
   const router = useRouter();
   const form = useForm<z.input<typeof contactMessageUpdateSchema>>({
     resolver: zodResolver(contactMessageUpdateSchema),
-    defaultValues: { status: message.status }
+    defaultValues: { status: message.status, internalNotes: (message as ContactMessage & { internalNotes?: string | null }).internalNotes ?? "" }
   });
 
   async function onSubmit(values: z.input<typeof contactMessageUpdateSchema>) {
@@ -448,6 +448,9 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
         <AdminSelect {...form.register("status")}>
           {messageStatuses.map((status) => <AdminOption key={status} value={status}>{status}</AdminOption>)}
         </AdminSelect>
+      </Field>
+      <Field label="Internal notes">
+        <textarea {...form.register("internalNotes")} className={textareaClass} placeholder="Private follow-up notes, actions taken..." />
       </Field>
       <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Update Message"}</Button>
     </form>

@@ -87,7 +87,9 @@ export const contactMessageSchema = z.object({
   siteSlug: z.string().trim().optional()
 });
 
-export const contactMessageUpdateSchema = contactMessageSchema.partial();
+export const contactMessageUpdateSchema = contactMessageSchema.partial().extend({
+  internalNotes: z.string().trim().optional()
+});
 
 export const testimonialSchema = z.object({
   clientName: z.string().trim().min(2),

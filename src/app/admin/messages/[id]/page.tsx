@@ -124,13 +124,13 @@ export default async function MessageDetailPage({ params }: PageProps) {
 
         {/* ── Sidebar ── */}
         <aside className="grid gap-5 self-start">
-          {/* Panel 1: Status Management */}
+          {/* Panel 1: Status Management & Notes */}
           <div>
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <Inbox size={14} className="text-[color:var(--primary)]" />
               </div>
-              <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">Message Status</h2>
+              <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">Status & Notes</h2>
             </div>
             <ContactMessageStatusForm message={message} />
           </div>

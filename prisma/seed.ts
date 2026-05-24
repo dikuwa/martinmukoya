@@ -259,17 +259,49 @@ async function main() {
   });
 
   await db.contactMessage.deleteMany({});
-  await db.contactMessage.createMany({
-    data: messageSeeds.map(([name, email, inquiryType, message], index) => ({
+  const allMessages: Array<{
+    name: string;
+    siteId: string;
+    email: string;
+    phone?: string;
+    inquiryType?: string;
+    message: string;
+    sourcePage?: string;
+    status: ContactMessageStatus;
+    internalNotes?: string;
+  }> = [
+    // Martin Mukoya messages (first 7)
+    ...(messageSeeds.slice(0, 7).map(([name, email, inquiryType, message], index) => ({
       name,
       siteId: martinSite.id,
       email,
       inquiryType,
       message,
       sourcePage: index % 2 === 0 ? "/contact" : "/",
-      status: [ContactMessageStatus.NEW, ContactMessageStatus.READ, ContactMessageStatus.REPLIED][index % 3]
-    }))
-  });
+      status: [ContactMessageStatus.NEW, ContactMessageStatus.READ, ContactMessageStatus.REPLIED][index % 3],
+      internalNotes: index === 2 ? "Sent pricing guide via email. Awaiting response." : undefined
+    })) as Array<{
+      name: string;
+      siteId: string;
+      email: string;
+      inquiryType: string;
+      message: string;
+      sourcePage: string;
+      status: ContactMessageStatus;
+      internalNotes?: string;
+    }>),
+    // FlexTech Media messages
+    { name: "Winnie Nangula", siteId: flextechSite.id, email: "winnie@example.com", phone: "+264 81 234 5678", inquiryType: "Media Production", message: "We need a corporate video produced for an upcoming product launch. Can you handle scripting, filming, and post-production?", sourcePage: "/contact", status: ContactMessageStatus.NEW },
+    { name: "Hilma Kambonde", siteId: flextechSite.id, email: "hilma@example.com", inquiryType: "Web design", message: "Our current website needs a complete redesign. It's not converting visitors and looks outdated on mobile.", sourcePage: "/", status: ContactMessageStatus.NEW, internalNotes: "Potential large project. Follow up urgently." },
+    { name: "Tulonga Shipanga", siteId: flextechSite.id, email: "tulonga@example.com", phone: "+264 81 876 5432", inquiryType: "Digital strategy", message: "I'm looking for a digital marketing strategy for a new fintech startup launching in Windhoek this quarter.", sourcePage: "/services", status: ContactMessageStatus.READ },
+    { name: "Erastus Shikongo", siteId: flextechSite.id, email: "erastus@example.com", inquiryType: "Brand identity", message: "We are rebranding our logistics company and need a full brand identity package: logo, colours, typography, and stationery.", sourcePage: "/contact", status: ContactMessageStatus.REPLIED, internalNotes: "Sent brand questionnaire and mood board examples on 5 May." },
+    { name: "Ndeshi Hamunyela", siteId: flextechSite.id, email: "ndeshi@example.com", inquiryType: "Booking", message: "Do you build online booking systems for salons? I manage a team of 8 stylists and need client scheduling and payment integration.", sourcePage: "/", status: ContactMessageStatus.NEW },
+    { name: "Petrus Shilongo", siteId: flextechSite.id, email: "petrus@example.com", inquiryType: "Photography", message: "I need a product photographer for an e-commerce catalogue. Approximately 150 products, studio or on-location.", sourcePage: "/contact", status: ContactMessageStatus.NEW, internalNotes: "Sent pricing sheet. Waiting for budget confirmation." },
+    { name: "Laimi Nekwaya", siteId: flextechSite.id, email: "laimi@example.com", phone: "+264 81 345 6789", inquiryType: "Consultation", message: "I'm starting a small organic food business and need advice on website, branding, and online presence from the ground up.", sourcePage: "/start-project", status: ContactMessageStatus.READ },
+    { name: "Simon Amutenya", siteId: flextechSite.id, email: "simon@example.com", inquiryType: "E-commerce", message: "We currently sell via WhatsApp and Instagram. Looking for a proper e-commerce platform that integrates with local payment gateways.", sourcePage: "/services", status: ContactMessageStatus.NEW }
+  ];
+
+  await db.contactMessage.createMany({ data: allMessages });
 
   await db.analyticsEvent.deleteMany({});
   await db.analyticsEvent.createMany({

@@ -222,18 +222,19 @@ model Lead {
 }
 
 model ContactMessage {
-  id          String               @id @default(cuid())
-  siteId      String?
-  name        String
-  email       String
-  phone       String?
-  inquiryType String?
-  message     String
-  sourcePage  String?
-  status      ContactMessageStatus @default(NEW)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  site        Site?                @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  id            String               @id @default(cuid())
+  siteId        String?
+  name          String
+  email         String
+  phone         String?
+  inquiryType   String?
+  message       String
+  sourcePage    String?
+  status        ContactMessageStatus @default(NEW)
+  internalNotes String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  site          Site?                @relation(fields: [siteId], references: [id], onDelete: SetNull)
 
   @@index([siteId])
   @@index([status, createdAt])
