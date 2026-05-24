@@ -1,5 +1,11 @@
 import { Suspense } from "react";
 import { AuthCard } from "@/components/auth/auth-card";
+import { noIndexRobots } from "@/lib/seo";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: noIndexRobots
+};
 
 export default function SignInPage() {
   return (

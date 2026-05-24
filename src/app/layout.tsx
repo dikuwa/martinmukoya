@@ -48,6 +48,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "/"
+  },
+  robots: {
+    index: true,
+    follow: true
   }
 };
 

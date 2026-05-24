@@ -9,26 +9,25 @@ import { getCurrentSite } from "@/lib/sites";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "Contact",
     description: site.pages.contact.metadataDescription,
-    alternates: { canonical: "/contact" },
     openGraph: {
       title: `Contact | ${site.brandName}`,
-      description: site.pages.contact.metadataDescription,
-      url: "/contact"
+      description: site.pages.contact.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `Contact | ${site.brandName}`,
       description: site.pages.contact.metadataDescription
     }
-  };
+  }, "/contact", site.slug);
 }
 
 export default async function ContactPage() {

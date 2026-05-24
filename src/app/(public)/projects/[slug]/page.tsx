@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, publicSiteConfigs } from "@/lib/public-site-config";
-import { absoluteUrl, siteUrl } from "@/lib/seo";
+import { absoluteUrl, canonicalSiteForSharedContent, PRIMARY_SITE_SLUG, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
 import { ArrowUpRight, Github } from "lucide-react";
 import type { Metadata } from "next";
@@ -32,14 +32,14 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
     return { title: "Project not found" };
   }
 
-  return {
+  const isSharedWithPrimary = publicSiteConfigs[PRIMARY_SITE_SLUG].projects.some((item) => item.slug === project.slug);
+
+  return withCanonical({
     title: project.title,
     description: project.summary,
-    alternates: { canonical: `/projects/${project.slug}` },
     openGraph: {
       title: project.title,
       description: project.summary,
-      url: `/projects/${project.slug}`,
       images: [project.coverImage]
     },
     twitter: {
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
       description: project.summary,
       images: [project.coverImage]
     }
-  };
+  }, `/projects/${project.slug}`, site.slug, { canonicalSiteSlug: canonicalSiteForSharedContent(site.slug, isSharedWithPrimary) });
 }
 
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {

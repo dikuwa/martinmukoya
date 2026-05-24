@@ -14,7 +14,7 @@ import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
 import { mergeSiteOverrides } from "@/lib/site-overrides";
 import { breadcrumbSchema } from "@/lib/schema";
-import { absoluteUrl, siteUrl } from "@/lib/seo";
+import { absoluteUrl, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Facebook, Github, Handshake, Linkedin, Mail, MessageCircle, Smartphone, Target, Zap } from "lucide-react";
@@ -28,14 +28,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const pageTitle = site.slug === "flextech-media" ? "Digital Media Agency" : "Business Systems Developer";
 
-  return {
+  return withCanonical({
     title: pageTitle,
     description: site.home.heroDescription,
-    alternates: { canonical: "/" },
     openGraph: {
       title: `${pageTitle} | ${site.brandName}`,
       description: site.home.heroDescription,
-      url: "/",
       images: [site.home.heroImage]
     },
     twitter: {
@@ -44,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: site.home.heroDescription,
       images: [site.home.heroImage]
     }
-  };
+  }, "/", site.slug);
 }
 
 export default async function HomePage() {

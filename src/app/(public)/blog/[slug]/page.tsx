@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, publicSiteConfigs } from "@/lib/public-site-config";
-import { absoluteUrl, siteUrl } from "@/lib/seo";
+import { absoluteUrl, canonicalSiteForSharedContent, PRIMARY_SITE_SLUG, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
 
 type BlogPageProps = {
@@ -33,14 +33,14 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
     return { title: "Post not found" };
   }
 
-  return {
+  const isSharedWithPrimary = publicSiteConfigs[PRIMARY_SITE_SLUG].blogPosts.some((item) => item.slug === post.slug);
+
+  return withCanonical({
     title: post.title,
     description: post.excerpt,
-    alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      url: `/blog/${post.slug}`,
       type: "article",
       publishedTime: post.publishedAt,
       authors: [site.brandName],
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
       description: post.excerpt,
       images: [post.coverImage]
     }
-  };
+  }, `/blog/${post.slug}`, site.slug, { canonicalSiteSlug: canonicalSiteForSharedContent(site.slug, isSharedWithPrimary) });
 }
 
 export default async function BlogDetailPage({ params }: BlogPageProps) {

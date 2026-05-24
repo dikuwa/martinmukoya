@@ -7,27 +7,26 @@ import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "Blog",
     description: site.pages.blog.metadataDescription,
-    alternates: { canonical: "/blog" },
     openGraph: {
       title: `Blog | ${site.brandName}`,
-      description: site.pages.blog.metadataDescription,
-      url: "/blog"
+      description: site.pages.blog.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `Blog | ${site.brandName}`,
       description: site.pages.blog.metadataDescription
     }
-  };
+  }, "/blog", site.slug);
 }
 
 export default async function BlogPage() {

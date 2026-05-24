@@ -11,26 +11,25 @@ import { ArrowRight, Bot, CalendarCheck, MessageCircle, MonitorCog } from "lucid
 import type { Metadata } from "next";
 import Image from "next/image";
 import { webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "About",
     description: site.pages.about.metadataDescription,
-    alternates: { canonical: "/about" },
     openGraph: {
       title: `About | ${site.brandName}`,
-      description: site.pages.about.metadataDescription,
-      url: "/about"
+      description: site.pages.about.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `About | ${site.brandName}`,
       description: site.pages.about.metadataDescription
     }
-  };
+  }, "/about", site.slug);
 }
 
 export default async function AboutPage() {

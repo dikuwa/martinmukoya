@@ -7,26 +7,25 @@ import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
+import { canonicalSiteForSharedContent, withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "FAQ",
     description: site.pages.faq.metadataDescription,
-    alternates: { canonical: "/faq" },
     openGraph: {
       title: `FAQ | ${site.brandName}`,
-      description: site.pages.faq.metadataDescription,
-      url: "/faq"
+      description: site.pages.faq.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `FAQ | ${site.brandName}`,
       description: site.pages.faq.metadataDescription
     }
-  };
+  }, "/faq", site.slug, { canonicalSiteSlug: canonicalSiteForSharedContent(site.slug) });
 }
 
 export default async function FAQPage() {

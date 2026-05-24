@@ -6,6 +6,7 @@ import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import type { Metadata } from "next";
 import { webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -13,21 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const pageTitle = site.pages.startProject.eyebrow;
 
-  return {
+  return withCanonical({
     title: pageTitle,
     description: site.pages.startProject.metadataDescription,
-    alternates: { canonical: "/start-project" },
     openGraph: {
       title: `${pageTitle} | ${site.brandName}`,
-      description: site.pages.startProject.metadataDescription,
-      url: "/start-project"
+      description: site.pages.startProject.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `${pageTitle} | ${site.brandName}`,
       description: site.pages.startProject.metadataDescription
     }
-  };
+  }, "/start-project", site.slug);
 }
 
 export default async function StartProjectPage() {

@@ -6,6 +6,7 @@ import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
 import { serviceSchema, webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 import { ArrowRight, Bot, CalendarCheck, CheckCircle2, MonitorCog, ShoppingBag, XCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { TrackedLink } from "@/components/public/tracked-link";
@@ -14,21 +15,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "Services",
     description: site.pages.services.metadataDescription,
-    alternates: { canonical: "/services" },
     openGraph: {
       title: `Services | ${site.brandName}`,
-      description: site.pages.services.metadataDescription,
-      url: "/services"
+      description: site.pages.services.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `Services | ${site.brandName}`,
       description: site.pages.services.metadataDescription
     }
-  };
+  }, "/services", site.slug);
 }
 
 export default async function ServicesPage() {

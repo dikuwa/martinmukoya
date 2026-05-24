@@ -6,27 +6,26 @@ import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = getPublicSiteConfig(currentSite?.slug);
 
-  return {
+  return withCanonical({
     title: "Projects",
     description: site.pages.projects.metadataDescription,
-    alternates: { canonical: "/projects" },
     openGraph: {
       title: `Projects | ${site.brandName}`,
-      description: site.pages.projects.metadataDescription,
-      url: "/projects"
+      description: site.pages.projects.metadataDescription
     },
     twitter: {
       card: "summary_large_image",
       title: `Projects | ${site.brandName}`,
       description: site.pages.projects.metadataDescription
     }
-  };
+  }, "/projects", site.slug);
 }
 
 export default async function ProjectsPage() {
