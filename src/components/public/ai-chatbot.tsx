@@ -7,9 +7,12 @@ import { TimelineSelector, type TimelineOption } from "@/components/public/timel
 import {
   ArrowLeft,
   ArrowUpRight,
+  Briefcase,
   CheckCircle,
+  ChevronRight,
   Mail,
   MessageCircle,
+  Phone,
   Send,
   User,
   X,
@@ -74,18 +77,16 @@ const serviceLabels: Record<string, string> = {
 function siteAwareGreeting(slug: string) {
   if (slug === "flextech-media") {
     return {
-      title: "Campaign assistant",
-      subtitle: "Fast guidance before handoff",
+      title: "Project Assistant ✨",
       initial:
-        "👋 Hi! I'm the FlexTech project assistant. I can help you understand our services, shape a campaign brief, or find the fastest way to speak with the team.",
+        "👋 Hi! I'm your FlexTech assistant. I can help you explore our services, shape a project brief, or connect you with the right team quickly.",
       humanLabel: "Team",
     };
   }
   return {
-    title: "Project assistant",
-    subtitle: "Fast guidance before handoff",
+    title: "Project Assistant ✨",
     initial:
-      "👋 Hi! I can help you choose a service, shape a brief, or find the quickest way to reach Martin.",
+      "👋 Hi! I'm your Martin assistant. I can help you choose the right solution, shape your project brief, or contact Martin quickly.",
     humanLabel: "Human",
   };
 }
@@ -126,6 +127,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const [leadSubmitting, setLeadSubmitting] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadError, setLeadError] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   const siteSlugRef = useRef(siteSlug);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -156,18 +158,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   // ── Copy greeting for the start page ──
   const greeting = useMemo(() => siteAwareGreeting(siteSlug), [siteSlug]);
 
-  // ── Quick replies ──
-  const quickReplies = useMemo(
-    () => [
-      "Choose a service",
-      "Ask a question",
-      "Budget guidance",
-      `Talk to ${humanLabel}`,
-    ],
-    [humanLabel]
-  );
-
-  // ── Start booking flow from a quick reply ──
+  // ── Start booking flow from action card ──
   const startBooking = useCallback(() => {
     // Add user message
     const userMsgId = messageIdRef.current++;
@@ -587,25 +578,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     [sessionId]
   );
 
-  // ── Automation: quick reply click handler ──
-  const handleQuickReply = useCallback(
-    (reply: string) => {
-      if (reply === "Choose a service") {
-        startBooking();
-        return;
-      }
-
-      if (reply.startsWith("Talk to")) {
-        startBooking();
-        return;
-      }
-
-      // For "Ask a question" or "Budget guidance", send to normal chat
-      handleSend(reply);
-    },
-    [startBooking]
-  );
-
   // ── Retry submit ──
   const handleRetry = useCallback(() => {
     setLeadError(false);
@@ -650,6 +622,19 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     };
   }, [open]);
 
+  // ── Online/offline detection ──
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   const isInBooking = bookingStep !== "NONE" && bookingStep !== "SUBMITTED";
 
   return (
@@ -679,9 +664,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                 <p className="text-sm font-bold text-[color:var(--text-strong)]">
                   {greeting.title}
                 </p>
-                <p className="mt-0.5 text-xs text-[color:var(--text-muted)]">
-                  {greeting.subtitle}
-                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}
+                  />
+                  <span className="text-xs text-[color:var(--text-muted)]">
+                    {isOnline ? "Online" : "Offline"}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -759,19 +749,136 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     </p>
                   )}
 
-                  {/* ═══ Quick replies on start page ═══ */}
+                  {/* ═══ Action cards on start page ═══ */}
                   {message.id === 1 && !hasConversationStarted && bookingStep === "NONE" && (
-                    <div className="mt-4 grid grid-cols-2 gap-1.5">
-                      {quickReplies.map((reply) => (
-                        <button
-                          key={reply}
-                          type="button"
-                          onClick={() => handleQuickReply(reply)}
-                          className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2.5 py-2 text-[10px] font-black leading-tight text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--text-strong)]"
-                        >
-                          {reply}
-                        </button>
-                      ))}
+                    <div className="mt-4 space-y-2">
+                      {/* Choose a service */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trackEvent({
+                            eventType: "chatbot_action_click",
+                            siteSlug,
+                            page: window.location.pathname,
+                            source: "chatbot_action_card",
+                            metadata: { action: "choose_service" },
+                          });
+                          startBooking();
+                        }}
+                        className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                        aria-label="Choose a service to start a project"
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                          <Briefcase size={20} />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-sm font-bold text-[color:var(--text-strong)]">
+                            Choose a service
+                          </span>
+                          <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
+                            Start your project brief
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
+                        />
+                      </button>
+
+                      {/* Call Us */}
+                      <a
+                        href={"tel:+264818563005"}
+                        className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                        aria-label="Call us"
+                        onClick={() =>
+                          trackEvent({
+                            eventType: "call_click",
+                            siteSlug,
+                            page: window.location.pathname,
+                            source: "chatbot_action_card",
+                          })
+                        }
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                          <Phone size={20} />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-sm font-bold text-[color:var(--text-strong)]">
+                            Call Us
+                          </span>
+                          <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
+                            Speak with us directly
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
+                        />
+                      </a>
+
+                      {/* WhatsApp */}
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                        aria-label={`Chat with ${humanLabel} on WhatsApp`}
+                        onClick={() =>
+                          trackEvent({
+                            eventType: "whatsapp_click",
+                            siteSlug,
+                            page: window.location.pathname,
+                            source: "chatbot_action_card",
+                          })
+                        }
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                          <MessageCircle size={20} />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-sm font-bold text-[color:var(--text-strong)]">
+                            WhatsApp
+                          </span>
+                          <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
+                            Chat with {humanLabel}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
+                        />
+                      </a>
+
+                      {/* Email */}
+                      <a
+                        href={emailHref[siteSlug] ?? emailHref["martin-mukoya"]}
+                        className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                        aria-label="Send an email"
+                        onClick={() =>
+                          trackEvent({
+                            eventType: "email_click",
+                            siteSlug,
+                            page: window.location.pathname,
+                            source: "chatbot_action_card",
+                          })
+                        }
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                          <Mail size={20} />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-sm font-bold text-[color:var(--text-strong)]">
+                            Email
+                          </span>
+                          <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
+                            Send us a message
+                          </span>
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
+                        />
+                      </a>
                     </div>
                   )}
                 </div>
