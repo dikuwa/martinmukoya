@@ -1,13 +1,20 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import {
+  CalendarDays,
+  Clock,
+  Sprout,
+  Trees,
+  Zap,
+} from "lucide-react";
 import { useCallback } from "react";
 
 export type TimelineOption = {
   value: string;
   label: string;
   description: string;
-  icon: string;
+  icon: React.ElementType;
 };
 
 const timelineOptions: TimelineOption[] = [
@@ -15,31 +22,31 @@ const timelineOptions: TimelineOption[] = [
     value: "asap-1month",
     label: "ASAP within 1 month",
     description: "Quick turnaround, focused scope",
-    icon: "⚡",
+    icon: Zap,
   },
   {
     value: "1-3months",
     label: "1–3 months",
     description: "Standard project timeline",
-    icon: "📅",
+    icon: CalendarDays,
   },
   {
     value: "3-6months",
     label: "3–6 months",
     description: "Larger project with more features",
-    icon: "🏗️",
+    icon: Trees,
   },
   {
     value: "6plus-months",
     label: "6+ months",
     description: "Complex, long-term engagement",
-    icon: "🌱",
+    icon: Sprout,
   },
   {
     value: "flexible",
     label: "Schedule is flexible",
     description: "No rush — we can plan around your availability",
-    icon: "🕊️",
+    icon: Clock,
   },
 ];
 
@@ -84,8 +91,8 @@ export function TimelineSelector({
             aria-label={`Select timeline: ${option.label}`}
           >
             {/* Icon */}
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--surface-soft)] text-base">
-              {option.icon}
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
+              <option.icon size={18} />
             </span>
 
             {/* Text */}
