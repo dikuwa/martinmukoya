@@ -1,7 +1,7 @@
 import { TrackedLink } from "@/components/public/tracked-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Github } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BriefcaseBusiness, Code2, Github, Layers3 } from "lucide-react";
 import Image from "next/image";
 
 type Project = {
@@ -23,7 +23,7 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
   const techStack = Array.from(new Set(project.techStack || [])).slice(0, 4);
 
   return (
-    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)] hover:shadow-[0_14px_36px_rgba(107,38,217,0.10)]">
+    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_18px_54px_rgba(107,38,217,0.08)] transition hover:-translate-y-1 hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--surface-soft)] hover:shadow-[0_24px_70px_rgba(107,38,217,0.15)]">
       <TrackedLink
         siteSlug={siteSlug}
         eventType="project_card_clicked"
@@ -41,9 +41,13 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
             className="motion-media object-cover group-hover:scale-[1.035]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(15,5,30,0.74))]" />
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)]/82 px-3 py-1.5 text-xs font-black text-[color:var(--text-normal)] backdrop-blur">
+            <Layers3 size={14} /> Case study
+          </div>
         </div>
       </TrackedLink>
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-6">
         <div className="flex flex-wrap gap-2">
           {services.map((service, index) => (
             <Badge key={`${project.slug}-${service}-${index}`}>{service}</Badge>
@@ -62,9 +66,10 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
           </TrackedLink>
         </h3>
         <p className="mt-3 min-h-[4.5rem] text-sm leading-6 text-[color:var(--text-muted)]">{project.summary}</p>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-[color:var(--border-subtle)] pt-5">
           {techStack.map((tech, index) => (
-            <span key={`${project.slug}-${tech}-${index}`} className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-1 text-[0.65rem] font-bold text-[color:var(--text-muted)]">
+            <span key={`${project.slug}-${tech}-${index}`} className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-1 text-[0.65rem] font-bold text-[color:var(--text-muted)]">
+              <Code2 size={12} />
               {tech}
             </span>
           ))}
@@ -79,7 +84,7 @@ export function ProjectCard({ project, siteSlug }: { project: Project; siteSlug?
               eventMetadata={{ contentId: project.id ?? project.slug, contentType: "Project" }}
               href={`/projects/${project.slug}`}
             >
-              Read Case Study
+              Read Case Study <ArrowRight size={15} />
             </TrackedLink>
           </Button>
           {githubUrl ? (
@@ -109,7 +114,7 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
   const techStack = Array.from(new Set(project.techStack || [])).slice(0, 4);
 
   return (
-    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:border-[color:var(--primary)]/30 hover:shadow-[0_16px_46px_rgba(107,38,217,0.14)]">
+    <article className="motion-card group flex h-full flex-col overflow-hidden rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_18px_54px_rgba(107,38,217,0.08)] transition hover:-translate-y-1 hover:border-[color:var(--primary)]/35 hover:shadow-[0_24px_70px_rgba(107,38,217,0.16)]">
       <TrackedLink
         siteSlug={siteSlug}
         eventType="project_card_clicked"
@@ -127,7 +132,10 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
             className="motion-media object-cover group-hover:scale-[1.045]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--surface)]/20 to-transparent" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_32%,rgba(15,5,30,0.70))]" />
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)]/82 px-3 py-1.5 text-xs font-black text-[color:var(--text-normal)] backdrop-blur">
+            <BriefcaseBusiness size={14} /> Agency build
+          </div>
         </div>
       </TrackedLink>
       <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
@@ -158,8 +166,9 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
           {techStack.map((tech, index) => (
             <span
               key={`${project.slug}-tech-${index}`}
-              className="rounded-full bg-[color:var(--surface-soft)] px-2 py-0.5 text-[0.6rem] font-medium text-[color:var(--text-faint)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--surface-soft)] px-2.5 py-1 text-[0.6rem] font-medium text-[color:var(--text-faint)]"
             >
+              <Code2 size={11} />
               {tech}
             </span>
           ))}
@@ -174,7 +183,7 @@ export function FlexTechProjectCard({ project, siteSlug }: { project: Project; s
               eventMetadata={{ contentId: project.id ?? project.slug, contentType: "Project" }}
               href={`/projects/${project.slug}`}
             >
-              Read Case Study
+              Read Case Study <ArrowRight size={14} />
             </TrackedLink>
           </Button>
           <div className="ml-auto flex items-center gap-1">
