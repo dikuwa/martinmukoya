@@ -1,30 +1,15 @@
 import { Reveal } from "@/components/public/motion";
-import { TrackedLink } from "@/components/public/tracked-link";
-import { Badge } from "@/components/ui/badge";
+import { SectionHeading } from "@/components/public/section-heading";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { serviceSchema, webPageSchema } from "@/lib/schema";
-import { withCanonical } from "@/lib/seo";
 import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
-import {
-  ArrowRight,
-  Bot,
-  BriefcaseBusiness,
-  CalendarCheck,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  type LucideIcon,
-  MonitorCog,
-  ShoppingBag,
-  Sparkles,
-  Target,
-  XCircle
-} from "lucide-react";
+import { serviceSchema, webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
+import { ArrowRight, Bot, CalendarCheck, CheckCircle2, MonitorCog, ShoppingBag, XCircle } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { TrackedLink } from "@/components/public/tracked-link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -52,7 +37,7 @@ export default async function ServicesPage() {
   const isFlexTech = site.slug === "flextech-media";
 
   const breadcrumbSchema = webPageSchema({
-    name: `Services | ${site.brandName}`,
+    name: "Services | " + site.brandName,
     description: page.metadataDescription,
     breadcrumbs: [
       { name: "Home", url: "/" },
@@ -75,237 +60,207 @@ export default async function ServicesPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {serviceSchemas.map((schema, index) => (
-        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      {serviceSchemas.map((s, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(s) }} />
       ))}
-
-      <Section className="relative overflow-hidden pb-10 pt-12 lg:pb-14 lg:pt-16">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(136,82,224,0.22),transparent_30rem),radial-gradient(circle_at_82%_4%,rgba(34,197,94,0.10),transparent_26rem)]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-px bg-[linear-gradient(90deg,transparent,rgba(136,82,224,0.45),transparent)]" />
+      <Section className={cn("pb-12", isFlexTech && "pb-8")}>
         <Container>
-          <div className="grid gap-10 lg:grid-cols-[1fr_0.82fr] lg:items-end">
-            <Reveal>
-              <Badge className="mb-5">
-                <Sparkles size={13} /> Services
-              </Badge>
-              <h1 className="max-w-4xl text-balance font-display text-[clamp(2.5rem,6vw,5.8rem)] font-black leading-[0.94] text-[color:var(--text-strong)]">
-                {page.title}
-              </h1>
-              <p className="mt-6 max-w-3xl text-base leading-8 text-[color:var(--text-muted)] md:text-lg">
-                {page.description}
-              </p>
-            </Reveal>
-
-            <Reveal delay={0.08}>
-              <div className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[0_20px_70px_rgba(107,38,217,0.12)]">
-                <div className="flex items-center gap-3 border-b border-[color:var(--border-subtle)] pb-4">
-                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[color:var(--primary)]/12 text-[color:var(--primary)]">
-                    <Target size={20} />
-                  </span>
-                  <div>
-                    <p className="text-sm font-black text-[color:var(--text-strong)]">Pick the outcome first</p>
-                    <p className="text-xs leading-5 text-[color:var(--text-muted)]">Then shape the system around the work it needs to do.</p>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {heroOutcomes.map(({ label, icon: Icon }) => (
-                    <div key={label as string} className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-3 py-3">
-                      <Icon className="text-[color:var(--primary)]" size={17} />
-                      <p className="mt-2 text-xs font-bold text-[color:var(--text-normal)]">{label as string}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
-          </div>
-
-          <Reveal delay={0.12}>
-            <nav aria-label="Service sections" className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {site.services.map((service) => {
-                return (
-                  <a
-                    key={service.id}
-                    href={`#${service.id}`}
-                    className="group flex items-center justify-between gap-3 rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3 text-sm font-bold text-[color:var(--text-normal)] transition hover:-translate-y-0.5 hover:border-[color:var(--primary)]/45 hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)]">
-                        <ServiceGlyph id={service.id} size={18} />
-                      </span>
-                      <span className="truncate">{service.title}</span>
-                    </span>
-                    <ChevronRight className="shrink-0 text-[color:var(--text-faint)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--primary)]" size={17} />
-                  </a>
-                );
-              })}
-            </nav>
+          <Reveal>
+            <SectionHeading
+              eyebrow="Services"
+              title={page.title}
+              description={page.description}
+              align="center"
+            />
           </Reveal>
         </Container>
       </Section>
 
-      <Section className="relative overflow-hidden pt-0">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,var(--background),var(--background-elevated),var(--background))]" />
-        <Container className="grid gap-7">
-          {site.services.map((service, index) => (
-            <Reveal key={service.id} delay={index * 0.04}>
-              <ServiceFeature
-                service={service}
-                index={index}
-                ctaLabel={page.ctaLabel}
-                siteSlug={site.slug}
-              />
-            </Reveal>
-          ))}
-        </Container>
+      <Section className={cn(
+        "pt-0 relative overflow-hidden",
+        isFlexTech
+          ? "bg-[color:var(--background)]"
+          : "bg-gradient-to-b from-[color:var(--background)] to-[color:var(--background-elevated)]/12 technical-bg"
+      )}>
+        {!isFlexTech && (
+          <>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-20"
+              style={{
+                backgroundImage: `conic-gradient(at top, var(--primary-light) 0deg, var(--primary) 120deg, rgba(255,255,255,0) 220deg)`,
+                opacity: 0.06,
+                mixBlendMode: "soft-light"
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-[url('/assets/backgrounds/SVG/map-03.svg')] bg-bottom bg-cover opacity-12 blur-sm mix-blend-multiply"
+            />
+          </>
+        )}
+
+        {isFlexTech ? (
+          <Container className="grid gap-6">
+            {site.services.map((service, index) => (
+              <Reveal key={service.id} delay={index * 0.05}>
+                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
+                  {/* Top: icon + title + description */}
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <ServiceIcon id={service.id} />
+                    </div>
+                    <div>
+                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
+                    </div>
+                  </div>
+
+                  {/* Middle: three clean content blocks */}
+                  <div className="mt-8 grid gap-3 lg:grid-cols-3">
+                    <InfoBlock
+                      title="What it helps"
+                      description={service.who}
+                      variant="help"
+                    />
+                    <InfoBlock
+                      title="Common friction"
+                      items={service.problems}
+                      variant="friction"
+                    />
+                    <InfoBlock
+                      title="Business results"
+                      items={service.outcomes}
+                      variant="result"
+                    />
+                  </div>
+
+                  {/* Bottom: CTA */}
+                  <div className="mt-8 flex justify-center">
+                    <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
+                      <TrackedLink
+                        siteSlug={site.slug}
+                        eventType="service_interest_clicked"
+                        eventPage="/services"
+                        eventSource="service_cta"
+                        eventMetadata={{ service: service.id }}
+                        href={`/start-project?service=${service.id}`}
+                      >
+                        {page.ctaLabel} <ArrowRight size={16} />
+                      </TrackedLink>
+                    </Button>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </Container>
+        ) : (
+          <Container className="grid gap-6">
+            {site.services.map((service, index) => (
+              <Reveal key={service.id} delay={index * 0.05}>
+                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/88 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-10">
+                  <div className="flex flex-col items-center text-center gap-4">
+                    <div className="mb-2">
+                      <ServiceIcon id={service.id} />
+                    </div>
+                    <div>
+                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
+                      <p className="mt-3 mx-auto max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-10 grid gap-4 lg:grid-cols-3">
+                    <InfoBlock title="Who it helps" description={service.who} />
+                    <InfoBlock title="Common friction" items={service.problems} variant="friction" />
+                    <InfoBlock title="Business results" items={service.outcomes} variant="result" />
+                  </div>
+
+                  <div className="mt-8 flex justify-center">
+                    <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
+                      <TrackedLink
+                        siteSlug={site.slug}
+                        eventType="service_interest_clicked"
+                        eventPage="/services"
+                        eventSource="service_cta"
+                        eventMetadata={{ service: service.id }}
+                        href={`/start-project?service=${service.id}`}
+                      >
+                        {page.ctaLabel} <ArrowRight size={16} />
+                      </TrackedLink>
+                    </Button>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </Container>
+        )}
       </Section>
     </>
   );
 }
 
-function ServiceFeature({
-  service,
-  index,
-  ctaLabel,
-  siteSlug
-}: {
-  service: {
-    id: string;
-    title: string;
-    summary: string;
-    who: string;
-    problems: string[];
-    outcomes: string[];
+function ServiceIcon({ id }: { id: string }) {
+  const icons = {
+    "web-applications": MonitorCog,
+    "booking-systems": CalendarCheck,
+    ecommerce: ShoppingBag,
+    "ai-automations": Bot
   };
-  index: number;
-  ctaLabel: string;
-  siteSlug: string;
-}) {
-  const isAlt = index % 2 === 1;
+  const iconColors = {
+    "web-applications": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
+    "booking-systems": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
+    ecommerce: "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
+    "ai-automations": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]"
+  };
+  const Icon = icons[id as keyof typeof icons] ?? MonitorCog;
+  const colorClass = iconColors[id as keyof typeof iconColors] ?? iconColors["web-applications"];
 
   return (
-    <article
-      id={service.id}
-      className="scroll-mt-32 overflow-hidden rounded-[30px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[0_22px_70px_rgba(107,38,217,0.10)]"
-    >
-      <div className={cn("grid gap-0 lg:grid-cols-[0.9fr_1.1fr]", isAlt && "lg:grid-cols-[1.1fr_0.9fr]")}>
-        <div className={cn("relative min-h-[310px] overflow-hidden bg-[color:var(--surface-soft)] p-7 sm:p-9", isAlt && "lg:order-2")}>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(136,82,224,0.34),transparent_18rem),radial-gradient(circle_at_78%_82%,rgba(34,197,94,0.10),transparent_16rem)]" />
-          <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.075)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.075)_1px,transparent_1px)] [background-size:34px_34px]" />
-          <div className="relative flex h-full flex-col justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--primary)]/25 bg-[color:var(--primary)]/12 px-3 py-1 text-xs font-black text-[color:var(--primary)]">
-                <ServiceGlyph id={service.id} size={15} /> {String(index + 1).padStart(2, "0")}
-              </span>
-              <h2 className="mt-7 max-w-lg text-balance font-display text-[clamp(2rem,4vw,4rem)] font-black leading-[0.98] text-[color:var(--text-strong)]">
-                {service.title}
-              </h2>
-              <p className="mt-5 max-w-xl text-sm leading-7 text-[color:var(--text-muted)] md:text-base">
-                {service.summary}
-              </p>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--background)]/35 px-3 py-1.5 text-xs font-bold text-[color:var(--text-normal)]">
-                <Clock3 size={14} /> Faster follow-up
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--background)]/35 px-3 py-1.5 text-xs font-bold text-[color:var(--text-normal)]">
-                <Target size={14} /> Clear next action
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-7 sm:p-9 lg:p-10">
-          <div className="max-w-2xl">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-[color:var(--text-faint)]">Best fit</p>
-            <p className="mt-3 text-base leading-8 text-[color:var(--text-normal)]">{service.who}</p>
-          </div>
-
-          <div className="mt-9 grid gap-8 xl:grid-cols-2">
-            <ServiceList
-              title="Friction removed"
-              icon={XCircle}
-              items={service.problems}
-              tone="muted"
-            />
-            <ServiceList
-              title="Business lift"
-              icon={CheckCircle2}
-              items={service.outcomes}
-              tone="accent"
-            />
-          </div>
-
-          <div className="mt-10 flex flex-wrap items-center gap-3">
-            <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
-              <TrackedLink
-                siteSlug={siteSlug}
-                eventType="service_interest_clicked"
-                eventPage="/services"
-                eventSource="service_cta"
-                eventMetadata={{ service: service.id }}
-                href={`/start-project?service=${service.id}`}
-              >
-                {ctaLabel} <ArrowRight size={16} />
-              </TrackedLink>
-            </Button>
-            <Link
-              href="/projects"
-              className="inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
-            >
-              See related work <ChevronRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function ServiceList({
-  title,
-  icon: Icon,
-  items,
-  tone
-}: {
-  title: string;
-  icon: LucideIcon;
-  items: string[];
-  tone: "muted" | "accent";
-}) {
-  return (
-    <div>
-      <h3 className="text-sm font-black text-[color:var(--text-strong)]">{title}</h3>
-      <div className="mt-4 space-y-3">
-        {items.map((item) => (
-          <div key={item} className="flex gap-3">
-            <span
-              className={cn(
-                "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-2xl",
-                tone === "accent"
-                  ? "bg-[color:var(--primary)]/12 text-[color:var(--primary)]"
-                  : "bg-[color:var(--surface-soft)] text-[color:var(--text-faint)]"
-              )}
-            >
-              <Icon size={16} />
-            </span>
-            <p className="text-sm leading-6 text-[color:var(--text-muted)]">{item}</p>
-          </div>
-        ))}
-      </div>
+    <div className={"grid h-14 w-14 shrink-0 place-items-center rounded-full border bg-white/[0.03] " + colorClass}>
+      <Icon size={26} />
     </div>
   );
 }
 
-function ServiceGlyph({ id, size = 18 }: { id: string; size?: number }) {
-  if (id === "booking-systems") return <CalendarCheck size={size} />;
-  if (id === "ecommerce") return <ShoppingBag size={size} />;
-  if (id === "ai-automations") return <Bot size={size} />;
-  return <MonitorCog size={size} />;
-}
+function InfoBlock({
+  title,
+  description,
+  items,
+  variant
+}: {
+  title: string;
+  description?: string;
+  items?: string[];
+  variant?: "friction" | "result" | "help";
+}) {
+  const isResult = variant === "result";
+  const rowClass = isResult
+    ? "border-[color:var(--primary-light)] bg-[color:var(--primary-light)]/10 text-[color:var(--text-strong)]"
+    : "border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)]/12 text-[color:var(--text-normal)]";
 
-const heroOutcomes: Array<{ label: string; icon: LucideIcon }> = [
-  { label: "Lead capture", icon: BriefcaseBusiness },
-  { label: "Booking flow", icon: CalendarCheck },
-  { label: "Commerce path", icon: ShoppingBag },
-  { label: "AI handoff", icon: Bot }
-];
+  return (
+    <div className={cn(
+      "rounded-[24px] border border-[color:var(--border-subtle)] p-5",
+      variant === "help"
+        ? "bg-[color:var(--surface-soft)]"
+        : "bg-white/[0.03]"
+    )}>
+      <h3 className="text-balance text-sm font-bold text-[color:var(--text-strong)]">{title}</h3>
+      {description ? (
+        <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+      ) : null}
+      {items ? (
+        <div className="mt-4 space-y-2">
+          {items.map((item) => (
+            <div key={item} className={"flex gap-3 rounded-[20px] border p-4 " + rowClass}>
+              <span className="mt-1 grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] shrink-0">
+                {isResult ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+              </span>
+              <p className="text-sm leading-6 text-[color:var(--text-muted)]">{item}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
