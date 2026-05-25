@@ -144,8 +144,8 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                   )}
                 >
                   <h2 className="flex items-center gap-3 text-balance font-display text-2xl font-black text-[color:var(--text-strong)]">
-                    <span className="grid size-10 place-items-center rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]">
-                      <Icon size={20} aria-hidden="true" />
+                    <span className="grid size-10 place-items-center rounded-full border border-[color:var(--color-brand-primary)]/20 bg-[color:var(--color-brand-primary)]/10 text-[color:var(--color-brand-primary)]">
+                      <Icon size={20} strokeWidth={2.4} aria-hidden="true" />
                     </span>
                     {title}
                   </h2>

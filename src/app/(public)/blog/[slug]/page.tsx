@@ -96,13 +96,13 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <Section className="pb-12">
-        <Container className="max-w-4xl">
+        <Container className="max-w-4xl text-center">
           <Reveal>
             <Badge>{post.category}</Badge>
             <h1 className="text-balance mt-5 font-display text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.98] text-[color:var(--text-strong)]">
               {post.title}
             </h1>
-            <p className="mt-5 text-lg leading-8 text-[color:var(--text-muted)]">{post.excerpt}</p>
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-[color:var(--text-muted)]">{post.excerpt}</p>
             <p className="mt-4 text-sm font-semibold text-[color:var(--text-faint)]">
               Published {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(post.publishedAt))}
             </p>
