@@ -7,7 +7,8 @@ import { getPublicContent } from "@/lib/public-content";
 import { getPublicSiteConfig, publicSiteConfigs } from "@/lib/public-site-config";
 import { absoluteUrl, canonicalSiteForSharedContent, PRIMARY_SITE_SLUG, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
-import { ArrowUpRight, Github } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ArrowUpRight, CircleAlert, Github, Lightbulb, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -65,6 +66,11 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const githubUrl = project.githubUrl?.trim();
   const showLiveUrl = Boolean(liveUrl && liveUrl !== "https://example.com" && liveUrl !== "https://example.com/");
   const showGithubUrl = Boolean(githubUrl && githubUrl !== "https://github.com/");
+  const projectInsights = [
+    { title: "Problem", body: project.problem, Icon: CircleAlert },
+    { title: "Solution", body: project.solution, Icon: Lightbulb },
+    { title: "Outcome", body: project.outcome, Icon: Trophy }
+  ];
   const schema = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
@@ -95,13 +101,13 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       <Section className="pb-12">
         <Container>
           <Reveal>
-            <div className="max-w-4xl">
+            <div className="mx-auto max-w-4xl text-center">
               <Badge>{project.clientType} · {project.industry}</Badge>
               <h1 className="text-balance mt-5 font-display text-[clamp(2.5rem,6vw,5.5rem)] font-black leading-[0.96] text-[color:var(--text-strong)]">
                 {project.title}
               </h1>
-              <p className="mt-6 max-w-3xl text-lg leading-8 text-[color:var(--text-muted)]">{project.description}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-[color:var(--text-muted)]">{project.description}</p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
                 {showLiveUrl ? (
                   <Button asChild>
                     <a href={liveUrl} target="_blank" rel="noopener noreferrer">
@@ -126,19 +132,28 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       </Section>
 
       <Section className="bg-gradient-to-b from-[color:var(--background-elevated)]/95 to-[color:var(--background)]/50">
-        <Container className="grid gap-5 md:grid-cols-3">
-          {[
-            ["Problem", project.problem],
-            ["Solution", project.solution],
-            ["Outcome", project.outcome]
-          ].map(([title, body], index) => (
-            <Reveal key={title} delay={index * 0.05}>
-              <article className="h-full rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
-                <h2 className="text-balance font-display text-2xl font-black text-[color:var(--text-strong)]">{title}</h2>
-                <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{body}</p>
-              </article>
-            </Reveal>
-          ))}
+        <Container>
+          <div className="grid gap-8 border-y border-[color:var(--border-subtle)] py-8 md:grid-cols-3 md:divide-x md:divide-[color:var(--border-subtle)]">
+            {projectInsights.map(({ title, body, Icon }, index) => (
+              <Reveal key={title} delay={index * 0.05}>
+                <article
+                  className={cn(
+                    "md:px-6",
+                    index === 0 && "md:pl-0",
+                    index === projectInsights.length - 1 && "md:pr-0"
+                  )}
+                >
+                  <h2 className="flex items-center gap-3 text-balance font-display text-2xl font-black text-[color:var(--text-strong)]">
+                    <span className="grid size-10 place-items-center rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]">
+                      <Icon size={20} aria-hidden="true" />
+                    </span>
+                    {title}
+                  </h2>
+                  <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{body}</p>
+                </article>
+              </Reveal>
+            ))}
+          </div>
         </Container>
       </Section>
 

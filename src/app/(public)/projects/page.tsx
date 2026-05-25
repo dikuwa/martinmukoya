@@ -54,6 +54,7 @@ export default async function ProjectsPage() {
               eyebrow="Projects"
               title={page.title}
               description={page.description}
+              align="center"
             />
           </Reveal>
         </Container>
