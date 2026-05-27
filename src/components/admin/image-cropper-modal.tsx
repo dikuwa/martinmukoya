@@ -5,7 +5,7 @@
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import * as Dialog from "@radix-ui/react-dialog";
 import { SlidersHorizontal, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
@@ -98,6 +98,9 @@ async function uploadCropped(
   return payload.url;
 }
 
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+
 export function ImageCropperModal({
   imageSrc,
   open,
@@ -112,6 +115,24 @@ export function ImageCropperModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
   const zoomTrackRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const moveHandlerRef = useRef<((ev: MouseEvent) => void) | null>(null);
+  const upHandlerRef = useRef<((ev: MouseEvent) => void) | null>(null);
+
+  // Clean up drag event listeners on unmount
+  useEffect(() => {
+    return () => {
+      isDraggingRef.current = false;
+      if (moveHandlerRef.current) {
+        window.removeEventListener("mousemove", moveHandlerRef.current);
+        moveHandlerRef.current = null;
+      }
+      if (upHandlerRef.current) {
+        window.removeEventListener("mouseup", upHandlerRef.current);
+        upHandlerRef.current = null;
+      }
+    };
+  }, []);
 
   const onCropComplete = useCallback(
     (_: Area, croppedPixels: Area) => {
@@ -189,6 +210,8 @@ export function ImageCropperModal({
             aspect={aspect}
             cropShape={cropShape}
             showGrid={false}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
@@ -207,20 +230,49 @@ export function ImageCropperModal({
           <div
             ref={zoomTrackRef}
             className="relative flex-1 h-5 flex items-center cursor-pointer group"
-            onClick={(e) => {
+            onMouseDown={(e) => {
+              // Clean up any previous drag handlers before starting new ones
+              if (moveHandlerRef.current) {
+                window.removeEventListener("mousemove", moveHandlerRef.current);
+              }
+              if (upHandlerRef.current) {
+                window.removeEventListener("mouseup", upHandlerRef.current);
+              }
+
+              isDraggingRef.current = true;
               const rect = e.currentTarget.getBoundingClientRect();
-              const pct = (e.clientX - rect.left) / rect.width;
-              setZoom(Math.max(1, Math.min(5, 1 + pct * 4)));
+              const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              setZoom(MIN_ZOOM + pct * (MAX_ZOOM - MIN_ZOOM));
+
+              const onMove = (ev: MouseEvent) => {
+                if (!isDraggingRef.current) return;
+                const r = zoomTrackRef.current?.getBoundingClientRect();
+                if (!r) return;
+                const p = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+                setZoom(MIN_ZOOM + p * (MAX_ZOOM - MIN_ZOOM));
+              };
+              const onUp = () => {
+                isDraggingRef.current = false;
+                moveHandlerRef.current = null;
+                upHandlerRef.current = null;
+                window.removeEventListener("mousemove", onMove);
+                window.removeEventListener("mouseup", onUp);
+              };
+
+              moveHandlerRef.current = onMove;
+              upHandlerRef.current = onUp;
+              window.addEventListener("mousemove", onMove);
+              window.addEventListener("mouseup", onUp);
             }}
           >
             <div className="absolute inset-x-0 h-1 rounded-full bg-[var(--border-subtle)]" />
             <div
               className="absolute h-1 rounded-full bg-[var(--primary)]"
-              style={{ width: `${((zoom - 1) / 4) * 100}%` }}
+              style={{ width: `${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%` }}
             />
             <div
               className="absolute h-4 w-4 rounded-full border-2 border-[var(--primary)] bg-[var(--surface)] shadow-md -translate-x-1/2 transition-transform group-hover:scale-110"
-              style={{ left: `${((zoom - 1) / 4) * 100}%` }}
+              style={{ left: `${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%` }}
             />
           </div>
           <ZoomIn size={16} className="text-[var(--text-faint)] shrink-0" />

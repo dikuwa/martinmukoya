@@ -7,14 +7,26 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
 import { Globe, Star, Plus, Quote, Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
 type PageProps = { searchParams: Promise<{ search?: string; published?: string; featured?: string; site?: string; page?: string }> };
 const PAGE_SIZE = 10;
 
-function clientInitial(name: string) {
-  return (name ?? "T").charAt(0).toUpperCase();
+function TestimonialAvatar({ name, image }: { name: string; image?: string | null }) {
+  if (image) {
+    return (
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--surface-soft)]">
+        <Image src={image} alt={name} fill className="object-cover" sizes="40px" />
+      </div>
+    );
+  }
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+      {(name ?? "T").charAt(0).toUpperCase()}
+    </span>
+  );
 }
 
 async function TestimonialsTable({ searchParams }: PageProps) {
@@ -53,9 +65,7 @@ async function TestimonialsTable({ searchParams }: PageProps) {
       <AdminTable items={items} empty="No testimonials found." editHref={(item) => `/admin/testimonials/${item.id}/edit`} actionLabel="Edit" columns={[
         { header: "Client", cell: (item) => (
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
-              {clientInitial(item.clientName)}
-            </span>
+            <TestimonialAvatar name={item.clientName} image={item.image} />
             <div className="min-w-0">
               <p className="truncate font-bold text-[color:var(--text-strong)]">{item.clientName}</p>
               <p className="truncate text-xs text-[color:var(--text-muted)]">{item.company ?? "—"}</p>
