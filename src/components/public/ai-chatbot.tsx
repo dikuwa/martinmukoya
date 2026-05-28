@@ -817,7 +817,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     aria-label="Choose a service to start a project"
                   >
                     <Briefcase size={14} />
-                    Choose a Service
+                    Services
                   </button>
 
                   {/* WhatsApp */}
