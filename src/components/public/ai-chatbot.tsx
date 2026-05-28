@@ -130,7 +130,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageIdRef = useRef(2);
-  const hasConversationStarted = messages.length > 1;
   const bookingStepRef = useRef(bookingStep);
   const leadSubmittingRef = useRef(false);
   const loadingRef = useRef(false);
@@ -791,9 +790,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
               </button>
             </div>
 
-            {/* Bottom row: Service, WhatsApp, Call */}
-            {!hasConversationStarted && bookingStep === "NONE" && (
-              <div className="border-t border-[color:var(--border-subtle)] px-4 py-3">
+            {/* Bottom row: Service, WhatsApp, Call — always visible */}
+            <div className="border-t border-[color:var(--border-subtle)] px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   {/* Choose a Service */}
                   <button
@@ -854,7 +852,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   </a>
                 </div>
               </div>
-            )}
           </div>
 
           {/* ── Chat Transcript ── */}
