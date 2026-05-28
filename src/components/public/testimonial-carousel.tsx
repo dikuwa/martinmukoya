@@ -12,7 +12,7 @@ type Testimonial = {
   image?: string | null;
 };
 
-const AUTO_SCROLL_INTERVAL = 5000; // 5 seconds between auto-scrolls
+const AUTO_SCROLL_INTERVAL = 3000; // 5 seconds between auto-scrolls
 const PAUSE_RESUME_DELAY = 4000; // 4 seconds after interaction before resuming
 
 export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[]; siteSlug?: string }) {

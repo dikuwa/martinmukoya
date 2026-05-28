@@ -56,7 +56,7 @@ export default async function BlogPage() {
               eyebrow="Blog"
               title={page.title}
               description={page.description}
-              align={isFlexTech ? "center" : "left"}
+              align="center"
             />
           </Reveal>
         </Container>
