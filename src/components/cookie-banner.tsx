@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Cookie } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const COOKIE_CONSENT_KEY = "cookie-consent-v1";
@@ -25,10 +26,24 @@ function storeConsent(choice: "accepted" | "declined") {
 export function CookieBanner() {
   const [consent, setConsent] = useState<ConsentChoice>(null);
   const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    setConsent(getStoredConsent());
+    let entranceTimer: number | undefined;
+    const hydrationTimer = window.setTimeout(() => {
+      const storedConsent = getStoredConsent();
+      setConsent(storedConsent);
+      setMounted(true);
+
+      if (storedConsent === null) {
+        entranceTimer = window.setTimeout(() => setIsVisible(true), 140);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(hydrationTimer);
+      if (entranceTimer) window.clearTimeout(entranceTimer);
+    };
   }, []);
 
   const handleAccept = () => {
@@ -48,28 +63,43 @@ export function CookieBanner() {
   if (consent !== null) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[60] p-3 sm:p-4">
-      <div className="mx-auto flex max-w-[1200px] flex-col items-start gap-4 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/95 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-xl sm:flex-row sm:items-center sm:gap-6 sm:p-5">
-        <p className="text-xs leading-relaxed text-[color:var(--text-normal)] sm:text-sm">
-          This site uses cookies for analytics and essential functionality.{" "}
-          <Link href="/privacy" className="font-semibold text-[color:var(--primary)] underline underline-offset-2 transition hover:opacity-80">
-            Learn more
-          </Link>
-        </p>
-        <div className="flex shrink-0 items-center gap-3">
+    <div className="fixed inset-x-0 bottom-3 z-[60] px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-5 sm:px-5">
+      <div
+        className={[
+          "mx-auto flex max-w-[880px] flex-col gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/88 px-4 py-3 text-[color:var(--text-normal)] shadow-[0_10px_28px_rgba(65,23,130,0.18)] backdrop-blur-md transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row sm:items-center sm:gap-4 sm:px-[18px] sm:py-3.5",
+          isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+        ].join(" ")}
+      >
+        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+          <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/70 text-[color:var(--accent-light)] sm:mt-0">
+            <Cookie size={15} aria-hidden="true" />
+          </span>
+          <p className="text-[13px] leading-[1.4] text-[color:var(--text-normal)] sm:text-sm">
+            We use cookies to improve your experience. By using this site, you agree to our{" "}
+            <Link href="/privacy" className="font-semibold text-[color:var(--accent-light)] transition hover:underline hover:underline-offset-2">
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/terms" className="font-semibold text-[color:var(--accent-light)] transition hover:underline hover:underline-offset-2">
+              Terms of Use
+            </Link>
+            .
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
           <button
             type="button"
             onClick={handleDecline}
-            className="rounded-full border border-[color:var(--border-subtle)] px-4 py-2 text-xs font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+            className="rounded-lg border border-[color:var(--border-subtle)] px-3 py-1.5 text-[13px] font-semibold text-[color:var(--text-muted)] transition hover:border-[color:var(--accent)]/40 hover:bg-[color:var(--surface-soft)]/70 hover:text-[color:var(--text-strong)]"
           >
             Decline
           </button>
           <button
             type="button"
             onClick={handleAccept}
-            className="rounded-full bg-[#22C55E] px-4 py-2 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(34,197,94,0.25)] transition hover:bg-[#16A34A]"
+            className="rounded-lg bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--primary-light)] px-3.5 py-1.5 text-[13px] font-bold text-[color:var(--primary-foreground)] shadow-[0_6px_16px_rgba(107,38,217,0.24)] transition hover:brightness-110"
           >
-            Accept All
+            Accept
           </button>
         </div>
       </div>
