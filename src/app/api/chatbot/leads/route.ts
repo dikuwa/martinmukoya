@@ -6,6 +6,7 @@ import { getSiteBySlug, getCurrentSite } from "@/lib/sites";
 import { createNotification } from "@/lib/notifications";
 import { invalidateTag, tags } from "@/lib/cache";
 import { sendLeadNotification } from "@/lib/email";
+import { validateEmail, validatePhone } from "@/lib/contact-validation";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +112,18 @@ export async function POST(request: Request) {
       notesParts.push(`Conversation summary: ${parsed.conversationSummary}`);
     }
 
+    // Validate contact info
+    const emailValid = validateEmail(parsed.email ?? "");
+    const phoneValid = validatePhone(parsed.phone ?? "");
+
+    // Append validation notes
+    if (!emailValid) {
+      notesParts.push("⚠️ Email address appears invalid");
+    }
+    if (!phoneValid && parsed.phone) {
+      notesParts.push("⚠️ Phone number appears invalid");
+    }
+
     // Insert the lead
     const lead = await db.lead.create({
       data: {
@@ -127,6 +140,8 @@ export async function POST(request: Request) {
         source: "chatbot",
         preferredContact: parsed.preferredContact,
         status: "NEW",
+        emailValid,
+        phoneValid,
         internalNotes: notesParts.length > 0 ? notesParts.join("\n") : null,
       },
     });

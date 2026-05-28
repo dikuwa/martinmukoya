@@ -6,7 +6,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { Button } from "@/components/ui/button";
 import { stripMarkdown } from "@/lib/utils";
 import { db } from "@/lib/db";
-import { Calendar, Clock, Globe, Mail, MessageSquare, Phone, User, Building2, Target, Wallet, ArrowLeft, ExternalLink, Hash, Users } from "lucide-react";
+import { BadgeCheck, BadgeX, Calendar, Clock, Globe, Mail, MessageSquare, Phone, User, Building2, Target, Wallet, ArrowLeft, ExternalLink, Hash, Users } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -76,6 +76,11 @@ export default async function LeadDetailPage({ params }: PageProps) {
             <span className="flex items-center gap-1.5">
               <Mail size={14} className="text-[color:var(--text-faint)]" />
               <span className="font-semibold text-[color:var(--text-normal)]">{lead.email}</span>
+              {lead.emailValid ? (
+                <span title="Email validated"><BadgeCheck size={13} className="text-[#22c55e]" /></span>
+              ) : (
+                <span title="Email may be invalid"><BadgeX size={13} className="text-[#ef4444]" /></span>
+              )}
             </span>
             {lead.phone ? (
               <>
@@ -83,6 +88,11 @@ export default async function LeadDetailPage({ params }: PageProps) {
                 <span className="flex items-center gap-1.5">
                   <Phone size={14} className="text-[color:var(--text-faint)]" />
                   <span className="font-semibold text-[color:var(--text-normal)]">{lead.phone}</span>
+                  {lead.phoneValid ? (
+                    <span title="Phone validated"><BadgeCheck size={13} className="text-[#22c55e]" /></span>
+                  ) : (
+                    <span title="Phone may be invalid"><BadgeX size={13} className="text-[#ef4444]" /></span>
+                  )}
                 </span>
               </>
             ) : null}

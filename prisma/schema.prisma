@@ -207,6 +207,8 @@ model Lead {
   message          String
   source           String
   preferredContact PreferredContact
+  emailValid       Boolean          @default(true)
+  phoneValid       Boolean          @default(true)
   status           LeadStatus       @default(NEW)
   internalNotes    String?
   createdAt        DateTime         @default(now())

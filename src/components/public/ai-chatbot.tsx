@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   Briefcase,
   CheckCircle,
+  Mail,
   MessageCircle,
   Phone,
   Send,
@@ -21,6 +22,7 @@ import { detectBuyerIntent, TRIGGER_THRESHOLD } from "@/lib/buyer-intent";
 import { trackEvent } from "@/lib/analytics-client";
 
 const whatsappHref = "https://wa.me/264818563005";
+const emailHref = "mailto:hello@martinmukoya.com";
 
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const PHONE_RE = /(?:\+264|0)\s*[1-9]\d{1,2}\s*\d{3,7}/;
@@ -155,6 +157,11 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
   // ── Start booking flow from action card ──
   const startBooking = useCallback(() => {
+    // If already in booking, reset cleanly first
+    if (bookingStep !== "NONE" && bookingStep !== "SUBMITTED") {
+      setBookingData(initialBookingData);
+    }
+
     // Add user message
     const userMsgId = messageIdRef.current++;
     setMessages((current) => [
@@ -181,7 +188,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     ]);
 
     setBookingStep("SERVICES");
-  }, []);
+  }, [bookingStep]);
 
   // ── Handle service selection ──
   const handleServicesDone = useCallback(() => {
@@ -831,6 +838,24 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   >
                     <MessageCircle size={14} />
                     WhatsApp
+                  </a>
+
+                  {/* Email */}
+                  <a
+                    href={emailHref}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-xs font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    aria-label="Email us"
+                    onClick={() =>
+                      trackEvent({
+                        eventType: "email_click",
+                        siteSlug,
+                        page: window.location.pathname,
+                        source: "chatbot_action_card",
+                      })
+                    }
+                  >
+                    <Mail size={14} />
+                    Email
                   </a>
 
                   {/* Call */}
