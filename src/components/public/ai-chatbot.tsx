@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   Briefcase,
   CheckCircle,
-  ChevronRight,
   MessageCircle,
   Phone,
   Send,
@@ -17,6 +16,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { BuyerIntentCard } from "./buyer-intent-card";
+import { detectBuyerIntent, TRIGGER_THRESHOLD } from "@/lib/buyer-intent";
 import { trackEvent } from "@/lib/analytics-client";
 
 const whatsappHref = "https://wa.me/264818563005";
@@ -102,7 +103,7 @@ function hasBuyingIntent(text: string): boolean {
 export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ id: number; author: string; text: string; time: string }>
+    Array<{ id: number; author: string; text: string; time: string; cardType?: "buyer-intent" }>
   >(() => [
     {
       id: 1,
@@ -122,6 +123,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadError, setLeadError] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [intentCardShown, setIntentCardShown] = useState(false);
 
   const siteSlugRef = useRef(siteSlug);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -436,6 +438,88 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     ]);
   }, []);
 
+  // ── Handle service selection from buyer-intent card ──
+  const handleIntentServiceSelect = useCallback(
+    (
+      _serviceId: string,
+      label: string,
+      serviceValue: string,
+      customDetails?: string,
+    ) => {
+      // Add user message showing their choice
+      const userMsgId = messageIdRef.current++;
+      setMessages((current) => [
+        ...current,
+        {
+          id: userMsgId,
+          author: "You",
+          text: `I need help with ${label}`,
+          time: "Now",
+        },
+      ]);
+
+      // Pre-select the service in booking data
+      setBookingData((prev) => ({
+        ...prev,
+        services: [serviceValue],
+        ...(customDetails ? { customServiceDetails: customDetails } : {}),
+      }));
+
+      // Context-aware AI response based on selected service
+      const responses: Record<string, string> = {
+        website:
+          "Web development — excellent choice! Let's talk about your budget so I can recommend the right approach.",
+        seo:
+          "SEO is a smart move for growing your online presence. Let's figure out the right budget range for your goals.",
+        ai:
+          "AI automation is a game-changer! Let's look at the budget that fits your automation needs.",
+        ecommerce:
+          "An online store — great choice! Let's talk about your budget to determine the best platform and features.",
+        branding:
+          "Branding sets you apart. Let's discuss your budget so I can tailor the right package.",
+        booking:
+          "A booking system will save you and your customers time. Let's look at the budget that works for you.",
+      };
+
+      const aiMsgId = messageIdRef.current++;
+      setMessages((current) => [
+        ...current,
+        {
+          id: aiMsgId,
+          author: "AI",
+          text:
+            responses[_serviceId] ||
+            `**${label}** — great pick! What budget are you working with? This helps me tailor the solution.`,
+          time: "Now",
+        },
+      ]);
+
+      // Skip to budget step
+      setBookingStep("BUDGET");
+
+      trackEvent({
+        eventType: "chatbot_action_click",
+        siteSlug,
+        page: window.location.pathname,
+        source: "chatbot_intent_card",
+        metadata: { action: "select_service", service: _serviceId },
+      });
+    },
+    [siteSlug, humanLabel],
+  );
+
+  // ── Handle "Book Consultation" from buyer-intent card ──
+  const handleBookConsultation = useCallback(() => {
+    trackEvent({
+      eventType: "chatbot_action_click",
+      siteSlug,
+      page: window.location.pathname,
+      source: "chatbot_intent_card",
+      metadata: { action: "book_consultation" },
+    });
+    startBooking();
+  }, [siteSlug, startBooking]);
+
   // ── Handle sending a normal chat message ──
   async function handleSend(content: string) {
     if (!content.trim() || loadingRef.current) return;
@@ -488,7 +572,27 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     }
 
     // Normal chat: send to AI API
-    await sendToApi(content, content, () => setLoading(false));
+    const intentResult = detectBuyerIntent(content);
+    const shouldShowCard = !intentCardShown && intentResult.triggered;
+
+    await sendToApi(content, content, () => {
+      // Show buyer intent action card after AI finishes responding
+      if (shouldShowCard) {
+        const cardMsgId = messageIdRef.current++;
+        setMessages((current) => [
+          ...current,
+          {
+            id: cardMsgId,
+            author: "AI",
+            text: "",
+            time: "Now",
+            cardType: "buyer-intent",
+          },
+        ]);
+        setIntentCardShown(true);
+      }
+      setLoading(false);
+    });
   }
 
   // ── Send to AI API ──
@@ -639,80 +743,33 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           className="flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(100vw-2rem,23rem)] flex-col overflow-hidden rounded-[26px] border border-[color:var(--primary)]/20 bg-[color:var(--background-elevated)]/95 shadow-[0_24px_70px_rgba(107,38,217,0.14)] backdrop-blur-xl lg:max-h-[min(42rem,calc(100vh-7rem))]"
         >
           {/* ── Header ── */}
-          <div className="flex items-center justify-between gap-3 border-b border-[color:var(--primary)]/15 px-4 py-3.5">
-            <div className="flex items-center gap-3">
-              {isInBooking && (
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
-                  aria-label="Go back"
-                >
-                  <ArrowLeft size={16} />
-                </button>
-              )}
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
-                <MessageCircle size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[color:var(--text-strong)]">
-                  {greeting.title}
-                </p>
-                <div className="mt-0.5 flex items-center gap-1.5">
+          <div className="border-b border-[color:var(--primary)]/15">
+            {/* Top row: Logo + Title + Online dot | Close */}
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                {isInBooking && (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+                    aria-label="Go back"
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+                )}
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
+                  <MessageCircle size={16} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-[color:var(--text-strong)]">
+                    {greeting.title}
+                  </p>
                   <span
                     className={`h-2 w-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}
+                    title={isOnline ? "Online" : "Offline"}
                   />
-                  <span className="text-xs text-[color:var(--text-muted)]">
-                    {isOnline ? "Online" : "Offline"}
-                  </span>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  trackEvent({
-                    eventType: "chatbot_action_click",
-                    siteSlug,
-                    page: window.location.pathname,
-                    source: "chatbot_header",
-                    metadata: { action: "choose_service" },
-                  });
-                  startBooking();
-                }}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary)]"
-                aria-label="Choose a service"
-                title="Choose a service"
-              >
-                <Briefcase size={16} />
-              </button>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary)]"
-                aria-label={`Talk to ${humanLabel} on WhatsApp`}
-                title={`Talk to ${humanLabel}`}
-              >
-                <MessageCircle size={16} />
-              </a>
-              <a
-                href={"tel:+264818563005"}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--primary)]"
-                aria-label="Call us"
-                title="Call us"
-                onClick={() =>
-                  trackEvent({
-                    eventType: "call_click",
-                    siteSlug,
-                    page: window.location.pathname,
-                    source: "chatbot_header",
-                  })
-                }
-              >
-                <Phone size={16} />
-              </a>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -723,111 +780,84 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                 <X size={17} />
               </button>
             </div>
-          </div>
 
-          {/* ── Quick Actions ── */}
-          {!hasConversationStarted && bookingStep === "NONE" && (
-            <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/95 px-4 py-3 backdrop-blur-xl">
-              <div className="space-y-2">
-                {/* Choose a service */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    trackEvent({
-                      eventType: "chatbot_action_click",
-                      siteSlug,
-                      page: window.location.pathname,
-                      source: "chatbot_action_card",
-                      metadata: { action: "choose_service" },
-                    });
-                    startBooking();
-                  }}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
-                  aria-label="Choose a service to start a project"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                    <Briefcase size={20} />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block text-sm font-bold text-[color:var(--text-strong)]">
-                      Choose a service
+            {/* Bottom row: Service, WhatsApp, Call */}
+            {!hasConversationStarted && bookingStep === "NONE" && (
+              <div className="border-t border-[color:var(--border-subtle)] px-4 py-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Choose a Service */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      trackEvent({
+                        eventType: "chatbot_action_click",
+                        siteSlug,
+                        page: window.location.pathname,
+                        source: "chatbot_action_card",
+                        metadata: { action: "choose_service" },
+                      });
+                      startBooking();
+                    }}
+                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    aria-label="Choose a service to start a project"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                      <Briefcase size={18} />
                     </span>
-                    <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
-                      Start your project brief
+                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
+                      Choose a Service
                     </span>
-                  </span>
-                  <ChevronRight
-                    size={18}
-                    className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
-                  />
-                </button>
+                  </button>
 
-                {/* Call Us */}
-                <a
-                  href={"tel:+264818563005"}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
-                  aria-label="Call us"
-                  onClick={() =>
-                    trackEvent({
-                      eventType: "call_click",
-                      siteSlug,
-                      page: window.location.pathname,
-                      source: "chatbot_action_card",
-                    })
-                  }
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                    <Phone size={20} />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block text-sm font-bold text-[color:var(--text-strong)]">
-                      Call Us
+                  {/* WhatsApp */}
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    aria-label={`Chat with ${humanLabel} on WhatsApp`}
+                    onClick={() =>
+                      trackEvent({
+                        eventType: "whatsapp_click",
+                        siteSlug,
+                        page: window.location.pathname,
+                        source: "chatbot_action_card",
+                      })
+                    }
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                      <MessageCircle size={18} />
                     </span>
-                    <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
-                      Speak with us directly
-                    </span>
-                  </span>
-                  <ChevronRight
-                    size={18}
-                    className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
-                  />
-                </a>
-
-                {/* WhatsApp */}
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
-                  aria-label={`Chat with ${humanLabel} on WhatsApp`}
-                  onClick={() =>
-                    trackEvent({
-                      eventType: "whatsapp_click",
-                      siteSlug,
-                      page: window.location.pathname,
-                      source: "chatbot_action_card",
-                    })
-                  }
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                    <MessageCircle size={20} />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block text-sm font-bold text-[color:var(--text-strong)]">
+                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
                       WhatsApp
                     </span>
-                    <span className="mt-0.5 block text-xs text-[color:var(--text-muted)]">
-                      Chat with {humanLabel}
+                  </a>
+
+                  {/* Call */}
+                  <a
+                    href={"tel:+264818563005"}
+                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    aria-label="Call us"
+                    onClick={() =>
+                      trackEvent({
+                        eventType: "call_click",
+                        siteSlug,
+                        page: window.location.pathname,
+                        source: "chatbot_action_card",
+                      })
+                    }
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
+                      <Phone size={18} />
                     </span>
-                  </span>
-                  <ChevronRight
-                    size={18}
-                    className="shrink-0 text-[color:var(--text-faint)] transition-all duration-200 group-hover:text-[color:var(--primary)] group-hover:translate-x-0.5"
-                  />
-                </a>
+                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
+                      Call
+                    </span>
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* ── Chat Transcript ── */}
           <div className="flex min-h-0 flex-1 flex-col">
@@ -835,37 +865,73 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
               ref={transcriptRef}
               className="chat-transcript min-h-[13rem] flex-1 space-y-3 overflow-y-auto px-4 py-4"
             >
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={
-                    message.author === "AI"
-                      ? "chat-bubble chat-bubble--assistant"
-                      : "ml-auto chat-bubble chat-bubble--user"
-                  }
-                >
-                  <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
-                    <span>
-                      {message.author === "AI" ? "Assistant" : "You"}
-                    </span>
-                    <span>{message.time}</span>
-                  </div>
-                  {message.author === "AI" ? (
-                    <div className="mt-2 text-sm leading-6">
-                      <MarkdownRenderer
-                        content={message.text}
-                        isUser={false}
-                      />
+              {messages.map((message) => {
+                // Render buyer-intent card as a standalone element
+                if (message.cardType === "buyer-intent") {
+                  return (
+                    <div key={message.id} className="chat-bubble chat-bubble--assistant">
+                      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                        <span>Assistant</span>
+                        <span>{message.time}</span>
+                      </div>
+                      <div className="mt-2">
+                        <BuyerIntentCard
+                          onSelectService={handleIntentServiceSelect}
+                          onBookConsultation={handleBookConsultation}
+                          onWhatsApp={() =>
+                            trackEvent({
+                              eventType: "whatsapp_click",
+                              siteSlug,
+                              page: window.location.pathname,
+                              source: "chatbot_intent_card",
+                            })
+                          }
+                          onCall={() =>
+                            trackEvent({
+                              eventType: "call_click",
+                              siteSlug,
+                              page: window.location.pathname,
+                              source: "chatbot_intent_card",
+                            })
+                          }
+                          whatsappHref={whatsappHref}
+                          humanLabel={humanLabel}
+                        />
+                      </div>
                     </div>
-                  ) : (
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 break-words text-[color:var(--text-strong)]">
-                      {message.text}
-                    </p>
-                  )}
+                  );
+                }
 
-
-                </div>
-              ))}
+                return (
+                  <div
+                    key={message.id}
+                    className={
+                      message.author === "AI"
+                        ? "chat-bubble chat-bubble--assistant"
+                        : "ml-auto chat-bubble chat-bubble--user"
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
+                      <span>
+                        {message.author === "AI" ? "Assistant" : "You"}
+                      </span>
+                      <span>{message.time}</span>
+                    </div>
+                    {message.author === "AI" ? (
+                      <div className="mt-2 text-sm leading-6">
+                        <MarkdownRenderer
+                          content={message.text}
+                          isUser={false}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 break-words text-[color:var(--text-strong)]">
+                        {message.text}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* ═══ Step 1: Service Selector ═══ */}
               {bookingStep === "SERVICES" && (
