@@ -71,7 +71,7 @@ export function BuyerIntentCard({
                 row.customDetails,
               )
             }
-            className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-transparent px-4 py-3 text-left text-sm font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+            className="w-full rounded-xl border border-[color:var(--border-subtle)] bg-transparent px-4 py-2.5 text-left text-xs font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
           >
             {row.label}
           </button>
@@ -83,9 +83,9 @@ export function BuyerIntentCard({
           onClick={() =>
             onSelectService("other-project", "Other", "other")
           }
-          className="w-full rounded-xl border border-dashed border-[color:var(--border-subtle)] bg-transparent px-4 py-3 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--primary)]/6 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+          className="w-full rounded-xl border border-dashed border-[color:var(--border-subtle)] bg-transparent px-4 py-2.5 text-left transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--primary)]/6 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
         >
-          <div className="text-sm font-bold text-[color:var(--text-strong)]">
+          <div className="text-xs font-bold text-[color:var(--text-strong)]">
             Something else? Describe your project
           </div>
           <div className="mt-0.5 text-xs text-[color:var(--text-muted)]">
