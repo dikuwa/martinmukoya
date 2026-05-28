@@ -11,6 +11,32 @@
  * TRIGGER_THRESHOLD  = 10  → minimum score to trigger
  */
 
+// ── Website-specific intent triggers ──
+export const WEBSITE_INTENT_PHRASES = [
+  "do you create websites",
+  "do you build websites",
+  "do you make websites",
+  "can you create websites",
+  "can you build websites",
+  "can you make websites",
+  "do you create a website",
+  "do you build a website",
+  "do you make a website",
+  "can you create a website",
+  "can you build a website",
+  "can you make a website",
+  "can you make me a website",
+  "i need a website",
+  "i need a landing page",
+  "i need a web app",
+  "i need a web application",
+  "i need a business website",
+  "i need a company website",
+  "i want a website",
+  "i want a landing page",
+  "i want a web app",
+] as const;
+
 // ── High intent phrases ──
 export const HIGH_INTENT_PHRASES = [
   "i need a website",
@@ -59,6 +85,9 @@ export const HIGH_INTENT_PHRASES = [
   "looking for a developer",
 ] as const;
 
+// ── Website-specific intent score ──
+export const WEBSITE_INTENT_SCORE = 10;
+
 // ── Soft intent phrases ──
 export const SOFT_INTENT_PHRASES = [
   "tell me more",
@@ -79,7 +108,7 @@ export const SOFT_INTENT_PHRASES = [
   "i want to modernize my business",
   "do you do ecommerce",
   "do you do booking systems",
-  "do you make websites",
+  "can you make me a website",
   "i am exploring options",
   "what do you specialise in",
   "what kind of websites",
@@ -153,28 +182,67 @@ export const TRIGGER_THRESHOLD = 10;
 
 // ── Helpers ──
 
-/** Normalize text for matching */
+/** Normalize text for matching — lowercase, strip punctuation, collapse whitespace */
 function normalize(text: string): string {
-  return text.toLowerCase().replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+  return text.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** Fuzzy-phrase match: ≥60% word overlap after normalisation */
-function fuzzyPhraseMatch(text: string, phrase: string): boolean {
-  const textWords = text.split(/\s+/).filter((w) => w.length > 2);
-  const phraseWords = phrase.split(/\s+/).filter((w) => w.length > 2);
-  if (phraseWords.length < 2) return false;
+/**
+ * Levenshtein distance — used for typo-tolerant single-word matching.
+ */
+function levenshtein(a: string, b: string): number {
+  if (a.length < b.length) [a, b] = [b, a];
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 0; i < a.length; i++) {
+    const cur = [i + 1];
+    for (let j = 0; j < b.length; j++) {
+      cur[j + 1] = Math.min(
+        prev[j + 1] + 1,
+        cur[j] + 1,
+        prev[j] + (a[i] !== b[j] ? 1 : 0),
+      );
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
 
+/**
+ * Typo-tolerant fuzzy match: checks if two words are similar
+ * (levenshtein distance ≤ 1 for short words, ≤ 2 for longer words).
+ */
+function wordsMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  const maxDist = Math.min(2, Math.floor(Math.max(a.length, b.length) / 3));
+  return levenshtein(a, b) <= maxDist;
+}
+
+/**
+ * Fuzzy-phrase match: ≥50% word overlap after normalisation,
+ * with typo-tolerant single-word matching.
+ * Also handles single-word phrases (common typos like "websit" → "website").
+ */
+function fuzzyPhraseMatch(text: string, phrase: string): boolean {
+  // Normalise and split
+  const textWords = normalize(text).split(/\s+/).filter((w) => w.length > 1);
+  const phraseWords = normalize(phrase).split(/\s+/).filter((w) => w.length > 1);
+  if (phraseWords.length === 0 || textWords.length === 0) return false;
+
+  // For single-word phrases, try direct typo-tolerant match
+  if (phraseWords.length === 1) {
+    return textWords.some((tw) => wordsMatch(tw, phraseWords[0]));
+  }
+
+  // Multi-word: count typo-tolerant word matches
   let matches = 0;
   for (const pw of phraseWords) {
-    for (const tw of textWords) {
-      if (tw.includes(pw) || pw.includes(tw)) {
-        matches++;
-        break;
-      }
+    if (textWords.some((tw) => wordsMatch(tw, pw))) {
+      matches++;
     }
   }
 
-  return matches >= Math.ceil(phraseWords.length * 0.6);
+  return matches >= Math.ceil(phraseWords.length * 0.5);
 }
 
 // ── Public API ──
@@ -208,6 +276,13 @@ export function detectBuyerIntent(text: string): IntentResult {
   let score = 0;
 
   // ── 1. Exact / substring matching ──
+  for (const phrase of WEBSITE_INTENT_PHRASES) {
+    if (normalized.includes(phrase)) {
+      score += WEBSITE_INTENT_SCORE;
+      matchedPhrases.push(phrase);
+    }
+  }
+
   for (const phrase of HIGH_INTENT_PHRASES) {
     if (normalized.includes(phrase)) {
       score += HIGH_INTENT_SCORE;
@@ -231,6 +306,13 @@ export function detectBuyerIntent(text: string): IntentResult {
 
   // ── 2. Fuzzy matching (only if below threshold to save work) ──
   if (score < TRIGGER_THRESHOLD) {
+    for (const phrase of WEBSITE_INTENT_PHRASES) {
+      if (!normalized.includes(phrase) && fuzzyPhraseMatch(normalized, phrase)) {
+        score += WEBSITE_INTENT_SCORE;
+        matchedPhrases.push(`~${phrase}`);
+      }
+    }
+
     for (const phrase of HIGH_INTENT_PHRASES) {
       if (!normalized.includes(phrase) && fuzzyPhraseMatch(normalized, phrase)) {
         score += HIGH_INTENT_SCORE;

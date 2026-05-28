@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { BudgetSelector, type BudgetOption } from "@/components/public/budget-selector";
 import { ServiceSelector } from "@/components/public/service-selector";
 import { TimelineSelector, type TimelineOption } from "@/components/public/timeline-selector";
@@ -95,12 +94,6 @@ const servicesValueLabel: Record<string, string> = {
   "ai-automations": "AI Automations",
   other: "Other",
 };
-
-/** Check if a user message shows buying/project intent. */
-function hasBuyingIntent(text: string): boolean {
-  const lower = text.toLowerCase();
-  return /\b(website|app|build|create|develop|need.*help|service|quote|cost|price|budget|ecommerce|booking|dashboard|automation|ai|campaign|design|landing page|project|system|platform|store|shop|i want|i need|can you|how much|looking for|start a project|book|choose a service)\b/.test(lower);
-}
 
 export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false);
@@ -592,6 +585,20 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     const intentResult = detectBuyerIntent(content);
     const shouldShowCard = !intentCardShown && intentResult.triggered;
 
+    // Track buyer intent detection
+    if (intentResult.triggered) {
+      trackEvent({
+        eventType: "chatbot_buyer_intent",
+        siteSlug: siteSlugRef.current,
+        page: window.location.pathname,
+        source: "chatbot",
+        metadata: {
+          intent_score: intentResult.score,
+          matched_phrases: intentResult.matchedPhrases.slice(0, 5),
+        },
+      });
+    }
+
     await sendToApi(content, content, () => {
       // Show buyer intent action card after AI finishes responding
       if (shouldShowCard) {
@@ -607,6 +614,18 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           },
         ]);
         setIntentCardShown(true);
+
+        // Track when card is shown
+        trackEvent({
+          eventType: "chatbot_intent_card_shown",
+          siteSlug: siteSlugRef.current,
+          page: window.location.pathname,
+          source: "chatbot",
+          metadata: {
+            intent_score: intentResult.score,
+            matched_phrases: intentResult.matchedPhrases.slice(0, 5),
+          },
+        });
       }
       setLoading(false);
     });
@@ -751,7 +770,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   }, []);
 
   const actionPillClass =
-    "inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-[14px] font-bold leading-[14px] tracking-[-0.01em] not-italic font-['Plus_Jakarta_Sans',Inter,system-ui,sans-serif] text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
+    "inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-[14px] font-bold leading-[14px] tracking-[-0.01em] not-italic text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
 
   const isInBooking = bookingStep !== "NONE" && bookingStep !== "SUBMITTED";
 
