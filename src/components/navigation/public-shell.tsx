@@ -1,6 +1,7 @@
 "use client";
 
 import { AIChatbot } from "@/components/public/ai-chatbot";
+import { CookieBanner } from "@/components/cookie-banner";
 import FinalCTA from "@/components/public/final-cta";
 import { TrackedAnchor } from "@/components/public/tracked-anchor";
 import { TrackedLink } from "@/components/public/tracked-link";
@@ -56,6 +57,7 @@ export function PublicShell({ children, site }: { children: React.ReactNode; sit
       <TopBar site={site} />
       <PrimaryNav site={site} />
       <AIChatbot siteSlug={site.slug} />
+      <CookieBanner />
       <main>{children}</main>
       <FinalCTA site={site} />
       <Footer site={site} />
@@ -276,12 +278,15 @@ function Footer({ site }: { site: PublicSiteConfig }) {
             <p className="text-xs text-[color:var(--text-faint)]">
               &copy; 2026 FlexTech Media. All rights reserved.
             </p>
-            <div className="flex items-center gap-4 text-xs text-[color:var(--text-faint)]">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[color:var(--text-faint)] sm:justify-end">
               <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
-                Privacy Policy
+                Privacy
               </Link>
-              <span aria-hidden="true">&middot;</span>
-              <span>
+              <Link href="/terms" className="transition hover:text-[color:var(--text-muted)]">
+                Terms
+              </Link>
+              <span aria-hidden="true" className="hidden sm:inline">&middot;</span>
+              <span className="sm:ml-0">
                 Designed by{" "}
                 <a href="https://martinmukoya.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
                   Martin Mukoya
@@ -327,11 +332,16 @@ function Footer({ site }: { site: PublicSiteConfig }) {
         </div>
       </Container>
       <Container className="border-t border-[color:var(--border-subtle)] py-5 text-xs text-[color:var(--text-faint)]">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <p>&copy; 2026 {site.brandName}. {site.copyright}</p>
-          <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
-            Privacy Policy
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition hover:text-[color:var(--text-muted)]">
+              Terms
+            </Link>
+          </div>
         </div>
       </Container>
     </footer>
