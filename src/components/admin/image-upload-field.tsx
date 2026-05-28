@@ -141,7 +141,7 @@ export function ImageUploadField({
       <span>{label}</span>
 
       {value ? (
-        <div className="group relative h-28 overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] sm:h-32">
+        <div className={cropShape === "round" ? "group relative w-24 h-24 overflow-hidden rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]" : "group relative h-28 overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] sm:h-32"}>
           <img
             src={value}
             alt=""
@@ -179,7 +179,7 @@ export function ImageUploadField({
         </div>
       ) : (
         <div
-          className="flex h-28 cursor-pointer items-center justify-center rounded-[calc(var(--radius)*0.75)] border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] transition hover:border-[color:var(--primary)]/40 sm:h-32"
+          className={cropShape === "round" ? "flex w-24 h-24 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] transition hover:border-[color:var(--primary)]/40" : "flex h-28 cursor-pointer items-center justify-center rounded-[calc(var(--radius)*0.75)] border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] transition hover:border-[color:var(--primary)]/40 sm:h-32"}
           onClick={() => hiddenFileRef.current?.click()}
         >
           <ImagePlus size={24} className="text-[color:var(--text-faint)]" />

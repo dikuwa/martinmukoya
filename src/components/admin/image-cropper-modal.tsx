@@ -5,7 +5,7 @@
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import * as Dialog from "@radix-ui/react-dialog";
 import { SlidersHorizontal, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
@@ -116,23 +116,6 @@ export function ImageCropperModal({
   const [saving, setSaving] = useState(false);
   const zoomTrackRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
-  const moveHandlerRef = useRef<((ev: MouseEvent) => void) | null>(null);
-  const upHandlerRef = useRef<((ev: MouseEvent) => void) | null>(null);
-
-  // Clean up drag event listeners on unmount
-  useEffect(() => {
-    return () => {
-      isDraggingRef.current = false;
-      if (moveHandlerRef.current) {
-        window.removeEventListener("mousemove", moveHandlerRef.current);
-        moveHandlerRef.current = null;
-      }
-      if (upHandlerRef.current) {
-        window.removeEventListener("mouseup", upHandlerRef.current);
-        upHandlerRef.current = null;
-      }
-    };
-  }, []);
 
   const onCropComplete = useCallback(
     (_: Area, croppedPixels: Area) => {
@@ -226,25 +209,26 @@ export function ImageCropperModal({
 
         {/* Zoom slider */}
         <div className="flex items-center gap-3 border-t border-[var(--border-subtle)] px-5 py-3.5">
-          <ZoomOut size={16} className="text-[var(--text-faint)] shrink-0" />
+          <button
+            type="button"
+            onClick={() => setZoom((prev) => Math.max(MIN_ZOOM, +(prev - 0.2).toFixed(1)))}
+            className="grid h-7 w-7 place-items-center rounded-md text-[var(--text-faint)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--text-strong)] disabled:opacity-30"
+            disabled={zoom <= MIN_ZOOM}
+            aria-label="Zoom out"
+          >
+            <ZoomOut size={16} />
+          </button>
           <div
             ref={zoomTrackRef}
-            className="relative flex-1 h-5 flex items-center cursor-pointer group"
-            onMouseDown={(e) => {
-              // Clean up any previous drag handlers before starting new ones
-              if (moveHandlerRef.current) {
-                window.removeEventListener("mousemove", moveHandlerRef.current);
-              }
-              if (upHandlerRef.current) {
-                window.removeEventListener("mouseup", upHandlerRef.current);
-              }
-
+            className="relative flex-1 h-5 flex items-center cursor-pointer group touch-none"
+            onPointerDown={(e) => {
+              e.preventDefault();
               isDraggingRef.current = true;
               const rect = e.currentTarget.getBoundingClientRect();
               const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
               setZoom(MIN_ZOOM + pct * (MAX_ZOOM - MIN_ZOOM));
 
-              const onMove = (ev: MouseEvent) => {
+              const onMove = (ev: PointerEvent) => {
                 if (!isDraggingRef.current) return;
                 const r = zoomTrackRef.current?.getBoundingClientRect();
                 if (!r) return;
@@ -253,16 +237,12 @@ export function ImageCropperModal({
               };
               const onUp = () => {
                 isDraggingRef.current = false;
-                moveHandlerRef.current = null;
-                upHandlerRef.current = null;
-                window.removeEventListener("mousemove", onMove);
-                window.removeEventListener("mouseup", onUp);
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
               };
 
-              moveHandlerRef.current = onMove;
-              upHandlerRef.current = onUp;
-              window.addEventListener("mousemove", onMove);
-              window.addEventListener("mouseup", onUp);
+              window.addEventListener("pointermove", onMove);
+              window.addEventListener("pointerup", onUp);
             }}
           >
             <div className="absolute inset-x-0 h-1 rounded-full bg-[var(--border-subtle)]" />
@@ -275,7 +255,15 @@ export function ImageCropperModal({
               style={{ left: `${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%` }}
             />
           </div>
-          <ZoomIn size={16} className="text-[var(--text-faint)] shrink-0" />
+          <button
+            type="button"
+            onClick={() => setZoom((prev) => Math.min(MAX_ZOOM, +(prev + 0.2).toFixed(1)))}
+            className="grid h-7 w-7 place-items-center rounded-md text-[var(--text-faint)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--text-strong)] disabled:opacity-30"
+            disabled={zoom >= MAX_ZOOM}
+            aria-label="Zoom in"
+          >
+            <ZoomIn size={16} />
+          </button>
         </div>
 
         {/* Actions */}
