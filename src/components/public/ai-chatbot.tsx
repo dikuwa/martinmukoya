@@ -119,6 +119,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const [leadError, setLeadError] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [intentCardShown, setIntentCardShown] = useState(false);
+  const intentCardShownRef = useRef(false);
 
   const siteSlugRef = useRef(siteSlug);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -601,7 +602,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
     await sendToApi(content, content, () => {
       // Show buyer intent action card after AI finishes responding
-      if (shouldShowCard) {
+      // Guard with ref to prevent duplicate if keyword check already showed one
+      if (shouldShowCard && !intentCardShownRef.current) {
         const cardMsgId = messageIdRef.current++;
         setMessages((current) => [
           ...current,
@@ -614,6 +616,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           },
         ]);
         setIntentCardShown(true);
+        intentCardShownRef.current = true;
 
         // Track when card is shown
         trackEvent({
@@ -636,7 +639,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     async (
       displayContent: string,
       apiContent: string,
-      cb?: () => void
+      cb?: (aiText?: string) => void
     ) => {
       let aiMessageId: number;
       setMessages((current) => {
@@ -647,6 +650,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         ];
       });
 
+      let fullText = "";
       try {
         const res = await fetch("/api/ai-chat", {
           method: "POST",
@@ -674,7 +678,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let done = false;
-        let fullText = "";
 
         while (!done) {
           const { value, done: d } = await reader.read();
@@ -689,6 +692,34 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
               )
             );
           }
+        }
+
+        // After streaming completes, check AI response for choice keywords
+        if (!intentCardShownRef.current && responseMentionsChoice(fullText)) {
+          const cardMsgId = messageIdRef.current++;
+          setMessages((current) => [
+            ...current,
+            {
+              id: cardMsgId,
+              author: "AI",
+              text: "",
+              time: "Now",
+              cardType: "buyer-intent",
+            },
+          ]);
+          setIntentCardShown(true);
+          intentCardShownRef.current = true;
+
+          trackEvent({
+            eventType: "chatbot_intent_card_shown",
+            siteSlug: siteSlugRef.current,
+            page: window.location.pathname,
+            source: "chatbot",
+            metadata: {
+              trigger: "ai_response_keyword",
+              ai_snippet: fullText.slice(0, 120),
+            },
+          });
         }
       } catch (err) {
         const id = aiMessageId!;
@@ -706,7 +737,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           )
         );
       } finally {
-        cb?.();
+        cb?.(fullText);
       }
     },
     [sessionId]
@@ -771,6 +802,37 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
   const actionPillClass =
     "action-pill inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
+
+  // ── AI response keyword fail-safe ──
+  // If the AI mentions options, choices, or selection, force the service card to show.
+  const CHOICE_KEYWORDS = [
+    "options below",
+    "option below",
+    "choose a service",
+    "choose one",
+    "choose an option",
+    "choose the option",
+    "choose the service",
+    "select a service",
+    "select an option",
+    "select the service",
+    "select the option",
+    "pick an option",
+    "pick one",
+    "service that best fits",
+    "service that fits",
+    "take a look below",
+    "one or more",
+    "what would you like help with",
+    "what service",
+    "what services",
+  ];
+
+  function responseMentionsChoice(text: string): boolean {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    return CHOICE_KEYWORDS.some((kw) => lower.includes(kw));
+  }
 
   const isInBooking = bookingStep !== "NONE" && bookingStep !== "SUBMITTED";
 
