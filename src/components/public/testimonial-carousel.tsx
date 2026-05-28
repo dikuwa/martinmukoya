@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -51,16 +50,6 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), PAUSE_RESUME_DELAY);
   }, []);
-
-  // Manual navigation
-  function scroll(direction: "prev" | "next") {
-    const newIndex = direction === "next"
-      ? (currentIndex + 1) % items.length
-      : (currentIndex - 1 + items.length) % items.length;
-    scrollToIndex(newIndex);
-    setCurrentIndex(newIndex);
-    pauseAutoScroll();
-  }
 
   // Auto-scroll effect
   useEffect(() => {
@@ -172,24 +161,6 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
             ))}
           </div>
         )}
-      </div>
-      <div className="mt-5 flex justify-center gap-3">
-        <button
-          type="button"
-          aria-label="Previous testimonial"
-          onClick={() => scroll("prev")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)]"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <button
-          type="button"
-          aria-label="Next testimonial"
-          onClick={() => scroll("next")}
-          className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-strong)] transition hover:border-[color:var(--primary)]"
-        >
-          <ArrowRight size={18} />
-        </button>
       </div>
     </div>
   );
