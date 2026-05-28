@@ -72,14 +72,14 @@ const serviceLabels: Record<string, string> = {
 function siteAwareGreeting(slug: string) {
   if (slug === "flextech-media") {
     return {
-      title: "Project Assistant ✨",
+      title: "Project Assistant",
       initial:
         "👋 Hi! I'm your FlexTech assistant. I can help you explore our services, shape a project brief, or connect you with the right team quickly.",
       humanLabel: "Team",
     };
   }
   return {
-    title: "Project Assistant ✨",
+    title: "Project Assistant",
     initial:
       "👋 Hi! I'm your Martin assistant. I can help you choose the right solution, shape your project brief, or contact Martin quickly.",
     humanLabel: "Human",
@@ -446,6 +446,33 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       serviceValue: string,
       customDetails?: string,
     ) => {
+      // ── Handle "Something else" → ask for description ──
+      if (_serviceId === "other-project") {
+        const userMsgId = messageIdRef.current++;
+        setMessages((current) => [
+          ...current,
+          {
+            id: userMsgId,
+            author: "You",
+            text: "Something else — describe my project",
+            time: "Now",
+          },
+        ]);
+
+        const aiMsgId = messageIdRef.current++;
+        setMessages((current) => [
+          ...current,
+          {
+            id: aiMsgId,
+            author: "AI",
+            text: "Sure — briefly describe what you need, and I'll guide you from there.",
+            time: "Now",
+          },
+        ]);
+
+        return;
+      }
+
       // Add user message showing their choice
       const userMsgId = messageIdRef.current++;
       setMessages((current) => [
@@ -467,18 +494,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
       // Context-aware AI response based on selected service
       const responses: Record<string, string> = {
-        website:
-          "Web development — excellent choice! Let's talk about your budget so I can recommend the right approach.",
-        seo:
-          "SEO is a smart move for growing your online presence. Let's figure out the right budget range for your goals.",
-        ai:
-          "AI automation is a game-changer! Let's look at the budget that fits your automation needs.",
-        ecommerce:
-          "An online store — great choice! Let's talk about your budget to determine the best platform and features.",
-        branding:
-          "Branding sets you apart. Let's discuss your budget so I can tailor the right package.",
+        "web-apps":
+          "Web applications & dashboards — excellent choice! Let's talk about your budget so I can recommend the right approach.",
         booking:
           "A booking system will save you and your customers time. Let's look at the budget that works for you.",
+        ecommerce:
+          "An online store — great choice! Let's talk about your budget to determine the best platform and features.",
+        "ai-auto":
+          "AI automation is a game-changer! Let's look at the budget that fits your automation needs.",
       };
 
       const aiMsgId = messageIdRef.current++;
@@ -507,18 +530,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     },
     [siteSlug, humanLabel],
   );
-
-  // ── Handle "Book Consultation" from buyer-intent card ──
-  const handleBookConsultation = useCallback(() => {
-    trackEvent({
-      eventType: "chatbot_action_click",
-      siteSlug,
-      page: window.location.pathname,
-      source: "chatbot_intent_card",
-      metadata: { action: "book_consultation" },
-    });
-    startBooking();
-  }, [siteSlug, startBooking]);
 
   // ── Handle sending a normal chat message ──
   async function handleSend(content: string) {
@@ -765,7 +776,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     {greeting.title}
                   </p>
                   <span
-                    className={`h-2 w-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}
+                    className={`h-2 w-2 rounded-full ${isOnline ? "bg-green-500 online-dot-pulse" : "bg-gray-400"}`}
                     title={isOnline ? "Online" : "Offline"}
                   />
                 </div>
@@ -773,9 +784,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] text-[color:var(--text-muted)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:text-[color:var(--primary)]"
                 aria-label="Close chat"
-                title="Close"
               >
                 <X size={17} />
               </button>
@@ -784,7 +794,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
             {/* Bottom row: Service, WhatsApp, Call */}
             {!hasConversationStarted && bookingStep === "NONE" && (
               <div className="border-t border-[color:var(--border-subtle)] px-4 py-3">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {/* Choose a Service */}
                   <button
                     type="button"
@@ -798,15 +808,11 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       });
                       startBooking();
                     }}
-                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-xs font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
                     aria-label="Choose a service to start a project"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                      <Briefcase size={18} />
-                    </span>
-                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
-                      Choose a Service
-                    </span>
+                    <Briefcase size={14} />
+                    Choose a Service
                   </button>
 
                   {/* WhatsApp */}
@@ -814,7 +820,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     href={whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-xs font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
                     aria-label={`Chat with ${humanLabel} on WhatsApp`}
                     onClick={() =>
                       trackEvent({
@@ -825,18 +831,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       })
                     }
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                      <MessageCircle size={18} />
-                    </span>
-                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
-                      WhatsApp
-                    </span>
+                    <MessageCircle size={14} />
+                    WhatsApp
                   </a>
 
                   {/* Call */}
                   <a
                     href={"tel:+264818563005"}
-                    className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2 py-3 transition-all duration-200 hover:border-[color:var(--primary)]/40 hover:bg-[color:var(--surface-soft)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-xs font-bold text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
                     aria-label="Call us"
                     onClick={() =>
                       trackEvent({
@@ -847,12 +849,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       })
                     }
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--primary)]/10 text-[color:var(--primary)] transition-all duration-200 group-hover:bg-[color:var(--primary)]/15">
-                      <Phone size={18} />
-                    </span>
-                    <span className="text-[11px] font-bold leading-tight text-center text-[color:var(--text-strong)]">
-                      Call
-                    </span>
+                    <Phone size={14} />
+                    Call
                   </a>
                 </div>
               </div>
@@ -877,7 +875,6 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       <div className="mt-2">
                         <BuyerIntentCard
                           onSelectService={handleIntentServiceSelect}
-                          onBookConsultation={handleBookConsultation}
                           onWhatsApp={() =>
                             trackEvent({
                               eventType: "whatsapp_click",
