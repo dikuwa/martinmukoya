@@ -276,12 +276,18 @@ function Footer({ site }: { site: PublicSiteConfig }) {
             <p className="text-xs text-[color:var(--text-faint)]">
               &copy; 2026 FlexTech Media. All rights reserved.
             </p>
-            <p className="text-xs text-[color:var(--text-faint)]">
-              Designed by{" "}
-              <a href="https://martinmukoya.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
-                Martin Mukoya
-              </a>
-            </p>
+            <div className="flex items-center gap-4 text-xs text-[color:var(--text-faint)]">
+              <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
+                Privacy Policy
+              </Link>
+              <span aria-hidden="true">&middot;</span>
+              <span>
+                Designed by{" "}
+                <a href="https://martinmukoya.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]">
+                  Martin Mukoya
+                </a>
+              </span>
+            </div>
           </Container>
         </div>
       </footer>
@@ -321,7 +327,12 @@ function Footer({ site }: { site: PublicSiteConfig }) {
         </div>
       </Container>
       <Container className="border-t border-[color:var(--border-subtle)] py-5 text-xs text-[color:var(--text-faint)]">
-        &copy; 2026 {site.brandName}. {site.copyright}
+        <div className="flex items-center justify-between gap-4">
+          <p>&copy; 2026 {site.brandName}. {site.copyright}</p>
+          <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
+            Privacy Policy
+          </Link>
+        </div>
       </Container>
     </footer>
   );
