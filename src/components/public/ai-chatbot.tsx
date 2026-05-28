@@ -438,16 +438,19 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
     ]);
   }, []);
 
-  // ── Handle service selection from buyer-intent card ──
-  const handleIntentServiceSelect = useCallback(
-    (
-      _serviceId: string,
-      label: string,
-      serviceValue: string,
-      customDetails?: string,
-    ) => {
-      // ── Handle "Something else" → ask for description ──
-      if (_serviceId === "other-project") {
+  // ── Handle multi-service selection from buyer-intent card ──
+  const handleIntentMultiSelect = useCallback(
+    (selected: Array<{
+      id: string;
+      label: string;
+      serviceValue: string;
+      customDetails?: string;
+    }>) => {
+      if (selected.length === 0) return;
+
+      // ── Handle "Something else" only → ask for description ──
+      const otherItem = selected.find((s) => s.id === "other-project");
+      if (selected.length === 1 && otherItem) {
         const userMsgId = messageIdRef.current++;
         setMessages((current) => [
           ...current,
@@ -473,26 +476,33 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         return;
       }
 
-      // Add user message showing their choice
+      // Build labels and service values
+      const labels = selected.map((s) => s.label).join(", ");
+      const serviceValues = selected.map((s) => s.serviceValue);
+
+      // Add user message showing their choices
       const userMsgId = messageIdRef.current++;
       setMessages((current) => [
         ...current,
         {
           id: userMsgId,
           author: "You",
-          text: `I need help with ${label}`,
+          text: `I need help with: ${labels}`,
           time: "Now",
         },
       ]);
 
-      // Pre-select the service in booking data
+      // Pre-select services in booking data
       setBookingData((prev) => ({
         ...prev,
-        services: [serviceValue],
-        ...(customDetails ? { customServiceDetails: customDetails } : {}),
+        services: serviceValues,
+        ...(otherItem?.customDetails
+          ? { customServiceDetails: otherItem.customDetails }
+          : {}),
       }));
 
-      // Context-aware AI response based on selected service
+      // Context-aware AI response based on first selected service
+      const firstServiceId = selected[0]?.id;
       const responses: Record<string, string> = {
         "web-apps":
           "Web applications & dashboards — excellent choice! Let's talk about your budget so I can recommend the right approach.",
@@ -511,8 +521,10 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           id: aiMsgId,
           author: "AI",
           text:
-            responses[_serviceId] ||
-            `**${label}** — great pick! What budget are you working with? This helps me tailor the solution.`,
+            (selected.length > 1
+              ? `**${labels}** — great choices! Let's talk about your budget so I can recommend the right approach.`
+              : responses[firstServiceId ?? ""] ||
+                `**${labels}** — great pick! What budget are you working with? This helps me tailor the solution.`),
           time: "Now",
         },
       ]);
@@ -525,10 +537,13 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         siteSlug,
         page: window.location.pathname,
         source: "chatbot_intent_card",
-        metadata: { action: "select_service", service: _serviceId },
+        metadata: {
+          action: "multi_select_service",
+          services: serviceValues,
+        },
       });
     },
-    [siteSlug, humanLabel],
+    [siteSlug],
   );
 
   // ── Handle sending a normal chat message ──
@@ -980,7 +995,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       </div>
                       <div className="mt-2">
                         <BuyerIntentCard
-                          onSelectService={handleIntentServiceSelect}
+                          onServicesConfirm={handleIntentMultiSelect}
                           onWhatsApp={() =>
                             trackEvent({
                               eventType: "whatsapp_click",
