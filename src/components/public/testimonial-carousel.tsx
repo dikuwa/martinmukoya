@@ -13,8 +13,11 @@ type Testimonial = {
   image?: string | null;
 };
 
+type DragDirection = "horizontal" | "vertical" | null;
+
 const AUTO_SCROLL_INTERVAL = 3000; // 3 seconds between auto-scrolls
 const PAUSE_RESUME_DELAY = 4000; // 4 seconds after interaction before resuming
+const DRAG_THRESHOLD = 8;
 
 export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[]; siteSlug?: string }) {
   const isMartinMukoya = siteSlug !== "flextech-media";
@@ -22,6 +25,19 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragRef = useRef<{
+    direction: DragDirection;
+    pointerId: number | null;
+    scrollLeft: number;
+    x: number;
+    y: number;
+  }>({
+    direction: null,
+    pointerId: null,
+    scrollLeft: 0,
+    x: 0,
+    y: 0
+  });
   const [cardWidth, setCardWidth] = useState(420);
 
   // Measure card width (card + gap) after mount and on resize
@@ -53,14 +69,76 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
   }, []);
 
   const pauseWhileReading = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (!event.isPrimary || !scrollRef.current) return;
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     setIsPaused(true);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragRef.current = {
+      direction: null,
+      pointerId: event.pointerId,
+      scrollLeft: scrollRef.current.scrollLeft,
+      x: event.clientX,
+      y: event.clientY
+    };
   }, []);
 
   const resumeAfterReading = useCallback((event: PointerEvent<HTMLElement>) => {
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    if (dragRef.current.pointerId === event.pointerId) {
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      dragRef.current = {
+        direction: null,
+        pointerId: null,
+        scrollLeft: 0,
+        x: 0,
+        y: 0
+      };
+    }
     setIsPaused(false);
+  }, []);
+
+  const resumeIfNotDraggingHorizontally = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (dragRef.current.pointerId !== event.pointerId || dragRef.current.direction === "horizontal") return;
+    dragRef.current = {
+      direction: null,
+      pointerId: null,
+      scrollLeft: 0,
+      x: 0,
+      y: 0
+    };
+    setIsPaused(false);
+  }, []);
+
+  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const el = scrollRef.current;
+    if (!el || drag.pointerId !== event.pointerId) return;
+
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (drag.direction === null) {
+      if (absX <= DRAG_THRESHOLD && absY <= DRAG_THRESHOLD) return;
+
+      if (absY > absX) {
+        drag.direction = "vertical";
+        return;
+      }
+
+      if (absX > absY && absX > DRAG_THRESHOLD) {
+        drag.direction = "horizontal";
+        if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        }
+      }
+    }
+
+    if (drag.direction !== "horizontal") return;
+
+    event.preventDefault();
+    el.scrollLeft = drag.scrollLeft - dx;
   }, []);
 
   // Auto-scroll effect
@@ -101,9 +179,15 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex gap-5 overflow-x-auto pb-4 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onPointerMove={handlePointerMove}
+          onPointerUp={resumeAfterReading}
+          onPointerCancel={resumeAfterReading}
+          onPointerLeave={resumeIfNotDraggingHorizontally}
+          onLostPointerCapture={resumeAfterReading}
+          className="testimonial-carousel testimonial-track flex cursor-grab gap-5 overflow-x-auto pb-4 scroll-smooth [scrollbar-width:none] active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
           style={{
             scrollSnapType: "x mandatory",
+            touchAction: "pan-y",
             ...(isMartinMukoya
               ? {
                   maskImage: `linear-gradient(to right, transparent 0px, black 60px, black calc(100% - 60px), transparent 100%), linear-gradient(to bottom, black 0px, black calc(100% - 40px), transparent 100%)`,
@@ -118,9 +202,7 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
             <article
               key={item.clientName}
               onPointerDown={pauseWhileReading}
-              onPointerUp={resumeAfterReading}
-              onPointerCancel={resumeAfterReading}
-              className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 touch-pan-x cursor-pointer flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] active:cursor-grabbing"
+              className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
               style={{ scrollSnapAlign: "start" }}
             >
               <div className="relative h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
