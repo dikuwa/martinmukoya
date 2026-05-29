@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Testimonial = {
@@ -12,7 +13,7 @@ type Testimonial = {
   image?: string | null;
 };
 
-const AUTO_SCROLL_INTERVAL = 3000; // 5 seconds between auto-scrolls
+const AUTO_SCROLL_INTERVAL = 3000; // 3 seconds between auto-scrolls
 const PAUSE_RESUME_DELAY = 4000; // 4 seconds after interaction before resuming
 
 export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[]; siteSlug?: string }) {
@@ -51,6 +52,17 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
     pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), PAUSE_RESUME_DELAY);
   }, []);
 
+  const pauseWhileReading = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+    setIsPaused(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const resumeAfterReading = useCallback((event: PointerEvent<HTMLElement>) => {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setIsPaused(false);
+  }, []);
+
   // Auto-scroll effect
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
@@ -81,22 +93,8 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
     };
   }, []);
 
-  // Pause auto-scroll while hovering
-  function handleMouseEnter() {
-    setIsPaused(true);
-  }
-
-  function handleMouseLeave() {
-    // Resume after a short delay when leaving
-    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
-    pauseTimeoutRef.current = setTimeout(() => setIsPaused(false), 2000);
-  }
-
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div>
       <div className="relative mt-10">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-[color:var(--background-elevated)] via-[color:var(--background-elevated)]/40 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-[color:var(--background-elevated)] via-[color:var(--background-elevated)]/40 to-transparent" />
@@ -119,7 +117,10 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
           {items.map((item) => (
             <article
               key={item.clientName}
-              className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
+              onPointerDown={pauseWhileReading}
+              onPointerUp={resumeAfterReading}
+              onPointerCancel={resumeAfterReading}
+              className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 touch-pan-x cursor-pointer flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] active:cursor-grabbing"
               style={{ scrollSnapAlign: "start" }}
             >
               <div className="relative h-16 w-16 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
