@@ -4,7 +4,7 @@ import { SectionHeading } from "@/components/public/section-heading";
 import { TrackedAnchor } from "@/components/public/tracked-anchor";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
@@ -13,7 +13,7 @@ import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return withCanonical({
     title: "Contact",
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const contact = site.contact;
   const page = site.pages.contact;
 

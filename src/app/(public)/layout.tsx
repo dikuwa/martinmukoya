@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { PublicShell } from "@/components/navigation/public-shell";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
 import { getSiteBaseUrl } from "@/lib/seo";
-import { mergeSiteOverrides } from "@/lib/site-overrides";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const config = getPublicSiteConfig(currentSite?.slug);
+  const config = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return {
     metadataBase: new URL(getSiteBaseUrl(config.slug)),
@@ -36,7 +35,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const site = await getCurrentSite();
-  const config = getPublicSiteConfig(site?.slug);
-  const merged = await mergeSiteOverrides(config, site?.slug);
-  return <PublicShell site={merged}>{children}</PublicShell>;
+  const config = await getOverriddenPublicSiteConfig(site?.slug);
+  return <PublicShell site={config}>{children}</PublicShell>;
 }

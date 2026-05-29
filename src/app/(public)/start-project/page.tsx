@@ -2,7 +2,7 @@ import { Reveal } from "@/components/public/motion";
 import { StartProjectWizard } from "@/components/public/start-project-wizard";
 import { Badge } from "@/components/ui/badge";
 import { Container, Section } from "@/components/ui/container";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import type { Metadata } from "next";
 import { webPageSchema } from "@/lib/schema";
@@ -10,7 +10,7 @@ import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   const pageTitle = site.pages.startProject.eyebrow;
 
@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function StartProjectPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const page = site.pages.startProject;
 
   const breadcrumbSchema = webPageSchema({

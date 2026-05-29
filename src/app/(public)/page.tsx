@@ -11,8 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
-import { getPublicSiteConfig, type PublicSiteConfig } from "@/lib/public-site-config";
-import { mergeSiteOverrides } from "@/lib/site-overrides";
+import { type PublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { breadcrumbSchema } from "@/lib/schema";
 import { absoluteUrl, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
@@ -24,7 +24,7 @@ import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   const pageTitle = site.slug === "flextech-media" ? "Digital Media Agency" : "Business Systems Developer";
 
@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const currentSite = await getCurrentSite();
-  const site = await mergeSiteOverrides(getPublicSiteConfig(currentSite?.slug), currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const home = site.home;
 
   const content = await getPublicContent(site, currentSite?.id);

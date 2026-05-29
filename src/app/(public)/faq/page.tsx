@@ -5,13 +5,13 @@ import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { canonicalSiteForSharedContent, withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return withCanonical({
     title: "FAQ",
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function FAQPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const content = await getPublicContent(site, currentSite?.id);
   const page = site.pages.faq;
 

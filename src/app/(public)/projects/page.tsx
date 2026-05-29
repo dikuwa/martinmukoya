@@ -3,7 +3,7 @@ import { ProjectsClient } from "@/components/public/projects-client";
 import { SectionHeading } from "@/components/public/section-heading";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { webPageSchema } from "@/lib/schema";
 import { withCanonical } from "@/lib/seo";
@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return withCanonical({
     title: "Projects",
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProjectsPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const content = await getPublicContent(site, currentSite?.id);
   const page = site.pages.projects;
 

@@ -5,7 +5,7 @@ import { TrackedLink } from "@/components/public/tracked-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { ArrowRight, Bot, CalendarCheck, MessageCircle, MonitorCog } from "lucide-react";
 import type { Metadata } from "next";
@@ -15,7 +15,7 @@ import { withCanonical } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return withCanonical({
     title: "About",
@@ -34,17 +34,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
+  const page = site.pages.about;
   const isMartin = site.slug === "martin-mukoya";
 
   // FlexTech doesn't have an individual about page — redirect or show minimal
   if (!isMartin) {
-    return <FlexTechAboutPage />;
+    return <FlexTechAboutPage site={site} />;
   }
 
   const breadcrumbSchema = webPageSchema({
     name: "About | " + site.brandName,
-    description: site.pages.about.metadataDescription,
+    description: page.metadataDescription,
     breadcrumbs: [
       { name: "Home", url: "/" },
       { name: "About", url: "/about" }
@@ -72,19 +73,17 @@ export default async function AboutPage() {
         <Container className="relative grid items-center gap-12 lg:grid-cols-[1fr_1fr]">
           {/* Left: copy */}
           <Reveal>
-            <Badge className="mb-6">About Martin</Badge>
+            <Badge className="mb-6">{page.eyebrow}</Badge>
             <h1 className="text-balance font-display text-[clamp(2.4rem,4vw,4rem)] font-black leading-[1.02] tracking-[-0.02em] text-[color:var(--text-strong)]">
-              Curiosity turned into systems that solve real problems.
+              {page.title}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[color:var(--text-muted)]">
-              I started as a science teacher, but curiosity pulled me deep into technology, systems,
-              automation, and problem solving. Today, I build practical digital systems designed to
-              help businesses operate more clearly.
+              {page.description}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="motion-sheen">
                 <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage="/about" eventSource="hero_cta" href="/start-project">
-                  Let&rsquo;s Build Something <ArrowRight size={18} />
+                  {page.ctaLabel} <ArrowRight size={18} />
                 </TrackedLink>
               </Button>
               <Button asChild size="lg" variant="secondary">
@@ -352,19 +351,19 @@ function PhilosophyCard({ text }: { text: string }) {
 }
 
 /* ─── FlexTech minimal about page ─── */
-function FlexTechAboutPage() {
+function FlexTechAboutPage({ site }: { site: Awaited<ReturnType<typeof getOverriddenPublicSiteConfig>> }) {
+  const page = site.pages.about;
+
   return (
     <Section>
       <Container>
         <div className="mx-auto max-w-3xl text-center">
-          <Badge className="mb-6">About FlexTech</Badge>
+          <Badge className="mb-6">{page.eyebrow}</Badge>
           <h1 className="text-balance font-display text-[clamp(2.4rem,4vw,4rem)] font-black leading-[1.02] tracking-[-0.02em] text-[color:var(--text-strong)]">
-            Digital media work with practical systems underneath.
+            {page.title}
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[color:var(--text-muted)]">
-            FlexTech Media exists for brands that need more than a nice page. The work combines
-            visual direction, clear copy, enquiry capture, content structure, and the tracking needed
-            to know what is working.
+            {page.description}
           </p>
         </div>
       </Container>

@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getPublicContent } from "@/lib/public-content";
-import { getPublicSiteConfig, publicSiteConfigs } from "@/lib/public-site-config";
+import { publicSiteConfigs } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { absoluteUrl, canonicalSiteForSharedContent, PRIMARY_SITE_SLUG, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
 
@@ -25,7 +26,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: BlogPageProps): Promise<Metadata> {
   const { slug } = await params;
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const content = await getPublicContent(site, currentSite?.id);
   const post = content.blogPosts.find((item) => item.slug === slug);
 
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
 export default async function BlogDetailPage({ params }: BlogPageProps) {
   const { slug } = await params;
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const content = await getPublicContent(site, currentSite?.id);
   const post = content.blogPosts.find((item) => item.slug === slug);
 

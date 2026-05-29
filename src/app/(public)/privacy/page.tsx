@@ -1,5 +1,5 @@
 import { Container, Section } from "@/components/ui/container";
-import { getPublicSiteConfig } from "@/lib/public-site-config";
+import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { webPageSchema } from "@/lib/schema";
 import { withCanonical } from "@/lib/seo";
@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
   return withCanonical({
     title: "Privacy Policy",
@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PrivacyPage() {
   const currentSite = await getCurrentSite();
-  const site = getPublicSiteConfig(currentSite?.slug);
+  const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
   const isFlexTech = site.slug === "flextech-media";
   const brand = site.brandName;
   const domain = isFlexTech ? "flextech-media.com" : "martinmukoya.com";
