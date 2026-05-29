@@ -107,9 +107,9 @@ function applyHeroObject(config: PublicSiteConfig, raw: unknown) {
   if (!hero) return;
 
   setString(config.home, "eyebrow", hero.eyebrow);
-  setString(config.home, "heroTitle", hero.title ?? hero.heading ?? hero.heroTitle);
+  setString(config.home, "heroTitle", hero.title ?? hero.heading ?? hero.heroTitle ?? hero.headline);
   setString(config.home, "heroDescription", hero.description ?? hero.subtitle ?? hero.heroDescription);
-  setString(config.home, "primaryCta", hero.primaryCta ?? hero.primary);
+  setString(config.home, "primaryCta", hero.primaryCta ?? hero.primary ?? hero.cta);
   setString(config.home, "secondaryCta", hero.secondaryCta ?? hero.secondary);
   setString(config.home, "secondaryHref", hero.secondaryHref);
   setString(config.home, "heroImage", hero.image ?? hero.heroImage);
@@ -162,6 +162,30 @@ const SETTING_MAP: Record<string, SettingMapEntry> = {
       if (typeof raw === "string" && raw.length > 0) config.availability = raw;
     },
   },
+  contact: {
+    apply: (config, raw) => {
+      const obj = getRecord(raw);
+      if (!obj) return;
+      if (typeof obj.email === "string" && obj.email.length > 0) config.contact.email = obj.email;
+      if (typeof obj.phone === "string" && obj.phone.length > 0) {
+        const digits = obj.phone.replace(/[^0-9]/g, "");
+        config.contact.phone = obj.phone;
+        config.contact.phoneHref = `tel:${obj.phone.replace(/\s+/g, "")}`;
+        if (digits) config.contact.whatsappHref = `https://wa.me/${digits}`;
+      }
+      if (typeof obj.location === "string" && obj.location.length > 0) config.contact.location = obj.location;
+      if (typeof obj.whatsapp === "string" && obj.whatsapp.length > 0) config.contact.whatsappHref = obj.whatsapp;
+    },
+  },
+  socials: {
+    apply: (config, raw) => {
+      const obj = getRecord(raw);
+      if (!obj) return;
+      if (typeof obj.github === "string" && obj.github.length > 0) config.contact.github = obj.github;
+      if (typeof obj.facebook === "string" && obj.facebook.length > 0) config.contact.facebook = obj.facebook;
+      if (typeof obj.linkedin === "string" && obj.linkedin.length > 0) config.contact.linkedin = obj.linkedin;
+    },
+  },
   hero: { apply: applyHeroObject },
   "home.hero": { apply: applyHeroObject },
   "homepage.hero": { apply: applyHeroObject },
@@ -195,6 +219,8 @@ const SETTING_MAP: Record<string, SettingMapEntry> = {
   "home.heroTitle": pathSetter(["home", "heroTitle"]),
   "home.heroDescription": pathSetter(["home", "heroDescription"]),
   "home.primaryCta": pathSetter(["home", "primaryCta"]),
+  "home.headline": pathSetter(["home", "heroTitle"]),
+  "home.cta": pathSetter(["home", "primaryCta"]),
   "home.secondaryCta": pathSetter(["home", "secondaryCta"]),
   "home.secondaryHref": pathSetter(["home", "secondaryHref"]),
   "home.heroImage": pathSetter(["home", "heroImage"]),

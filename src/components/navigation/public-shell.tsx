@@ -262,21 +262,20 @@ function Footer({ site }: { site: PublicSiteConfig }) {
               </ul>
             </div>
 
-            {/* Company */}
-            <div>
-              <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.12em] text-[color:var(--text-faint)]">Company</h4>
-              <p className="text-sm leading-6 text-[color:var(--text-muted)]">
-                Reg. No. CC/2024/00337<br />
-                ERF 234, SILVER AVENUE<br />
-                TAMARISKIA, SWAKOPMUND
-              </p>
-            </div>
+            {site.registrationInfo && (
+              <div>
+                <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.12em] text-[color:var(--text-faint)]">Company</h4>
+                <p className="text-sm leading-6 text-[color:var(--text-muted)]">
+                  {site.registrationInfo}
+                </p>
+              </div>
+            )}
           </div>
         </Container>
         <div className="border-t border-[color:var(--border-subtle)]">
           <Container className="flex flex-col items-center justify-between gap-3 py-5 sm:flex-row">
             <p className="text-xs text-[color:var(--text-faint)]">
-              &copy; 2026 FlexTech Media. All rights reserved.
+              &copy; 2026 {site.brandName}. {site.copyright}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[color:var(--text-faint)] sm:justify-end">
               <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
