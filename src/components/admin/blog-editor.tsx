@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { type ClipboardEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type ClipboardEvent, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import toast from "react-hot-toast";
@@ -66,6 +66,7 @@ const contentComponents: Components = {
 export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
   const lastValue = useRef(value);
   // Keep React from reconciling the editable DOM on every keystroke (which
   // would move the browser selection/caret). The preview remains controlled.
@@ -73,6 +74,8 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [editorWidth, setEditorWidth] = useState(66.67);
+  const [resizing, setResizing] = useState(false);
 
   useEffect(() => { lastValue.current = value; }, [value]);
 
@@ -110,6 +113,28 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const insertTable = () => command("insertHTML", "<table><thead><tr><th>Heading</th><th>Heading</th></tr></thead><tbody><tr><td>Cell</td><td>Cell</td></tr></tbody></table><p><br></p>");
   const insertChecklist = () => command("insertHTML", '<ul><li><input type="checkbox"> Task</li></ul><p><br></p>');
 
+  const resizeFromClientX = useCallback((clientX: number) => {
+    const bounds = splitRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const next = ((clientX - bounds.left) / bounds.width) * 100;
+    setEditorWidth(Math.min(80, Math.max(20, next)));
+  }, []);
+
+  const startResize = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setResizing(true);
+    resizeFromClientX(event.clientX);
+  };
+
+  const resizeWithKeyboard = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") return;
+    event.preventDefault();
+    if (event.key === "Home") setEditorWidth(20);
+    else if (event.key === "End") setEditorWidth(80);
+    else setEditorWidth((width) => Math.min(80, Math.max(20, width + (event.key === "ArrowRight" ? 5 : -5))));
+  };
+
   const tools = [
     ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
     ["Bold", Bold, () => command("bold")], ["Italic", Italic, () => command("italic")], ["Underline", Underline, () => command("underline")], ["Strikethrough", Strikethrough, () => command("strikeThrough")],
@@ -126,7 +151,11 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
       <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
     </div>
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+    <div
+      ref={splitRef}
+      className={`grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,var(--editor-fr))_1rem_minmax(0,var(--preview-fr))] lg:gap-0 ${resizing ? "lg:cursor-col-resize lg:select-none" : ""}`}
+      style={{ "--editor-fr": `${editorWidth}fr`, "--preview-fr": `${100 - editorWidth}fr` } as CSSProperties}
+    >
       <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
         {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
@@ -135,6 +164,23 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
           className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
         </div>
+      </div>
+      <div
+        role="separator"
+        aria-label="Resize editor and preview"
+        aria-orientation="vertical"
+        aria-valuemin={20}
+        aria-valuemax={80}
+        aria-valuenow={Math.round(editorWidth)}
+        tabIndex={0}
+        onPointerDown={startResize}
+        onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) resizeFromClientX(event.clientX); }}
+        onPointerUp={(event) => { event.currentTarget.releasePointerCapture(event.pointerId); setResizing(false); }}
+        onPointerCancel={() => setResizing(false)}
+        onKeyDown={resizeWithKeyboard}
+        className="group relative hidden w-4 cursor-col-resize touch-none items-center justify-center outline-none lg:flex"
+      >
+        <span className={`h-20 w-1 rounded-full transition ${resizing ? "bg-[color:var(--primary)]" : "bg-[color:var(--border-subtle)] group-hover:bg-[color:var(--primary)] group-focus-visible:bg-[color:var(--primary)]"}`} />
       </div>
       <div className={`${preview ? "block" : "hidden lg:block"} min-w-0 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`} role="region" aria-label="Live article preview">
         <article className="rich-blog-preview p-6 text-base leading-8"><ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{value || "Preview will appear here as you type…"}</ReactMarkdown></article>
