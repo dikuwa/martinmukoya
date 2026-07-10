@@ -64,11 +64,6 @@ export async function DELETE(
         where: { id: notification.sourceId, status: "NEW" },
         data: { status: "READ" },
       });
-    } else if (notification.type === "chat") {
-      await db.chatSession.updateMany({
-        where: { id: notification.sourceId, handedToHuman: true },
-        data: { handedToHuman: false },
-      });
     }
 
     await db.notification.delete({ where: { id } });

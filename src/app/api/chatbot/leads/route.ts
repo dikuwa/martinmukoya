@@ -153,7 +153,8 @@ export async function POST(request: Request) {
           where: { id: parsed.sessionId },
           data: {
             leadId: lead.id,
-            handedToHuman: true,
+            mode: "WAITING_FOR_HUMAN",
+            handoverRequestedAt: new Date(),
             summary: parsed.conversationSummary?.slice(0, 200) ?? parsed.description.slice(0, 200),
           },
         })

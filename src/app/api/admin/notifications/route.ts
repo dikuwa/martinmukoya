@@ -149,7 +149,6 @@ export async function DELETE(request: Request) {
       // Group by type to update source records in bulk
       const leadIds = toDelete.filter((n) => n.type === "lead").map((n) => n.sourceId);
       const msgIds = toDelete.filter((n) => n.type === "message").map((n) => n.sourceId);
-      const chatIds = toDelete.filter((n) => n.type === "chat").map((n) => n.sourceId);
 
       // Acknowledge source records so syncNotifications doesn't re-create them
       const updates: Promise<unknown>[] = [];
@@ -166,14 +165,6 @@ export async function DELETE(request: Request) {
           db.contactMessage.updateMany({
             where: { id: { in: msgIds }, status: "NEW" },
             data: { status: "READ" },
-          })
-        );
-      }
-      if (chatIds.length > 0) {
-        updates.push(
-          db.chatSession.updateMany({
-            where: { id: { in: chatIds }, handedToHuman: true },
-            data: { handedToHuman: false },
           })
         );
       }

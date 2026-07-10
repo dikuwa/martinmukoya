@@ -16,8 +16,7 @@ export async function GET(request: Request) {
 
     if (query.siteId) where.siteId = query.siteId;
     if (query.site && query.site !== "all") where.site = { slug: query.site };
-    if (query.status === "handover") where.handedToHuman = true;
-    if (query.status === "open") where.handedToHuman = false;
+    if (["AI", "WAITING_FOR_HUMAN", "HUMAN"].includes(query.status ?? "")) where.mode = query.status as Prisma.EnumChatModeFilter;
     if (query.search) {
       where.OR = [
         { visitorId: { contains: query.search, mode: "insensitive" } },

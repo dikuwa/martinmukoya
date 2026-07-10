@@ -6,6 +6,8 @@ import { createNotification } from "@/lib/notifications";
 import { sendLeadNotification, sendVisitorConfirmation } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCurrentSite } from "@/lib/sites";
+import { getSiteBySlug } from "@/lib/sites";
+import { newVisitorToken, requestHuman } from "@/lib/live-chat";
 
 // Basic content guardrails (simple black-list). For production replace with moderation API.
 const FORBIDDEN_RE = /\b(bomb|kill|terror|explosive|suicide|rape|child abuse)\b/i;
@@ -165,7 +167,7 @@ function inferPreferredContact(content: string) {
   return PreferredContact.EMAIL;
 }
 
-async function streamAndSaveFallback(sessionId: string, content: string, reply: string) {
+async function streamAndSaveFallback(sessionId: string, token: string, content: string, reply: string) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -179,7 +181,7 @@ async function streamAndSaveFallback(sessionId: string, content: string, reply: 
   });
 
   await db.chatMessage.create({
-    data: { sessionId, role: "ASSISTANT", content: reply }
+    data: { sessionId, role: "AI", content: reply }
   });
   await invalidateTag(tags.chatSessions);
 
@@ -187,6 +189,7 @@ async function streamAndSaveFallback(sessionId: string, content: string, reply: 
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "X-Chat-Session-Id": sessionId,
+      "X-Chat-Visitor-Token": token,
       "X-Assistant-Fallback": content ? "true" : "empty"
     }
   });
@@ -282,7 +285,7 @@ export async function POST(req: Request) {
     }
 
     // Detect site — prefer client-provided slug, fall back to server-side detection
-    const detectedSite = await getCurrentSite();
+    const detectedSite = clientSiteSlug ? await getSiteBySlug(clientSiteSlug) : await getCurrentSite();
     const activeSiteSlug = clientSiteSlug || detectedSite?.slug;
     const isFlexTech = activeSiteSlug === "flextech-media";
 
@@ -300,20 +303,19 @@ export async function POST(req: Request) {
       data: {
         siteId: site?.id,
         summary: content.slice(0, 180),
-        handedToHuman: shouldHandToHuman
+        visitorToken: newVisitorToken()
       }
     });
 
     await db.chatMessage.create({
       data: {
         sessionId: activeSession.id,
-        role: "USER",
+        role: "VISITOR",
         content
       }
     });
 
     const sharedEmail = content.match(EMAIL_RE)?.[0];
-    let capturedLead = false;
     if (sharedEmail && !activeSession.leadId) {
       const lead = await db.lead.create({
         data: {
@@ -332,7 +334,7 @@ export async function POST(req: Request) {
         where: { id: activeSession.id },
         data: {
           leadId: lead.id,
-          handedToHuman: true,
+          mode: shouldHandToHuman ? "WAITING_FOR_HUMAN" : activeSession.mode,
           summary: activeSession.summary ?? content.slice(0, 180)
         }
       });
@@ -361,7 +363,6 @@ export async function POST(req: Request) {
         sendLeadNotification(lead),
         sendVisitorConfirmation({ name: lead.name, email: lead.email, kind: "lead" })
       ]);
-      capturedLead = true;
     }
 
     if (session) {
@@ -369,7 +370,23 @@ export async function POST(req: Request) {
         where: { id: activeSession.id },
         data: {
           summary: activeSession.summary ?? content.slice(0, 180),
-          handedToHuman: activeSession.handedToHuman || shouldHandToHuman || capturedLead
+          mode: shouldHandToHuman ? "WAITING_FOR_HUMAN" : activeSession.mode
+        }
+      });
+    }
+
+    if (activeSession.mode !== "AI") {
+      return Response.json({ error: "This conversation is currently handled by a person." }, { status: 409 });
+    }
+
+    if (shouldHandToHuman) {
+      const handover = await requestHuman(activeSession.id, detectedSite);
+      return new Response(handover.content, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Chat-Session-Id": activeSession.id,
+          "X-Chat-Visitor-Token": activeSession.visitorToken,
+          "X-Chat-Mode": "WAITING_FOR_HUMAN"
         }
       });
     }
@@ -381,7 +398,7 @@ export async function POST(req: Request) {
     const config = getProviderConfig();
 
     if (!config.provider) {
-      return streamAndSaveFallback(activeSession.id, content, fallbackAssistantReply(content, activeSiteSlug));
+      return streamAndSaveFallback(activeSession.id, activeSession.visitorToken, content, fallbackAssistantReply(content, activeSiteSlug));
     }
 
     const recentMessages = await db.chatMessage.findMany({
@@ -405,7 +422,7 @@ export async function POST(req: Request) {
         messages: [
           { role: "system", content: systemPrompt },
           ...recentMessages.map((message) => ({
-            role: message.role === "ASSISTANT" ? "assistant" : "user",
+            role: message.role === "AI" ? "assistant" : "user",
             content: message.content
           }))
         ],
@@ -425,7 +442,7 @@ export async function POST(req: Request) {
       });
       const errorMessage = publicApiErrorMessage();
       await db.chatMessage.create({
-        data: { sessionId: activeSession.id, role: "ASSISTANT", content: errorMessage }
+        data: { sessionId: activeSession.id, role: "AI", content: errorMessage }
       });
       await invalidateTag(tags.chatSessions);
       await invalidateTag(tags.dashboard);
@@ -435,6 +452,7 @@ export async function POST(req: Request) {
         headers: {
           "Content-Type": "application/json",
           "X-Chat-Session-Id": activeSession.id,
+          "X-Chat-Visitor-Token": activeSession.visitorToken,
           "X-Assistant-Provider": `${config.provider}-error`
         }
       });
@@ -489,7 +507,7 @@ export async function POST(req: Request) {
           controller.close();
           // persist the assistant message
           try {
-            await db.chatMessage.create({ data: { sessionId: activeSession.id, role: "ASSISTANT", content: assistantText } });
+            await db.chatMessage.create({ data: { sessionId: activeSession.id, role: "AI", content: assistantText } });
             await invalidateTag(tags.chatSessions);
             await invalidateTag(tags.dashboard);
           } catch (error) {
@@ -503,6 +521,7 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "X-Chat-Session-Id": activeSession.id,
+        "X-Chat-Visitor-Token": activeSession.visitorToken,
         "X-Assistant-Provider": config.provider
       }
     });

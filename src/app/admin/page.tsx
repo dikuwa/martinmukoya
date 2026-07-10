@@ -59,7 +59,7 @@ export default async function AdminPage() {
     db.lead.count({ where: { status: "NEW" } }),
     db.project.count({ where: { published: true } }),
     db.analyticsEvent.count({ where: { eventType: "blog_view" } }),
-    db.chatSession.count({ where: { handedToHuman: true } }),
+    db.chatSession.count({ where: { mode: { in: ["WAITING_FOR_HUMAN", "HUMAN"] } } }),
     db.analyticsEvent.count({ where: { eventType: "whatsapp_click" } }),
     db.analyticsEvent.count({ where: { eventType: "cta_click" } }),
     db.lead.findMany({
@@ -98,8 +98,8 @@ export default async function AdminPage() {
     title: chat.lead?.name ?? chat.visitorId ?? "Anonymous visitor",
     detail: chat.summary ?? chat.messages[0]?.content ?? "No summary yet",
     href: `/admin/chat/${chat.id}`,
-    status: chat.handedToHuman ? "Handed over" : "Open",
-    tone: chat.handedToHuman ? "success" : "neutral"
+    status: chat.mode === "HUMAN" ? "Human live" : chat.mode === "WAITING_FOR_HUMAN" ? "Waiting" : "AI",
+    tone: chat.mode === "HUMAN" ? "success" : "neutral"
   } satisfies RecentItem));
 
   return (

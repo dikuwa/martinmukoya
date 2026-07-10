@@ -126,7 +126,7 @@ export async function syncNotifications() {
 
   // Chat sessions handed to human (all sites)
   const chats = await db.chatSession.findMany({
-    where: { handedToHuman: true },
+    where: { mode: "WAITING_FOR_HUMAN" },
     select: {
       id: true,
       siteId: true,

@@ -459,12 +459,12 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
 
 export function ChatSessionStatusForm({ session }: { session: ChatSession }) {
   const router = useRouter();
-  const form = useForm<{ handedToHuman: boolean; summary?: string }>({
-    resolver: zodResolver(z.object({ handedToHuman: z.boolean(), summary: z.string().trim().optional() })),
-    defaultValues: { handedToHuman: session.handedToHuman, summary: session.summary ?? "" }
+  const form = useForm<{ summary?: string }>({
+    resolver: zodResolver(z.object({ summary: z.string().trim().optional() })),
+    defaultValues: { summary: session.summary ?? "" }
   });
 
-  async function onSubmit(values: { handedToHuman: boolean; summary?: string }) {
+  async function onSubmit(values: { summary?: string }) {
     const response = await fetch(`/api/chat-sessions/${session.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -477,10 +477,6 @@ export function ChatSessionStatusForm({ session }: { session: ChatSession }) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
-      <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-        <input type="checkbox" {...form.register("handedToHuman")} className={checkboxClass} />
-        Mark for human follow-up
-      </label>
       <Field label="Summary">
         <textarea {...form.register("summary")} className={textareaClass} placeholder="Short note for follow-up context" />
       </Field>

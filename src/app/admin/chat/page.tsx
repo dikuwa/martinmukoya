@@ -21,8 +21,7 @@ async function ChatTable({ searchParams }: PageProps) {
   const page = Math.max(1, Number(params.page ?? "1"));
   const sites = await db.site.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } });
   const where = {
-    ...(params.status === "handover" ? { handedToHuman: true } : {}),
-    ...(params.status === "open" ? { handedToHuman: false } : {}),
+    ...(["AI", "WAITING_FOR_HUMAN", "HUMAN"].includes(params.status ?? "") ? { mode: params.status as "AI" | "WAITING_FOR_HUMAN" | "HUMAN" } : {}),
     ...(params.site && params.site !== "all" ? { site: { slug: params.site } } : {}),
     ...(params.search ? {
       OR: [
@@ -55,8 +54,9 @@ async function ChatTable({ searchParams }: PageProps) {
               label="Type"
               value={params.status}
               options={[
-                { label: "Internal", value: "open" },
-                { label: "Handed", value: "handover" }
+                { label: "AI", value: "AI" },
+                { label: "Waiting", value: "WAITING_FOR_HUMAN" },
+                { label: "Human live", value: "HUMAN" }
               ]}
             />
             <SelectFilter name="site" label="Site" value={params.site} options={[{ label: "All sites", value: "all" }, ...sites.map((site) => ({ label: site.name, value: site.slug }))]} />
@@ -102,9 +102,9 @@ async function ChatTable({ searchParams }: PageProps) {
               {item.lead.name}
             </span>
           ) : <span className="text-xs text-[color:var(--text-faint)]">—</span> },
-          { header: "Type", cell: (item) => item.handedToHuman
-            ? <StatusPill tone="success">Handed</StatusPill>
-            : <StatusPill tone="neutral">Internal</StatusPill>
+          { header: "Type", cell: (item) => item.mode === "HUMAN"
+            ? <StatusPill tone="success">Human live</StatusPill>
+            : item.mode === "WAITING_FOR_HUMAN" ? <StatusPill tone="warning">Waiting</StatusPill> : <StatusPill tone="neutral">AI</StatusPill>
           },
           { header: "Created", cell: (item) => (
             <span className="whitespace-nowrap text-sm text-[color:var(--text-muted)]">

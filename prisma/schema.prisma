@@ -44,9 +44,16 @@ enum ContactMessageStatus {
 }
 
 enum ChatMessageRole {
-  USER
-  ASSISTANT
+  VISITOR
+  AI
+  HUMAN
   SYSTEM
+}
+
+enum ChatMode {
+  AI
+  WAITING_FOR_HUMAN
+  HUMAN
 }
 
 model User {
@@ -64,6 +71,8 @@ model User {
   blogPosts     BlogPost[]
   faqs          FAQ[]
   testimonials  Testimonial[]
+  assignedChats ChatSession[] @relation("AssignedChatOperator")
+  chatMessages  ChatMessage[] @relation("HumanChatMessages")
 }
 
 model Site {
@@ -145,12 +154,28 @@ model Project {
   outcome          String?
   clientType       String?
   industry         String?
+  eyebrow          String?
+  timeline         String?
+  role             String?
+  deliverables     String[]      @default([])
+  stackSummary     String?
+  benefits         Json?
+  capabilities     Json?
   coverImage       String?
+  coverImageAlt    String?
   gallery          String[]
+  galleryImages    Json?
   techStack        String[]
   services         String[]
   liveUrl          String?
   githubUrl        String?
+  ctaEyebrow       String?
+  ctaTitle         String?
+  ctaDescription   String?
+  ctaPrimaryLabel  String?
+  ctaPrimaryUrl    String?
+  ctaSecondaryLabel String?
+  ctaSecondaryUrl   String?
   caseStudyContent String
   featured         Boolean       @default(false)
   published        Boolean       @default(false)
@@ -286,22 +311,28 @@ model FAQ {
 }
 
 model ChatSession {
-  id            String        @id @default(cuid())
-  siteId        String?
-  visitorId     String?
-  leadId        String?
-  summary       String?
-  handedToHuman Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  site          Site?         @relation(fields: [siteId], references: [id], onDelete: SetNull)
-  lead          Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  messages      ChatMessage[]
+  id                 String        @id @default(cuid())
+  siteId             String?
+  visitorId          String?
+  leadId             String?
+  summary            String?
+  mode               ChatMode     @default(AI)
+  visitorToken       String        @unique @default(cuid())
+  handoverRequestedAt DateTime?
+  humanJoinedAt      DateTime?
+  assignedAdminId    String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  site               Site?         @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  lead               Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  assignedAdmin      User?         @relation("AssignedChatOperator", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  messages           ChatMessage[]
 
   @@index([siteId])
   @@index([leadId])
   @@index([visitorId])
-  @@index([handedToHuman, createdAt])
+  @@index([mode, updatedAt])
+  @@index([assignedAdminId])
 }
 
 model ChatMessage {
@@ -309,8 +340,11 @@ model ChatMessage {
   sessionId String
   role      ChatMessageRole
   content   String
+  senderId  String?
+  senderName String?
   createdAt DateTime        @default(now())
   session   ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    User?           @relation("HumanChatMessages", fields: [senderId], references: [id], onDelete: SetNull)
 
   @@index([sessionId, createdAt])
 }

@@ -7,7 +7,7 @@ import { z } from "zod";
 type RouteContext = { params: Promise<{ id: string }> };
 
 const chatSessionUpdateSchema = z.object({
-  handedToHuman: z.boolean().optional(),
+  mode: z.enum(["AI", "WAITING_FOR_HUMAN", "HUMAN"]).optional(),
   summary: z.string().trim().optional()
 });
 

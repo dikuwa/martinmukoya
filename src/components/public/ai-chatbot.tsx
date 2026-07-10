@@ -98,7 +98,7 @@ const servicesValueLabel: Record<string, string> = {
 export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<
-    Array<{ id: number; author: string; text: string; time: string; cardType?: "buyer-intent" }>
+    Array<{ id: number | string; author: string; text: string; time: string; cardType?: "buyer-intent" }>
   >(() => [
     {
       id: 1,
@@ -110,6 +110,8 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [visitorToken, setVisitorToken] = useState<string | null>(null);
+  const [chatMode, setChatMode] = useState<"AI" | "WAITING_FOR_HUMAN" | "HUMAN">("AI");
 
   // ── Booking state ──
   const [bookingStep, setBookingStep] = useState<BookingStep>("NONE");
@@ -557,6 +559,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       source: "chatbot",
     });
 
+    if (chatMode !== "AI") {
+      setLoading(true);
+      const response = await fetch("/api/live-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, token: visitorToken, siteSlug: siteSlugRef.current, content }) });
+      if (response.ok) { const data = await response.json(); setDraft(""); applyLiveChat(data); }
+      setLoading(false);
+      return;
+    }
+
     const userMessageId = messageIdRef.current++;
     const userMessage = {
       id: userMessageId,
@@ -591,9 +601,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
     if (lower.startsWith("talk to")) {
       setDraft("");
-      // Start a light booking flow for handover
-      startBooking();
-      setLoading(false);
+      await requestHumanChat(content);
       return;
     }
 
@@ -679,9 +687,13 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
         if (!res.body) throw new Error("No response body");
         const nextSessionId = res.headers.get("X-Chat-Session-Id");
+        const nextToken = res.headers.get("X-Chat-Visitor-Token");
+        const nextMode = res.headers.get("X-Chat-Mode") as "AI" | "WAITING_FOR_HUMAN" | "HUMAN" | null;
         if (nextSessionId) {
           setSessionId(nextSessionId);
         }
+        if (nextToken) setVisitorToken(nextToken);
+        if (nextMode) setChatMode(nextMode);
 
         if (!res.ok) {
           const payload = await res.json().catch(() => null);
@@ -766,6 +778,23 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   }, [submitBooking]);
 
   // ── Effects ──
+  function applyLiveChat(data: { sessionId: string; visitorToken: string; mode: "AI" | "WAITING_FOR_HUMAN" | "HUMAN"; messages: Array<{ id: string; role: string; content: string; senderName?: string; createdAt: string }> }) {
+    setSessionId(data.sessionId); setVisitorToken(data.visitorToken); setChatMode(data.mode);
+    setMessages(data.messages.map(message => ({ id: message.id, author: message.role === "VISITOR" ? "You" : message.role === "HUMAN" ? "Human" : message.role === "SYSTEM" ? "System" : "AI", text: message.content, time: new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })));
+  }
+
+  async function requestHumanChat(content = `I would like to talk to ${humanLabel}`) {
+    setLoading(true);
+    const response = await fetch("/api/live-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, token: visitorToken, siteSlug: siteSlugRef.current, content, requestHuman: true }) });
+    if (response.ok) applyLiveChat(await response.json());
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (!open || !sessionId || !visitorToken || chatMode === "AI") return;
+    const poll = async () => { const response = await fetch(`/api/live-chat?sessionId=${encodeURIComponent(sessionId)}&token=${encodeURIComponent(visitorToken)}&siteSlug=${encodeURIComponent(siteSlugRef.current)}`, { cache: "no-store" }); if (response.ok) applyLiveChat(await response.json()); };
+    const timer = setInterval(poll, 2500); return () => clearInterval(timer);
+  }, [open, sessionId, visitorToken, chatMode]);
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -885,6 +914,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     title={isOnline ? "Online" : "Offline"}
                   />
                 </div>
+                <p className="text-[11px] font-semibold text-[color:var(--text-muted)]">{chatMode === "AI" ? "AI assistant" : chatMode === "HUMAN" ? `Chatting with ${siteSlug === "flextech-media" ? "FlexTech Team" : "Martin"}` : `Waiting for ${siteSlug === "flextech-media" ? "FlexTech Team" : "Martin"}`}</p>
               </div>
               <button
                 type="button"
@@ -917,6 +947,11 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   >
                     <Briefcase size={14} />
                     Services
+                  </button>
+
+                  {/* WhatsApp */}
+                  <button type="button" onClick={() => requestHumanChat()} className={actionPillClass} disabled={chatMode !== "AI"}>
+                    <MessageCircle size={14} />{chatMode === "AI" ? `Talk to ${humanLabel}` : chatMode === "HUMAN" ? "Human joined" : "Human requested"}
                   </button>
 
                   {/* WhatsApp */}
@@ -1024,18 +1059,18 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   <div
                     key={message.id}
                     className={
-                      message.author === "AI"
+                      message.author === "AI" || message.author === "Human" || message.author === "System"
                         ? "chat-bubble chat-bubble--assistant"
                         : "ml-auto chat-bubble chat-bubble--user"
                     }
                   >
                     <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
                       <span>
-                        {message.author === "AI" ? "Assistant" : "You"}
+                        {message.author === "AI" ? "Assistant" : message.author === "Human" ? (siteSlug === "flextech-media" ? "FlexTech Team" : "Martin") : message.author === "System" ? "Update" : "You"}
                       </span>
                       <span>{message.time}</span>
                     </div>
-                    {message.author === "AI" ? (
+                    {message.author !== "You" ? (
                       <div className="mt-2 text-sm leading-6">
                         <MarkdownRenderer
                           content={message.text}
@@ -1537,14 +1572,14 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     <Send size={16} />
                   </button>
                 </div>
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => requestHumanChat()}
+                  disabled={chatMode !== "AI"}
                   className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[color:var(--primary)] sm:hidden"
                 >
-                  Talk to {humanLabel} <ArrowUpRight size={13} />
-                </a>
+                  {chatMode === "AI" ? `Talk to ${humanLabel}` : chatMode === "HUMAN" ? "Human joined" : "Waiting for human"} <ArrowUpRight size={13} />
+                </button>
               </div>
             </div>
           </div>
