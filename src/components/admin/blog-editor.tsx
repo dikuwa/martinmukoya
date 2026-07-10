@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { type ClipboardEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import toast from "react-hot-toast";
 import {
@@ -56,11 +56,11 @@ function domToMarkdown(root: HTMLElement) {
   return Array.from(root.childNodes).map((node) => walk(node)).join("").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-const contentComponents = {
-  h1: ({ children }: { children?: React.ReactNode }) => <h1>{children}</h1>,
-  h2: ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>,
-  h3: ({ children }: { children?: React.ReactNode }) => <h3>{children}</h3>,
-  img: ({ src, alt }: { src?: string; alt?: string }) => <img src={src} alt={alt ?? ""} />,
+const contentComponents: Components = {
+  h1: ({ children }) => <h1>{children}</h1>,
+  h2: ({ children }) => <h2>{children}</h2>,
+  h3: ({ children }) => <h3>{children}</h3>,
+  img: ({ src, alt }) => <img src={typeof src === "string" ? src : undefined} alt={alt ?? ""} />,
 };
 
 export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
