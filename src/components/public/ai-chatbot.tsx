@@ -846,6 +846,12 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
   const actionPillClass =
     "action-pill inline-flex items-center gap-1 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2.5 py-1.5 text-[11px] font-bold leading-none text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
+  const actionPillStyle = {
+    fontFamily: '"Plus Jakarta Sans", Inter, system-ui, sans-serif',
+    fontSize: "11px",
+    fontWeight: 700,
+    lineHeight: "11px",
+  } as const;
 
   // ── AI response keyword fail-safe ──
   // If the AI mentions options, choices, or selection, force the service card to show.
@@ -943,6 +949,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       startBooking();
                     }}
                     className={actionPillClass}
+                    style={actionPillStyle}
                     aria-label="Choose a service to start a project"
                   >
                     <Briefcase size={12} />
@@ -950,7 +957,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   </button>
 
                   {/* WhatsApp */}
-                  <button type="button" onClick={() => requestHumanChat()} className={actionPillClass} disabled={chatMode !== "AI"}>
+                  <button type="button" onClick={() => requestHumanChat()} className={actionPillClass} style={actionPillStyle} disabled={chatMode !== "AI"}>
                     <MessageCircle size={12} />{chatMode === "AI" ? `Talk to ${humanLabel}` : chatMode === "HUMAN" ? "Human joined" : "Human requested"}
                   </button>
 
@@ -960,6 +967,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     target="_blank"
                     rel="noopener noreferrer"
                     className={actionPillClass}
+                    style={actionPillStyle}
                     aria-label={`Chat with ${humanLabel} on WhatsApp`}
                     onClick={() =>
                       trackEvent({
@@ -978,6 +986,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   <a
                     href={emailHref}
                     className={actionPillClass}
+                    style={actionPillStyle}
                     aria-label="Email us"
                     onClick={() =>
                       trackEvent({
@@ -996,6 +1005,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                   <a
                     href={"tel:+264818563005"}
                     className={actionPillClass}
+                    style={actionPillStyle}
                     aria-label="Call us"
                     onClick={() =>
                       trackEvent({

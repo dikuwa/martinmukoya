@@ -113,6 +113,12 @@ export function BuyerIntentCard({
 
   const isOtherSelected = selectedIds.has("other-project");
   const hasSelection = selectedIds.size > 0;
+  const compactContactStyle = {
+    fontFamily: '"Plus Jakarta Sans", Inter, system-ui, sans-serif',
+    fontSize: "11px",
+    fontWeight: 700,
+    lineHeight: "11px",
+  } as const;
 
   return (
     <div className="mt-1 animate-card-fade-in">
@@ -257,6 +263,7 @@ export function BuyerIntentCard({
             rel="noopener noreferrer"
             onClick={onWhatsApp}
             aria-label={`WhatsApp ${humanLabel}`}
+            style={compactContactStyle}
             className="inline-flex items-center justify-center gap-1 rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2 text-[11px] font-bold leading-none text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
             <MessageCircle size={12} />
@@ -266,6 +273,7 @@ export function BuyerIntentCard({
             type="button"
             onClick={onCall}
             aria-label={`Call ${humanLabel}`}
+            style={compactContactStyle}
             className="inline-flex items-center justify-center gap-1 rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2 text-[11px] font-bold leading-none text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
             <Phone size={12} />
