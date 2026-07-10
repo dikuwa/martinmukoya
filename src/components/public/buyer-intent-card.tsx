@@ -250,22 +250,21 @@ export function BuyerIntentCard({
         )}
 
         {/* Quick contact links */}
-        <div className="flex items-center justify-center gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-2 pt-2">
           <a
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={onWhatsApp}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2.5 text-center text-xs font-bold text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
             <MessageCircle size={13} />
             WhatsApp {humanLabel}
           </a>
-          <span className="text-[color:var(--text-faint)] select-none">·</span>
           <button
             type="button"
             onClick={onCall}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2.5 text-center text-xs font-bold text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
             <Phone size={13} />
             Call {humanLabel}

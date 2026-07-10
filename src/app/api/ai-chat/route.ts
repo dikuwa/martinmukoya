@@ -375,11 +375,11 @@ export async function POST(req: Request) {
       });
     }
 
-    if (activeSession.mode !== "AI") {
+    if (activeSession.mode === "HUMAN") {
       return Response.json({ error: "This conversation is currently handled by a person." }, { status: 409 });
     }
 
-    if (shouldHandToHuman) {
+    if (shouldHandToHuman && activeSession.mode === "AI") {
       const handover = await requestHuman(activeSession.id, detectedSite);
       return new Response(handover.content, {
         headers: {

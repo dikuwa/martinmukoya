@@ -559,7 +559,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       source: "chatbot",
     });
 
-    if (chatMode !== "AI") {
+    if (chatMode === "HUMAN") {
       setLoading(true);
       const response = await fetch("/api/live-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId, token: visitorToken, siteSlug: siteSlugRef.current, content }) });
       if (response.ok) { const data = await response.json(); setDraft(""); applyLiveChat(data); }
@@ -599,7 +599,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       return;
     }
 
-    if (lower.startsWith("talk to")) {
+    if (lower.startsWith("talk to") && chatMode === "AI") {
       setDraft("");
       await requestHumanChat(content);
       return;
@@ -793,7 +793,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   useEffect(() => {
     if (!open || !sessionId || !visitorToken || chatMode === "AI") return;
     const poll = async () => { const response = await fetch(`/api/live-chat?sessionId=${encodeURIComponent(sessionId)}&token=${encodeURIComponent(visitorToken)}&siteSlug=${encodeURIComponent(siteSlugRef.current)}`, { cache: "no-store" }); if (response.ok) applyLiveChat(await response.json()); };
-    const timer = setInterval(poll, 2500); return () => clearInterval(timer);
+    const timer = setInterval(() => { if (!loadingRef.current) poll(); }, 2500); return () => clearInterval(timer);
   }, [open, sessionId, visitorToken, chatMode]);
   useEffect(() => {
     if (textareaRef.current) {
