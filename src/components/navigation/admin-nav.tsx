@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, FileQuestion, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, Users } from "lucide-react";
+import { BarChart3, FileQuestion, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, UserRound, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -12,9 +12,18 @@ type NavCounts = {
   chats: number;
 };
 
-const adminNav = [
+type AdminNavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  countKey?: keyof NavCounts;
+  martinOnly?: boolean;
+};
+
+const adminNav: AdminNavItem[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },
+  { href: "/admin/about", label: "About", icon: UserRound, martinOnly: true },
   { href: "/admin/blog", label: "Blog", icon: Newspaper },
   { href: "/admin/leads", label: "Leads", icon: Users, countKey: "leads" as const },
   { href: "/admin/messages", label: "Messages", icon: Inbox, countKey: "messages" as const },
@@ -33,8 +42,10 @@ function isActivePath(pathname: string, href: string) {
 export function AdminNav() {
   const pathname = usePathname();
   const [counts, setCounts] = useState<NavCounts>({ leads: 0, messages: 0, chats: 0 });
+  const [isMartin, setIsMartin] = useState(false);
 
   useEffect(() => {
+    setIsMartin(!window.location.hostname.includes("flextech-media"));
     async function fetchCounts() {
       try {
         const res = await fetch("/api/admin/notifications/count");
@@ -53,7 +64,7 @@ export function AdminNav() {
 
   return (
     <nav className="mt-6 grid gap-0.5">
-      {adminNav.map((item) => {
+      {adminNav.filter((item) => !item.martinOnly || isMartin).map((item) => {
         const Icon = item.icon;
         const active = isActivePath(pathname, item.href);
         const badge = item.countKey ? counts[item.countKey] : 0;
@@ -90,8 +101,10 @@ export function AdminNav() {
 export function AdminMobileNav() {
   const pathname = usePathname();
   const [counts, setCounts] = useState<NavCounts>({ leads: 0, messages: 0, chats: 0 });
+  const [isMartin, setIsMartin] = useState(false);
 
   useEffect(() => {
+    setIsMartin(!window.location.hostname.includes("flextech-media"));
     async function fetchCounts() {
       try {
         const res = await fetch("/api/admin/notifications/count");
@@ -110,7 +123,7 @@ export function AdminMobileNav() {
 
   return (
     <nav className="flex gap-2 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-6 lg:hidden">
-      {adminNav.map((item) => {
+      {adminNav.filter((item) => !item.martinOnly || isMartin).map((item) => {
         const Icon = item.icon;
         const active = isActivePath(pathname, item.href);
         const badge = item.countKey ? counts[item.countKey] : 0;

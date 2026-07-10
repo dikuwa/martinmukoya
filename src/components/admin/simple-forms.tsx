@@ -177,21 +177,19 @@ function SiteCheckboxes({ register }: { register: (name: "siteSlugs") => UseForm
   );
 }
 
-function SettingsAssetUpload() {
-  const [assetUrl, setAssetUrl] = useState("");
-
+function SettingsAssetUpload({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
   return (
     <div className="rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4">
       <ImageUploadField
-        label="Upload setting asset"
+        label={label}
         folder="settings"
-        value={assetUrl}
-        onChange={setAssetUrl}
-        placeholder="Upload or paste an asset URL for the JSON value"
+        value={value}
+        onChange={onChange}
+        placeholder="Upload or paste an image URL"
         cropAspect={false}
       />
       <p className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-        Add the generated URL to the JSON value where the setting needs an image, logo, or background asset.
+        Uploading or pasting a URL updates the JSON value below automatically.
       </p>
     </div>
   );
@@ -485,13 +483,16 @@ export function ChatSessionStatusForm({ session }: { session: ChatSession }) {
   );
 }
 
-export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: { name: string } | null } }) {
+export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: { name: string; slug: string } | null } }) {
   const router = useRouter();
   const isAvailability = setting.key === "availability";
   const initialAvailability = typeof setting.value === "object" && setting.value !== null && !Array.isArray(setting.value)
     ? setting.value as { text?: unknown; active?: unknown }
     : null;
   const [availabilityActive, setAvailabilityActive] = useState(initialAvailability?.active !== false);
+  const imageSetting = setting.key === "home.aboutImage"
+    || setting.key === "about.image"
+    || (setting.site?.slug === "martin-mukoya" && (setting.key === "home.heroImage" || setting.key === "hero.image"));
   const form = useForm<{ value: string }>({
     resolver: zodResolver(z.object({ value: z.string().min(2) })),
     defaultValues: {
@@ -558,11 +559,17 @@ export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: {
             onClick={() => setAvailabilityActive((active) => !active)}
             className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 ${availabilityActive ? "bg-[color:var(--primary)]" : "bg-[color:var(--text-faint)]/50"}`}
           >
-            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${availabilityActive ? "translate-x-6" : "translate-x-1"}`} />
+            <span className={`absolute left-0 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${availabilityActive ? "translate-x-6" : "translate-x-1"}`} />
             <span className="sr-only">Toggle availability animation</span>
           </button>
         </div>
-      ) : <SettingsAssetUpload />}
+      ) : imageSetting ? (
+        <SettingsAssetUpload
+          label={setting.key.includes("hero") ? "Hero image" : "Homepage About image"}
+          value={(() => { try { const parsed = JSON.parse(form.watch("value")); return typeof parsed === "string" ? parsed : ""; } catch { return ""; } })()}
+          onChange={(url) => form.setValue("value", JSON.stringify(url, null, 2), { shouldDirty: true, shouldValidate: true })}
+        />
+      ) : null}
       <Field label="JSON value" error={form.formState.errors.value?.message}>
         <textarea {...form.register("value")} className={`${monoTextareaClass} min-h-80`} />
       </Field>
@@ -614,7 +621,6 @@ export function SiteSettingCreateForm() {
           ))}
         </AdminSelect>
       </Field>
-      <SettingsAssetUpload />
       <Field label="JSON value" error={form.formState.errors.value?.message}>
         <textarea {...form.register("value")} className={`${monoTextareaClass} min-h-80`} />
       </Field>

@@ -324,6 +324,8 @@ async function main() {
     { key: "contact.phone", value: "+264 81 8563 005" },
     { key: "availability", value: "Available for new projects" },
     { key: "hero.title", value: "I build practical systems that turn visitors into clients." },
+    { key: "home.heroImage", value: "/assets/hero-images/webp/hero-image.webp" },
+    { key: "home.aboutImage", value: "/assets/hero-images/webp/about.webp" },
     { key: "footer.description", value: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need cleaner leads and smoother operations." },
     { key: "footer.copyright", value: "Built for practical business systems." }
   ];
@@ -342,6 +344,7 @@ async function main() {
     { key: "contact.phone", value: "+264 81 8563 005" },
     { key: "availability", value: "Booking new projects" },
     { key: "hero.title", value: "I build systems that help businesses turn traffic into paying clients." },
+    { key: "home.aboutImage", value: "/assets/backgrounds/webP/brand-03.webp" },
     { key: "footer.description", value: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need clearer leads and smoother operations." },
     { key: "footer.company", value: "Reg. No. CC/2024/00337 · ERF 234, SILVER AVENUE, TAMARISKIA, SWAKOPMUND" },
     { key: "footer.copyright", value: "Built for brands that move with intent." }
