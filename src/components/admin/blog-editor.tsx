@@ -1,352 +1,145 @@
 "use client";
 
-import { type KeyboardEvent, useCallback, useRef, useState } from "react";
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
+
+import { type ClipboardEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CodeBlock } from "@/components/ui/code-block";
-import { Bold, Code2, Columns2, Eye, Heading, Image as ImageIcon, List, Link as LinkIcon, PencilLine } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  Bold, Code2, Eye, Heading1, Heading2, Heading3, Image as ImageIcon,
+  Italic, Link as LinkIcon, List, ListChecks, ListOrdered, Loader2,
+  Quote, Redo2, Strikethrough, Table2, Underline, Undo2,
+} from "lucide-react";
 
-interface BlogEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
+interface BlogEditorProps { value: string; onChange: (value: string) => void; error?: string }
+
+function inline(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+  if (!(node instanceof HTMLElement)) return "";
+  const body = Array.from(node.childNodes).map(inline).join("");
+  switch (node.tagName) {
+    case "STRONG": case "B": return `**${body}**`;
+    case "EM": case "I": return `*${body}*`;
+    case "S": case "STRIKE": return `~~${body}~~`;
+    case "U": return `<u>${body}</u>`;
+    case "CODE": return `\`${body}\``;
+    case "A": return `[${body}](${node.getAttribute("href") ?? ""})`;
+    case "IMG": return `![${node.getAttribute("alt") ?? ""}](${node.getAttribute("src") ?? ""})`;
+    case "BR": return "\n";
+    default: return body;
+  }
 }
 
-type ViewMode = "write" | "split" | "preview";
-
-function insertAtCursor(textarea: HTMLTextAreaElement, before: string, after = "") {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const selected = textarea.value.slice(start, end);
-  const insertion = selected ? `${before}${selected}${after}` : before;
-  const newValue =
-    textarea.value.slice(0, start) + insertion + textarea.value.slice(end);
-  return { value: newValue, cursorPos: start + insertion.length };
+function domToMarkdown(root: HTMLElement) {
+  const walk = (node: Node, depth = 0): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+    if (!(node instanceof HTMLElement)) return "";
+    const children = Array.from(node.childNodes).map((child) => walk(child, depth)).join("");
+    switch (node.tagName) {
+      case "H1": return `# ${inline(node)}\n\n`;
+      case "H2": return `## ${inline(node)}\n\n`;
+      case "H3": return `### ${inline(node)}\n\n`;
+      case "P": case "DIV": return `${inline(node)}\n\n`;
+      case "BLOCKQUOTE": return `${inline(node).split("\n").map((line) => `> ${line}`).join("\n")}\n\n`;
+      case "UL": case "OL": return `${Array.from(node.children).map((li, index) => `${"  ".repeat(depth)}${node.tagName === "OL" ? `${index + 1}.` : "-"} ${inline(li)}\n`).join("")}\n`;
+      case "PRE": return `\`\`\`\n${node.textContent ?? ""}\n\`\`\`\n\n`;
+      case "TABLE": {
+        const rows = Array.from(node.querySelectorAll("tr")).map((row) => Array.from(row.children).map((cell) => inline(cell).trim()));
+        if (!rows.length) return "";
+        return `${rows.map((row, i) => `| ${row.join(" | ")} |${i === 0 ? `\n| ${row.map(() => "---").join(" | ")} |` : ""}`).join("\n")}\n\n`;
+      }
+      if (["STRONG", "B", "EM", "I", "S", "STRIKE", "U", "CODE", "A", "IMG", "BR"].includes(node.tagName)) return inline(node);
+      return children;
+    }
+  };
+  return Array.from(root.childNodes).map((node) => walk(node)).join("").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-const toolbarButtons = [
-  {
-    label: "Heading",
-    icon: "heading",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "## ", ""),
-  },
-  {
-    label: "Inline code",
-    icon: "code",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "`", "`"),
-  },
-  {
-    label: "Bold",
-    icon: "bold",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "**", "**"),
-  },
-  {
-    label: "Bullet list",
-    icon: "list",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "- "),
-  },
-  {
-    label: "Insert link",
-    icon: "link",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "[text](url)"),
-  },
-  {
-    label: "Insert image",
-    icon: "image",
-    action: (ta: HTMLTextAreaElement) => insertAtCursor(ta, "![alt](url)"),
-  },
-];
-
-const iconComponents = {
-  heading: Heading,
-  code: Code2,
-  bold: Bold,
-  list: List,
-  link: LinkIcon,
-  image: ImageIcon,
-} as const;
-
-function PreviewPane({ content }: { content: string }) {
-  return (
-    <div className="prose prose-sm max-w-none p-6 text-base leading-8 text-[color:var(--text-normal)]">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: ({ children }) => (
-            <h1 className="mb-4 mt-8 font-display text-3xl font-black leading-tight text-[color:var(--text-strong)] first:mt-0">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="mb-3 mt-6 font-display text-2xl font-black leading-tight text-[color:var(--text-strong)] first:mt-0">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="mb-2 mt-5 text-xl font-bold leading-snug text-[color:var(--text-strong)] first:mt-0">
-              {children}
-            </h3>
-          ),
-          p: ({ children }) => (
-            <p className="mb-5 last:mb-0 leading-8">{children}</p>
-          ),
-          strong: ({ children }) => (
-            <strong className="font-bold text-[color:var(--text-strong)]">
-              {children}
-            </strong>
-          ),
-          em: ({ children }) => <em className="italic">{children}</em>,
-          ul: ({ children }) => (
-            <ul className="mb-5 space-y-2 pl-6 list-disc last:mb-0">
-              {children}
-            </ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="mb-5 space-y-2 pl-6 list-decimal last:mb-0">
-              {children}
-            </ol>
-          ),
-          li: ({ children }) => (
-            <li className="leading-7">
-              {children}
-            </li>
-          ),
-          a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-[color:var(--primary)]/40 underline-offset-2 text-[color:var(--primary-light)] hover:decoration-[color:var(--primary)] transition"
-            >
-              {children}
-            </a>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="mb-5 border-l-2 border-[color:var(--primary)]/30 pl-5 italic text-[color:var(--text-muted)] last:mb-0">
-              {children}
-            </blockquote>
-          ),
-          code: ({ children, className }) => {
-            const isInline = !className;
-            if (isInline) {
-              return (
-                <code className="inline rounded bg-[color:var(--surface-soft)] px-1.5 py-0.5 text-sm font-mono text-[color:var(--accent-light)]">
-                  {children}
-                </code>
-              );
-            }
-            return <CodeBlock className={className}>{children}</CodeBlock>;
-          },
-          pre: ({ children }) => <>{children}</>,
-          hr: () => (
-            <hr className="my-6 border-[color:var(--border-subtle)]" />
-          ),
-          img: ({ src, alt }) => {
-            const imageSrc = typeof src === "string" ? src : "";
-
-            return (
-              <div className="mb-5 overflow-hidden rounded-[calc(var(--radius,1rem))] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] last:mb-0">
-                <div className="relative aspect-[16/9] w-full">
-                  <Image
-                    src={imageSrc}
-                    alt={alt ?? ""}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 720px"
-                  />
-                </div>
-              </div>
-            );
-          },
-          table: ({ children }) => (
-            <div className="mb-5 overflow-x-auto last:mb-0">
-              <table className="w-full border-collapse text-sm">
-                {children}
-              </table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th className="border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-4 py-2 text-left font-bold text-[color:var(--text-strong)]">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="border border-[color:var(--border-subtle)] px-4 py-2">
-              {children}
-            </td>
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
+const contentComponents = {
+  h1: ({ children }: { children?: React.ReactNode }) => <h1>{children}</h1>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3>{children}</h3>,
+  img: ({ src, alt }: { src?: string; alt?: string }) => <img src={src} alt={alt ?? ""} />,
+};
 
 export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [view, setView] = useState<ViewMode>("split");
+  const editorRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const lastValue = useRef(value);
+  // Keep React from reconciling the editable DOM on every keystroke (which
+  // would move the browser selection/caret). The preview remains controlled.
+  const initialValue = useRef(value);
+  const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
-  const handleToolbarAction = useCallback(
-    (action: (ta: HTMLTextAreaElement) => { value: string; cursorPos: number }) => {
-      const ta = textareaRef.current;
-      if (!ta) return;
-      const result = action(ta);
-      onChange(result.value);
-      // Restore cursor position after React re-render
-      requestAnimationFrame(() => {
-        ta.focus();
-        ta.setSelectionRange(result.cursorPos, result.cursorPos);
-      });
-    },
-    [onChange]
-  );
+  useEffect(() => { lastValue.current = value; }, [value]);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      // Tab inserts 2 spaces
-      if (e.key === "Tab") {
-        e.preventDefault();
-        const ta = textareaRef.current;
-        if (!ta) return;
-        const start = ta.selectionStart;
-        const end = ta.selectionEnd;
-        const newValue =
-          ta.value.slice(0, start) + "  " + ta.value.slice(end);
-        onChange(newValue);
-        requestAnimationFrame(() => {
-          ta.focus();
-          ta.setSelectionRange(start + 2, start + 2);
-        });
-      }
-    },
-    [onChange]
-  );
+  const emitChange = useCallback(() => {
+    if (!editorRef.current) return;
+    const next = domToMarkdown(editorRef.current);
+    lastValue.current = next;
+    onChange(next);
+  }, [onChange]);
 
-  // View helper: resolve effective visibility of editor and preview panes
-  const editorVisible = view === "write" || view === "split";
-  const previewVisible = view === "preview" || view === "split";
+  const command = useCallback((name: string, argument?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(name, false, argument);
+    emitChange();
+  }, [emitChange]);
 
-  return (
-    <div className="grid gap-2">
-      {/* Toolbar — always visible */}
-      <div
-        className="flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1"
-        role="toolbar"
-        aria-label="Formatting tools"
-      >
-        {toolbarButtons.map((btn) => {
-          const Icon = iconComponents[btn.icon as keyof typeof iconComponents];
-          return (
-            <button
-              key={btn.label}
-              type="button"
-              onClick={() => handleToolbarAction(btn.action)}
-              className="inline-flex h-9 min-w-9 items-center justify-center rounded-[0.75rem] text-xs font-bold text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40"
-              aria-label={btn.label}
-              title={btn.label}
-            >
-              <Icon size={16} />
-            </button>
-          );
-        })}
+  const upload = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Choose a supported image file."); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("Image must be 8MB or smaller."); return; }
+    setUploading(true);
+    try {
+      const body = new FormData(); body.set("file", file); body.set("folder", "blog-content");
+      const response = await fetch("/api/uploads", { method: "POST", body });
+      const payload = await response.json().catch(() => null) as { url?: string; error?: string } | null;
+      if (!response.ok || !payload?.url) throw new Error(payload?.error || "Upload failed");
+      editorRef.current?.focus();
+      document.execCommand("insertImage", false, payload.url);
+      emitChange(); toast.success("Image uploaded and inserted");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Image upload failed"); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+  }, [emitChange]);
 
-        {/* Spacer */}
-        <span className="mx-1 h-5 w-px bg-[color:var(--border-subtle)]" />
+  const insertLink = () => { const url = window.prompt("Link URL (https://…)"); if (url && /^https?:\/\/|^\//i.test(url)) command("createLink", url); else if (url) toast.error("Enter a valid HTTP(S) or internal URL."); };
+  const insertImageUrl = () => { const url = window.prompt("Image URL (https://…)"); if (url && /^https:\/\//i.test(url)) command("insertImage", url); else if (url) toast.error("Enter a valid HTTPS image URL."); };
+  const insertTable = () => command("insertHTML", "<table><thead><tr><th>Heading</th><th>Heading</th></tr></thead><tbody><tr><td>Cell</td><td>Cell</td></tr></tbody></table><p><br></p>");
+  const insertChecklist = () => command("insertHTML", '<ul><li><input type="checkbox"> Task</li></ul><p><br></p>');
 
-        {/* View toggle — always visible */}
-        <div className="flex items-center gap-px rounded-md bg-[color:var(--surface-soft)] p-px">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "write"}
-            onClick={() => setView("write")}
-            className={`flex items-center gap-1.5 rounded-[0.75rem] px-2.5 py-1.5 text-xs font-bold transition ${
-              view === "write"
-                ? "bg-[color:var(--surface)] text-[color:var(--text-strong)] shadow-sm"
-                : "text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]"
-            }`}
-            aria-label="Write"
-            title="Write"
-          >
-            <PencilLine size={16} />
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "split"}
-            onClick={() => setView("split")}
-            className={`hidden items-center gap-1.5 rounded-[0.75rem] px-2.5 py-1.5 text-xs font-bold transition md:flex ${
-              view === "split"
-                ? "bg-[color:var(--surface)] text-[color:var(--text-strong)] shadow-sm"
-                : "text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]"
-            }`}
-            aria-label="Split view"
-            title="Split view"
-          >
-            <Columns2 size={16} />
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={view === "preview"}
-            onClick={() => setView("preview")}
-            className={`flex items-center gap-1.5 rounded-[0.75rem] px-2.5 py-1.5 text-xs font-bold transition ${
-              view === "preview"
-                ? "bg-[color:var(--surface)] text-[color:var(--text-strong)] shadow-sm"
-                : "text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]"
-            }`}
-            aria-label="Preview"
-            title="Preview"
-          >
-            <Eye size={16} />
-          </button>
+  const tools = [
+    ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
+    ["Bold", Bold, () => command("bold")], ["Italic", Italic, () => command("italic")], ["Underline", Underline, () => command("underline")], ["Strikethrough", Strikethrough, () => command("strikeThrough")],
+    ["Bulleted list", List, () => command("insertUnorderedList")], ["Numbered list", ListOrdered, () => command("insertOrderedList")], ["Checklist", ListChecks, insertChecklist],
+    ["Blockquote", Quote, () => command("formatBlock", "blockquote")], ["Link", LinkIcon, insertLink], ["Image URL", ImageIcon, insertImageUrl], ["Table", Table2, insertTable], ["Code block", Code2, () => command("formatBlock", "pre")],
+    ["Undo", Undo2, () => command("undo")], ["Redo", Redo2, () => command("redo")],
+  ] as const;
+
+  return <div className="grid min-w-0 gap-2">
+    <div role="toolbar" aria-label="Rich text formatting" className="flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1.5">
+      <select aria-label="Paragraph style" onChange={(e) => command("formatBlock", e.target.value)} defaultValue="p" className="h-9 rounded-md bg-[color:var(--surface-soft)] px-2 text-xs font-bold"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option></select>
+      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onClick={action} aria-label={label} title={label} className={`${i === 3 || i === 7 || i === 10 || i === 15 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
+      <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} aria-label="Upload and insert image" title="Upload image" className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] disabled:opacity-50">{uploading ? <Loader2 size={16} className="animate-spin"/> : <ImageIcon size={16}/>} Upload</button>
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
+      <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
+    </div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+      <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
+        {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
+        <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
+          onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); if(file){e.preventDefault(); void upload(file);} }}
+          onDragOver={(e: DragEvent) => {e.preventDefault(); setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={(e: DragEvent) => {e.preventDefault(); setDragging(false); const file=Array.from(e.dataTransfer.files).find((f)=>f.type.startsWith("image/")); if(file) void upload(file);}}
+          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
         </div>
       </div>
-
-      {/* Split layout */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: editorVisible && previewVisible ? "1fr 1fr" : editorVisible ? "1fr" : "1fr" }}>
-        {/* Editor pane */}
-        {editorVisible && (
-          <div className="markdown-editor-container overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)]">
-            <textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="markdown-editor-scroll h-[650px] max-h-[calc(100vh-16rem)] w-full resize-none border-0 bg-[color:var(--editor-bg)] px-[1.25rem] py-[1rem] font-mono text-[0.95rem] font-normal leading-[1.75] tracking-[-0.01em] text-[color:var(--editor-text)] outline-none transition-[background-color] placeholder:text-[color:var(--editor-placeholder)] focus:bg-[color:var(--editor-bg-active)] focus:shadow-none focus-visible:shadow-none focus-visible:outline-none"
-              placeholder="Write your blog content here using Markdown..."
-              spellCheck
-              aria-label="Blog content editor"
-            />
-          </div>
-        )}
-
-        {/* Preview pane */}
-        {previewVisible && (
-          <div
-            className="markdown-preview-scroll h-[650px] max-h-[calc(100vh-16rem)] overflow-y-auto rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--background)]"
-            role="region"
-            aria-label="Markdown preview"
-          >
-            {value.trim() ? (
-              <PreviewPane content={value} />
-            ) : (
-              <div className="flex h-full items-center justify-center p-6">
-                <p className="text-sm text-[color:var(--text-faint)]">
-                  Preview will appear here as you type...
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+      <div className={`${preview ? "block" : "hidden lg:block"} min-w-0 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`} role="region" aria-label="Live article preview">
+        <article className="rich-blog-preview p-6 text-base leading-8"><ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{value || "Preview will appear here as you type…"}</ReactMarkdown></article>
       </div>
-
-      {error ? (
-        <span className="text-xs text-[color:var(--destructive)]">{error}</span>
-      ) : null}
     </div>
-  );
+    {error ? <span className="text-xs text-[color:var(--destructive)]">{error}</span> : null}
+  </div>;
 }

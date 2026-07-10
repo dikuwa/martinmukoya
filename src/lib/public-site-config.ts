@@ -6,6 +6,7 @@ export type PublicSiteConfig = {
   brandLines: [string, string];
   logoAlt: string;
   availability: string;
+  availabilityActive: boolean;
   contact: typeof contact;
   footerDescription: string;
   copyright: string;
@@ -115,6 +116,7 @@ export const publicSiteConfigs: Record<"martin-mukoya" | "flextech-media", Publi
     brandLines: ["Martin", "Mukoya"],
     logoAlt: "Martin Mukoya",
     availability: "Available for new projects",
+    availabilityActive: true,
     contact,
     footerDescription: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need cleaner leads and smoother operations.",
     copyright: "Built for practical business systems.",
@@ -217,6 +219,7 @@ export const publicSiteConfigs: Record<"martin-mukoya" | "flextech-media", Publi
     brandLines: ["FlexTech", "Media"],
     logoAlt: "FlexTech Media",
     availability: "Booking new projects",
+    availabilityActive: true,
     contact: flextechContact,
     footerDescription: "Practical websites, booking systems, ecommerce flows, and AI automations for businesses that need clearer leads and smoother operations.",
     registrationInfo: "Reg. No. CC/2024/00337 · ERF 234, SILVER AVENUE, TAMARISKIA, SWAKOPMUND",

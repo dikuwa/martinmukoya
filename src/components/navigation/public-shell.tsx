@@ -59,7 +59,7 @@ export function PublicShell({ children, site }: { children: React.ReactNode; sit
       <AIChatbot siteSlug={site.slug} />
       <CookieBanner />
       <main>{children}</main>
-      <FinalCTA site={site} />
+      {!pathname.startsWith("/projects/") ? <FinalCTA site={site} /> : null}
       <Footer site={site} />
       <MobileBottomNav />
     </div>
@@ -104,9 +104,9 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
           </a>
         </div>
         <div className="flex items-center gap-3">            <span className={cn("inline-flex items-center gap-2 whitespace-nowrap font-semibold", "text-[color:var(--text-normal)]")}>
-              <span className="relative inline-flex h-2 w-2">
-                <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
-                <span className="relative inline-block h-2 w-2 rounded-full bg-[#22C55E]" />
+              <span className="relative inline-flex h-2 w-2" aria-hidden="true">
+                {site.availabilityActive ? <span className="absolute inset-0 animate-ping rounded-full bg-[#22C55E]/40" /> : null}
+                <span className={cn("relative inline-block h-2 w-2 rounded-full", site.availabilityActive ? "bg-[#22C55E]" : "bg-[color:var(--text-faint)]")} />
               </span>
             {site.availability}
           </span>
@@ -194,7 +194,7 @@ function PrimaryNav({ site }: { site: PublicSiteConfig }) {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
-          <Button asChild className={cn("hidden lg:inline-flex shadow-[0_18px_40px_rgba(34,197,94,0.18)]", "bg-[#22C55E] text-white hover:bg-[#16A34A]")}>
+          <Button asChild className="hidden bg-[color:var(--primary)] text-[color:var(--primary-foreground)] shadow-lg hover:bg-[color:var(--primary-light)] lg:inline-flex">
             <TrackedLink siteSlug={site.slug} eventType="cta_click" eventPage={pathname} eventSource="primary_nav_start_project" href="/start-project" className="text-white">
               {site.finalCta.primary}
             </TrackedLink>
@@ -216,9 +216,9 @@ function Footer({ site }: { site: PublicSiteConfig }) {
             {/* Brand column */}
             <div>
               <Link href="/" className="inline-flex items-center gap-3">
-                <span className="relative block h-16 w-16 overflow-hidden">
-                  <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain" sizes="64px" />
-                  <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain" sizes="64px" />
+                <span className="relative block h-16 w-48 overflow-hidden sm:w-52">
+                  <Image src="/assets/backgrounds/SVG/SVG/flex-light.svg" alt={site.logoAlt} fill className="theme-logo-dark object-contain object-left" sizes="(max-width: 640px) 192px, 208px" />
+                  <Image src="/assets/backgrounds/SVG/SVG/flex-dark.svg" alt={site.logoAlt} fill className="theme-logo-light object-contain object-left" sizes="(max-width: 640px) 192px, 208px" />
                 </span>
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-6 text-[color:var(--text-muted)]">
@@ -333,13 +333,25 @@ function Footer({ site }: { site: PublicSiteConfig }) {
       <Container className="border-t border-[color:var(--border-subtle)] py-5 text-xs text-[color:var(--text-faint)]">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <p>&copy; 2026 {site.brandName}. {site.copyright}</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-end">
             <Link href="/privacy" className="transition hover:text-[color:var(--text-muted)]">
               Privacy
             </Link>
             <Link href="/terms" className="transition hover:text-[color:var(--text-muted)]">
               Terms
             </Link>
+            <span aria-hidden="true" className="hidden sm:inline">&middot;</span>
+            <span>
+              Designed by{" "}
+              <a
+                href="https://www.flextech-media.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--primary)]"
+              >
+                FlexTech Media
+              </a>
+            </span>
           </div>
         </div>
       </Container>

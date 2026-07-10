@@ -487,9 +487,22 @@ export function ChatSessionStatusForm({ session }: { session: ChatSession }) {
 
 export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: { name: string } | null } }) {
   const router = useRouter();
+  const isAvailability = setting.key === "availability";
+  const initialAvailability = typeof setting.value === "object" && setting.value !== null && !Array.isArray(setting.value)
+    ? setting.value as { text?: unknown; active?: unknown }
+    : null;
+  const [availabilityActive, setAvailabilityActive] = useState(initialAvailability?.active !== false);
   const form = useForm<{ value: string }>({
     resolver: zodResolver(z.object({ value: z.string().min(2) })),
-    defaultValues: { value: JSON.stringify(setting.value, null, 2) }
+    defaultValues: {
+      value: JSON.stringify(
+        isAvailability && initialAvailability && typeof initialAvailability.text === "string"
+          ? initialAvailability.text
+          : setting.value,
+        null,
+        2
+      )
+    }
   });
 
   async function onSubmit(values: { value: string }) {
@@ -501,7 +514,14 @@ export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: {
       return;
     }
 
-    const payload = siteSettingUpdateSchema.parse({ value: parsed });
+    if (isAvailability && (typeof parsed !== "string" || !parsed.trim())) {
+      toast.error("Availability JSON value must be a non-empty string");
+      return;
+    }
+
+    const payload = siteSettingUpdateSchema.parse({
+      value: isAvailability ? { text: parsed, active: availabilityActive } : parsed
+    });
     const response = await fetch(`/api/site-settings/${setting.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -517,7 +537,32 @@ export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: {
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <p className="font-display text-2xl font-black text-[color:var(--text-strong)]">{setting.key}</p>
       <p className="text-sm font-semibold text-[color:var(--text-muted)]">Site: {setting.site?.name ?? "Global"}</p>
-      <SettingsAssetUpload />
+      {isAvailability ? (
+        <div className="flex flex-col gap-4 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="relative inline-flex h-3 w-3" aria-hidden="true">
+              {availabilityActive ? <span className="absolute inset-0 animate-ping rounded-full bg-[#22C55E]/40" /> : null}
+              <span className={`relative inline-block h-3 w-3 rounded-full ${availabilityActive ? "bg-[#22C55E]" : "bg-[color:var(--text-faint)]"}`} />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-[color:var(--text-strong)]">Availability indicator</p>
+              <p className="text-xs leading-5 text-[color:var(--text-muted)]">
+                {availabilityActive ? "Visible with an animated status ripple." : "Visible in grey without animation."}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={availabilityActive}
+            onClick={() => setAvailabilityActive((active) => !active)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40 ${availabilityActive ? "bg-[color:var(--primary)]" : "bg-[color:var(--text-faint)]/50"}`}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${availabilityActive ? "translate-x-6" : "translate-x-1"}`} />
+            <span className="sr-only">Toggle availability animation</span>
+          </button>
+        </div>
+      ) : <SettingsAssetUpload />}
       <Field label="JSON value" error={form.formState.errors.value?.message}>
         <textarea {...form.register("value")} className={`${monoTextareaClass} min-h-80`} />
       </Field>

@@ -13,7 +13,7 @@ import { db } from "@/lib/db";
  *   "contact.email"      | "info@flextech-media.com"  | contact.email
  *   "contact.phone"      | "+264 81 8563 005"         | contact.phone, contact.phoneHref,
  *                         |                            |   contact.whatsappHref (derived)
- *   "availability"       | "Booking new projects"     | availability
+ *   "availability"       | { text, active }            | availability indicator
  *   "hero.title"         | "I build systems that…"    | home.heroTitle
  *   "hero.description"   | "Websites, booking…"       | home.heroDescription
  *   "footer.description" | "Practical websites…"      | footerDescription
@@ -159,7 +159,14 @@ const SETTING_MAP: Record<string, SettingMapEntry> = {
   },
   availability: {
     apply: (config, raw) => {
-      if (typeof raw === "string" && raw.length > 0) config.availability = raw;
+      if (typeof raw === "string" && raw.length > 0) {
+        config.availability = raw;
+        return;
+      }
+      const availability = getRecord(raw);
+      if (!availability) return;
+      if (typeof availability.text === "string" && availability.text.length > 0) config.availability = availability.text;
+      if (typeof availability.active === "boolean") config.availabilityActive = availability.active;
     },
   },
   contact: {

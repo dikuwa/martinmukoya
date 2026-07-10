@@ -262,6 +262,32 @@ body {
   text-wrap: pretty;
 }
 
+.case-study-prose {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.case-study-prose :where(h1, h2, h3) {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-weight: 850;
+  line-height: 1.15;
+  margin: 2rem 0 0.75rem;
+}
+
+.case-study-prose h1 { font-size: 1.75rem; }
+.case-study-prose h2 { font-size: 1.5rem; }
+.case-study-prose h3 { font-size: 1.2rem; }
+.case-study-prose p { margin: 0 0 1.15rem; }
+.case-study-prose :where(ul, ol) { margin: 0 0 1.25rem; padding-left: 1.35rem; }
+.case-study-prose ul { list-style: disc; }
+.case-study-prose ol { list-style: decimal; }
+.case-study-prose li { margin: 0.35rem 0; }
+.case-study-prose a { color: var(--primary-light); text-decoration: underline; text-underline-offset: 0.2em; }
+.case-study-prose blockquote { border: 1px solid var(--border-subtle); border-radius: 1rem; margin: 1.5rem 0; padding: 1rem 1.25rem; color: var(--text-normal); }
+.case-study-prose code { border-radius: 0.35rem; background: var(--surface-soft); padding: 0.15rem 0.35rem; font-family: var(--font-mono); font-size: 0.9em; }
+
 button,
 input,
 textarea,
@@ -1080,3 +1106,21 @@ select:not([class*="appearance-none"]) {
   background-size: 200% 100%;
   animation: admin-shimmer 1.5s ease-in-out infinite;
 }
+/* Rich blog editor and the live article preview share the same document rhythm. */
+.rich-blog-editor :is(h1, h2, h3), .rich-blog-preview :is(h1, h2, h3) { color: var(--text-strong); font-weight: 800; line-height: 1.2; margin: 1.5em 0 .55em; }
+.rich-blog-editor h1, .rich-blog-preview h1 { font-size: 2rem; }
+.rich-blog-editor h2, .rich-blog-preview h2 { font-size: 1.5rem; }
+.rich-blog-editor h3, .rich-blog-preview h3 { font-size: 1.25rem; }
+.rich-blog-editor p, .rich-blog-preview p { margin: 0 0 1rem; }
+.rich-blog-editor :is(ul,ol), .rich-blog-preview :is(ul,ol) { margin: 0 0 1rem; padding-left: 1.5rem; }
+.rich-blog-editor ul, .rich-blog-preview ul { list-style: disc; }
+.rich-blog-editor ol, .rich-blog-preview ol { list-style: decimal; }
+.rich-blog-editor blockquote, .rich-blog-preview blockquote { border-left: 3px solid var(--primary); color: var(--text-muted); font-style: italic; margin: 1.25rem 0; padding-left: 1rem; }
+.rich-blog-editor a, .rich-blog-preview a { color: var(--primary); text-decoration: underline; }
+.rich-blog-editor img, .rich-blog-preview img { border-radius: .75rem; display: block; height: auto; margin: 1.25rem auto; max-width: 100%; }
+.rich-blog-editor table, .rich-blog-preview table { border-collapse: collapse; display: block; margin: 1.25rem 0; max-width: 100%; overflow-x: auto; width: 100%; }
+.rich-blog-editor :is(td,th), .rich-blog-preview :is(td,th) { border: 1px solid var(--border-subtle); min-width: 8rem; padding: .5rem .75rem; text-align: left; }
+.rich-blog-editor th, .rich-blog-preview th { background: var(--surface-soft); font-weight: 700; }
+.rich-blog-editor pre, .rich-blog-preview pre { background: var(--surface-soft); border-radius: .75rem; margin: 1rem 0; overflow-x: auto; padding: 1rem; }
+.rich-blog-editor:empty::before { color: var(--editor-placeholder); content: "Start writing your article…"; pointer-events: none; }
+.rich-blog-editor img:hover { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 3px; }

@@ -602,8 +602,8 @@ function MartinHeroVisual({ site }: { site: PublicSiteConfig }) {
       </div>
       <div className="motion-presence-chip absolute left-[78%] top-6 whitespace-nowrap rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/95 px-4 py-2 text-xs font-bold text-[color:var(--text-strong)] shadow-[0_3px_10px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--surface-soft)] sm:text-sm">
         <span className="relative mr-2 inline-flex h-2.5 w-2.5">
-          <span className="absolute inset-0 rounded-full bg-[#22C55E]/40 animate-ping" />
-          <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-[#22C55E]" />
+          {site.availabilityActive ? <span className="absolute inset-0 animate-ping rounded-full bg-[#22C55E]/40" /> : null}
+          <span className={`relative inline-block h-2.5 w-2.5 rounded-full ${site.availabilityActive ? "bg-[#22C55E]" : "bg-[color:var(--text-faint)]"}`} />
         </span>
         {site.availability}
       </div>
