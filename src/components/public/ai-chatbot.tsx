@@ -845,7 +845,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
   }, []);
 
   const actionPillClass =
-    "action-pill inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 py-2 text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
+    "action-pill inline-flex items-center gap-1 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-2.5 py-1.5 text-[11px] font-bold leading-none text-[color:var(--text-strong)] transition-all duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--primary)]/8 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]/40";
 
   // ── AI response keyword fail-safe ──
   // If the AI mentions options, choices, or selection, force the service card to show.
@@ -928,7 +928,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
 
             {/* Bottom row: Service, WhatsApp, Call — always visible */}
             <div className="border-t border-[color:var(--border-subtle)] px-4 py-3">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
                   {/* Choose a Service */}
                   <button
                     type="button"
@@ -945,13 +945,13 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                     className={actionPillClass}
                     aria-label="Choose a service to start a project"
                   >
-                    <Briefcase size={14} />
+                    <Briefcase size={12} />
                     Services
                   </button>
 
                   {/* WhatsApp */}
                   <button type="button" onClick={() => requestHumanChat()} className={actionPillClass} disabled={chatMode !== "AI"}>
-                    <MessageCircle size={14} />{chatMode === "AI" ? `Talk to ${humanLabel}` : chatMode === "HUMAN" ? "Human joined" : "Human requested"}
+                    <MessageCircle size={12} />{chatMode === "AI" ? `Talk to ${humanLabel}` : chatMode === "HUMAN" ? "Human joined" : "Human requested"}
                   </button>
 
                   {/* WhatsApp */}
@@ -970,7 +970,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       })
                     }
                   >
-                    <MessageCircle size={14} />
+                    <MessageCircle size={12} />
                     WhatsApp
                   </a>
 
@@ -988,7 +988,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       })
                     }
                   >
-                    <Mail size={14} />
+                    <Mail size={12} />
                     Email
                   </a>
 
@@ -1006,7 +1006,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
                       })
                     }
                   >
-                    <Phone size={14} />
+                    <Phone size={12} />
                     Call
                   </a>
                 </div>

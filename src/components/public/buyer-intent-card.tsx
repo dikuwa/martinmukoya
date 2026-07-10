@@ -250,24 +250,26 @@ export function BuyerIntentCard({
         )}
 
         {/* Quick contact links */}
-        <div className="grid grid-cols-2 gap-2 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
           <a
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={onWhatsApp}
-            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2.5 text-center text-xs font-bold text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
+            aria-label={`WhatsApp ${humanLabel}`}
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2 text-[11px] font-bold leading-none text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
-            <MessageCircle size={13} />
-            WhatsApp {humanLabel}
+            <MessageCircle size={12} />
+            WhatsApp
           </a>
           <button
             type="button"
             onClick={onCall}
-            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2.5 text-center text-xs font-bold text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
+            aria-label={`Call ${humanLabel}`}
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-[color:var(--primary)]/20 bg-[color:var(--primary)]/5 px-3 py-2 text-[11px] font-bold leading-none text-[color:var(--text-muted)] transition hover:border-[color:var(--primary)]/35 hover:bg-[color:var(--primary)]/10 hover:text-[color:var(--primary)]"
           >
-            <Phone size={13} />
-            Call {humanLabel}
+            <Phone size={12} />
+            Human
           </button>
         </div>
       </div>
