@@ -49,9 +49,9 @@ function domToMarkdown(root: HTMLElement) {
         if (!rows.length) return "";
         return `${rows.map((row, i) => `| ${row.join(" | ")} |${i === 0 ? `\n| ${row.map(() => "---").join(" | ")} |` : ""}`).join("\n")}\n\n`;
       }
-      if (["STRONG", "B", "EM", "I", "S", "STRIKE", "U", "CODE", "A", "IMG", "BR"].includes(node.tagName)) return inline(node);
-      return children;
     }
+    if (["STRONG", "B", "EM", "I", "S", "STRIKE", "U", "CODE", "A", "IMG", "BR"].includes(node.tagName)) return inline(node);
+    return children;
   };
   return Array.from(root.childNodes).map((node) => walk(node)).join("").replace(/\n{3,}/g, "\n\n").trim();
 }
