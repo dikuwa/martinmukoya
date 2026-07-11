@@ -1,0 +1,2 @@
+import{PageHeader}from"@/components/ui/page-header";import{FinanceSettingsForm}from"@/components/admin/finance-settings-form";import{getIssuerSnapshot}from"@/lib/finance-service";
+export default async function FinanceSettings(){return <div className="grid gap-8"><PageHeader title="Financial identity" description="Shared FlexTech Media issuer, banking details, and signature for both dashboards."/><FinanceSettingsForm initial={await getIssuerSnapshot()}/></div>}

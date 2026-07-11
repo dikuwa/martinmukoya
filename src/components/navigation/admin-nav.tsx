@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, FileQuestion, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, UserRound, Users } from "lucide-react";
+import { BarChart3, CalendarCheck, FileQuestion, FileText, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, UserRound, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -26,6 +26,8 @@ const adminNav: AdminNavItem[] = [
   { href: "/admin/about", label: "About", icon: UserRound, martinOnly: true },
   { href: "/admin/blog", label: "Blog", icon: Newspaper },
   { href: "/admin/leads", label: "Leads", icon: Users, countKey: "leads" as const },
+  { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+  { href: "/admin/documents", label: "Documents", icon: FileText },
   { href: "/admin/messages", label: "Messages", icon: Inbox, countKey: "messages" as const },
   { href: "/admin/testimonials", label: "Testimonials", icon: Star },
   { href: "/admin/faqs", label: "FAQs", icon: FileQuestion },
