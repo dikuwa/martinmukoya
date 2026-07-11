@@ -18,15 +18,17 @@ interface DashboardSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelec
 }
 
 export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProps>(
-  ({ options, placeholder, className, disabled, onChange, value, name, ...props }, ref) => {
+  ({ options, placeholder, className, disabled, onChange, value, defaultValue, name, "aria-label": ariaLabel }, ref) => {
     const id = useId();
     const [open, setOpen] = useState(false);
+    const [internalValue, setInternalValue] = useState(() => String(defaultValue ?? options[0]?.value ?? ""));
     const wrapperRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const selectedValue = value === undefined ? internalValue : String(value);
 
     const selectedOption = useMemo(
-      () => options.find((opt) => opt.value === value),
-      [options, value]
+      () => options.find((opt) => opt.value === selectedValue),
+      [options, selectedValue]
     );
 
     useEffect(() => {
@@ -56,12 +58,16 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
     }
 
     return (
-      <div ref={wrapperRef} className="relative" role="combobox" aria-expanded={open} aria-haspopup="listbox">
+      <div ref={wrapperRef} className="relative">
         <select
           name={name}
-          value={value ?? ""}
-          onChange={onChange}
+          value={selectedValue}
+          onChange={(event) => {
+            if (value === undefined) setInternalValue(event.target.value);
+            onChange?.(event);
+          }}
           disabled={disabled}
+          ref={ref}
           className="sr-only"
           tabIndex={-1}
           aria-hidden="true"
@@ -77,6 +83,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
           type="button"
           id={id}
           aria-haspopup="listbox"
+          aria-label={ariaLabel}
           aria-expanded={open}
           aria-controls={`${id}-listbox`}
           disabled={disabled}
@@ -108,7 +115,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
             className="absolute left-0 top-[calc(100%+0.45rem)] z-50 grid w-full min-w-[12rem] overflow-hidden rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]"
           >
             {options.map((option) => {
-              const active = option.value === value;
+              const active = option.value === selectedValue;
               return (
                 <button
                   key={option.value}
@@ -117,6 +124,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
                   aria-selected={active}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
+                    if (value === undefined) setInternalValue(option.value);
                     onChange?.({
                       target: { value: option.value, name },
                     } as React.ChangeEvent<HTMLSelectElement>);

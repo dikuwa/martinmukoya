@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string };
 type Invoice = { id: string; label: string; balance: number };
 type Line = { description: string; category: string; quantity: string; unitPrice: string };
-const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
+const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none transition-colors focus:border-[color:var(--primary)]";
+const field = "grid min-w-0 gap-2 text-sm font-bold";
 
 const documentTypeOptions = [
   { value: "QUOTE", label: "Quotation" },
@@ -80,13 +81,13 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
   }
 
   return (
-    <form id="new-document" onSubmit={submit} className="grid gap-5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+    <form id="new-document" onSubmit={submit} className="grid min-w-0 gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 sm:p-5 lg:p-6">
       <div>
         <h2 className="font-display text-xl font-black">Create document</h2>
         <p className="text-sm text-[color:var(--text-muted)]">Select a lead or booking, then set the actual scope and price.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-2 text-sm font-bold">Source
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+        <label className={field}>Source
           <DashboardSelect
             value={sourceKey}
             onChange={e => setSourceKey(e.target.value)}
@@ -94,7 +95,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
             className={input}
           />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Document type
+        <label className={field}>Document type
           <DashboardSelect
             value={type}
             onChange={e => setType(e.target.value)}
@@ -102,71 +103,72 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
             className={input}
           />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Customer
+        <label className={field}>Customer
           <input key={`${sourceKey}-name`} name="customerName" defaultValue={source?.name} required className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Company
+        <label className={field}>Company
           <input key={`${sourceKey}-company`} name="customerCompany" defaultValue={source?.company} className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Email
+        <label className={field}>Email
           <input key={`${sourceKey}-email`} name="customerEmail" type="email" defaultValue={source?.email} className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Phone
+        <label className={field}>Phone
           <input key={`${sourceKey}-phone`} name="customerPhone" defaultValue={source?.phone} className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">
+        <label className={field}>
           {type === "QUOTE" ? "Valid until" : "Due date"}
           <DashboardDatePicker
             name={type === "QUOTE" ? "validUntil" : "dueDate"}
             className={input}
           />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Customer address
+        <label className={field}>Customer address
           <input name="customerAddress" className={input} />
         </label>
       </div>
-      <div className="grid gap-3">
-        <div className="flex items-center justify-between">
+      <div className="grid min-w-0 gap-3 border-t border-[color:var(--border-subtle)] pt-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-bold">Line items</h3>
           <Button type="button" variant="secondary" size="sm" onClick={() => setLines(prev => [...prev, { description: "", category: "service", quantity: "1", unitPrice: "0" }])}>
-            Add line
+            <Plus size={15} /> Add line
           </Button>
         </div>
         {lines.map((line, index) => (
-          <div key={index} className="grid gap-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
-            <input value={line.description} onChange={e => updateLine(index, "description", e.target.value)} placeholder="Description" className={input} />
+          <div key={index} className="grid min-w-0 grid-cols-2 gap-2 rounded-xl bg-[color:var(--surface-soft)] p-3 sm:grid-cols-4 xl:grid-cols-[minmax(10rem,1.5fr)_minmax(7rem,1fr)_minmax(5rem,.6fr)_minmax(7rem,.8fr)_2.5rem]">
+            <input value={line.description} onChange={e => updateLine(index, "description", e.target.value)} placeholder="Item description" aria-label="Item description" className={`${input} col-span-2 sm:col-span-4 xl:col-span-1`} />
             <DashboardSelect
               value={line.category}
               onChange={e => updateLine(index, "category", e.target.value)}
               options={categoryOptions}
+              aria-label="Item category"
               className={input}
             />
-            <input value={line.quantity} onChange={e => updateLine(index, "quantity", e.target.value)} type="number" min="0" step="0.01" className={input} />
-            <input value={line.unitPrice} onChange={e => updateLine(index, "unitPrice", e.target.value)} type="number" min="0" step="0.01" className={input} />
-            <Button type="button" variant="ghost" size="icon" onClick={() => setLines(current => current.filter((_, i) => i !== index))} aria-label="Remove line item">
+            <input value={line.quantity} onChange={e => updateLine(index, "quantity", e.target.value)} aria-label="Quantity" placeholder="Qty" type="number" min="0" step="0.01" className={input} />
+            <input value={line.unitPrice} onChange={e => updateLine(index, "unitPrice", e.target.value)} aria-label="Rate" placeholder="Rate" type="number" min="0" step="0.01" className={input} />
+            <Button type="button" variant="ghost" size="icon" className="h-10 w-10 justify-self-end" onClick={() => setLines(current => current.filter((_, i) => i !== index))} aria-label="Remove line item">
               <Trash2 size={16} />
             </Button>
           </div>
         ))}
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-2 text-sm font-bold">Discount amount (N$)
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <label className={field}>Discount amount (N$)
           <input name="discountAmount" defaultValue="0" type="number" min="0" step="0.01" className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Additional charges (N$)
+        <label className={field}>Additional charges (N$)
           <input name="additionalCharges" defaultValue="0" type="number" min="0" step="0.01" className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Tax rate (%)
+        <label className={field}>Tax rate (%)
           <input name="taxRate" defaultValue="0" type="number" min="0" max="100" step="0.01" className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold">Payment terms
+        <label className={field}>Payment terms
           <input name="paymentTerms" placeholder="Net 30" className={input} />
         </label>
-        <label className="grid gap-2 text-sm font-bold md:col-span-2">Notes
+        <label className={`${field} sm:col-span-2 xl:col-span-4`}>Notes
           <textarea name="notes" className={`${input} min-h-20 py-3`} />
         </label>
       </div>
-      <Button disabled={saving} className="md:col-span-2">
+      <Button disabled={saving} className="h-11 w-full">
         {saving ? "Creating..." : "Create document"}
       </Button>
     </form>
@@ -194,7 +196,7 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+    <form onSubmit={submit} className="grid min-w-0 gap-4 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 sm:p-5 lg:sticky lg:top-5">
       <div>
         <h2 className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
@@ -243,5 +245,5 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
 }
 
 export function RegisterLink({ href, primary, secondary, trailing }: { href: string; primary: string; secondary: string; trailing: string }) {
-  return <Link href={href} className="grid grid-cols-[1fr_auto] gap-2 border-b border-[color:var(--border-subtle)] px-4 py-3 text-sm last:border-0 hover:bg-[color:var(--surface-soft)]"><span><strong>{primary}</strong><small className="ml-2 text-[color:var(--text-muted)]">{secondary}</small></span><span className="font-semibold">{trailing}</span></Link>;
+  return <Link href={href} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-[color:var(--border-subtle)] px-4 py-3 text-sm last:border-0 hover:bg-[color:var(--surface-soft)]"><span className="min-w-0"><strong className="block truncate">{primary}</strong><small className="mt-0.5 block break-words text-[color:var(--text-muted)]">{secondary}</small></span><span className="whitespace-nowrap font-semibold tabular-nums">{trailing}</span></Link>;
 }
