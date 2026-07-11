@@ -13,7 +13,7 @@ async function migrate() {
     return "The bookings, documents, and payments migration was applied successfully.";
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
+    return `Migration failed: ${error instanceof Error ? error.message : "Unknown error"}`;
   } finally { client.release(); await pool.end(); }
 }
 
