@@ -37,11 +37,14 @@ export async function AdminShell({ children }: { children: React.ReactNode }) {
         {/* ── Top bar ── */}
         <header className="sticky top-0 z-30 border-b border-[color:var(--border-subtle)] bg-[color:var(--background)]/90 backdrop-blur-xl">
           <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <AdminMobileNav />
+              <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--text-faint)]">
                 Dashboard
               </p>
               <p className="text-sm text-[color:var(--text-muted)] truncate">Content, leads, analytics, and settings</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <NotificationCenter />
@@ -54,7 +57,6 @@ export async function AdminShell({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           </div>
-          <AdminMobileNav />
         </header>
         <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
