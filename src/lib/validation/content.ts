@@ -8,6 +8,25 @@ const serviceTypeEnum = z.enum(["WEB_APP", "BOOKING_SYSTEM", "ECOMMERCE", "AI_AU
 const preferredContactEnum = z.enum(["EMAIL", "PHONE", "WHATSAPP"]);
 const leadStatusEnum = z.enum(["NEW", "REVIEWING", "CONTACTED", "QUALIFIED", "WON", "LOST", "ARCHIVED"]);
 const contactMessageStatusEnum = z.enum(["NEW", "READ", "REPLIED", "ARCHIVED"]);
+export const projectIconKeySchema = z.enum([
+  "auto", "industry", "client", "timeline", "role", "deliverables", "problem", "solution", "outcome",
+  "products", "speed", "enquiries", "security", "catalogue", "dashboard", "users", "payments",
+  "documents", "settings", "automation", "analytics", "website", "mobile", "database", "code", "support", "custom"
+]);
+const projectListItemSchema = z.object({
+  id: z.string().trim().optional(),
+  title: z.string().trim().min(1),
+  description: z.string().trim().optional(),
+  iconKey: projectIconKeySchema.default("auto"),
+  sortOrder: z.number().int().nonnegative().default(0)
+});
+const galleryImageSchema = z.object({
+  id: z.string().trim().optional(),
+  url: z.string().trim().min(1),
+  alt: z.string().trim().optional(),
+  caption: z.string().trim().optional(),
+  sortOrder: z.number().int().nonnegative().default(0)
+});
 
 export const projectSchema = z.object({
   title: z.string().trim().min(2),
@@ -19,12 +38,28 @@ export const projectSchema = z.object({
   outcome: z.string().trim().optional(),
   clientType: z.string().trim().optional(),
   industry: z.string().trim().optional(),
+  eyebrow: z.string().trim().optional(),
+  timeline: z.string().trim().optional(),
+  role: z.string().trim().optional(),
+  deliverables: stringArray,
+  stackSummary: z.string().trim().optional(),
+  benefits: z.array(projectListItemSchema).default([]),
+  capabilities: z.array(projectListItemSchema).default([]),
   coverImage: z.string().trim().optional(),
+  coverImageAlt: z.string().trim().optional(),
   gallery: stringArray,
+  galleryImages: z.array(galleryImageSchema).default([]),
   techStack: stringArray,
   services: stringArray,
   liveUrl: optionalUrl,
   githubUrl: optionalUrl,
+  ctaEyebrow: z.string().trim().optional(),
+  ctaTitle: z.string().trim().optional(),
+  ctaDescription: z.string().trim().optional(),
+  ctaPrimaryLabel: z.string().trim().optional(),
+  ctaPrimaryUrl: optionalUrl,
+  ctaSecondaryLabel: z.string().trim().optional(),
+  ctaSecondaryUrl: optionalUrl,
   caseStudyContent: z.string().trim().min(10),
   featured: z.boolean().default(false),
   published: z.boolean().default(false),
@@ -130,7 +165,7 @@ export const analyticsEventSchema = z.object({
   source: z.string().trim().optional(),
   device: z.string().trim().optional(),
   country: z.string().trim().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 export const siteSettingSchema = z.object({

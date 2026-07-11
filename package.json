@@ -8,6 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "remotion:studio": "remotion studio remotion/index.ts",
+    "remotion:render:wide": "remotion render remotion/index.ts MartinOutcomeWide out/martin-outcome-wide.mp4",
+    "remotion:render:vertical": "remotion render remotion/index.ts MartinOutcomeVertical out/martin-outcome-vertical.mp4",
+    "remotion:still": "remotion still remotion/index.ts MartinOutcomeWide out/martin-outcome-preview.png --frame=120",
     "env:check": "node scripts/check-env.mjs",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
@@ -56,11 +60,12 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4",
     "xlsx": "^0.18.5",
-    "zod": "^3.24.0"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.0.0",
     "@playwright/test": "^1.60.0",
+    "@remotion/cli": "^4.0.469",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/pg": "^8.20.0",
@@ -69,6 +74,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "prisma": "^7.6.0",
+    "remotion": "^4.0.469",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3"
   }

@@ -1,7 +1,27 @@
 import { db } from "@/lib/db";
 import type { PublicSiteConfig } from "@/lib/public-site-config";
 
-export type PublicProject = PublicSiteConfig["projects"][number];
+export type ProjectListItem = { id?: string; title: string; description?: string; iconKey?: string; sortOrder?: number };
+export type ProjectGalleryImage = { id?: string; url: string; alt?: string; caption?: string; sortOrder?: number };
+export type PublicProject = PublicSiteConfig["projects"][number] & {
+  eyebrow?: string;
+  timeline?: string;
+  role?: string;
+  deliverables?: string[];
+  stackSummary?: string;
+  benefits?: ProjectListItem[];
+  capabilities?: ProjectListItem[];
+  coverImageAlt?: string;
+  galleryImages?: ProjectGalleryImage[];
+  caseStudyContent?: string;
+  ctaEyebrow?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaPrimaryLabel?: string;
+  ctaPrimaryUrl?: string;
+  ctaSecondaryLabel?: string;
+  ctaSecondaryUrl?: string;
+};
 export type PublicBlogPost = PublicSiteConfig["blogPosts"][number];
 export type PublicTestimonial = PublicSiteConfig["testimonials"][number];
 export type PublicFAQ = PublicSiteConfig["faqs"][number];
@@ -13,6 +33,10 @@ function contentParagraphs(content: string) {
     .filter(Boolean);
 
   return paragraphs.length > 0 ? paragraphs : [content];
+}
+
+function objectArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value.filter((item): item is T => Boolean(item && typeof item === "object")) : [];
 }
 
 export async function getPublicContent(site: PublicSiteConfig, siteId?: string | null) {
@@ -56,12 +80,29 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       outcome: project.outcome || "The build created a cleaner path from visitor intent to business follow-up.",
       clientType: project.clientType || "Business",
       industry: project.industry || "Digital systems",
+      eyebrow: project.eyebrow || undefined,
+      timeline: project.timeline || undefined,
+      role: project.role || undefined,
+      deliverables: project.deliverables,
+      stackSummary: project.stackSummary || undefined,
+      benefits: objectArray<ProjectListItem>(project.benefits),
+      capabilities: objectArray<ProjectListItem>(project.capabilities),
       coverImage: project.coverImage || "/assets/hero-images/webp/hero-image.webp",
+      coverImageAlt: project.coverImageAlt || undefined,
       gallery: project.gallery.length > 0 ? project.gallery : [project.coverImage || "/assets/hero-images/webp/hero-image.webp"],
+      galleryImages: objectArray<ProjectGalleryImage>(project.galleryImages),
       techStack: project.techStack,
       services: project.services,
       liveUrl: project.liveUrl || "",
       githubUrl: project.githubUrl || "",
+      caseStudyContent: project.caseStudyContent,
+      ctaEyebrow: project.ctaEyebrow || undefined,
+      ctaTitle: project.ctaTitle || undefined,
+      ctaDescription: project.ctaDescription || undefined,
+      ctaPrimaryLabel: project.ctaPrimaryLabel || undefined,
+      ctaPrimaryUrl: project.ctaPrimaryUrl || undefined,
+      ctaSecondaryLabel: project.ctaSecondaryLabel || undefined,
+      ctaSecondaryUrl: project.ctaSecondaryUrl || undefined,
       featured: project.featured
     }))
     : site.projects;

@@ -61,7 +61,8 @@ export function AdminNav() {
     }
     fetchCounts();
     const interval = setInterval(fetchCounts, 10000);
-    return () => clearInterval(interval);
+    window.addEventListener("admin-activity-cleaned", fetchCounts);
+    return () => { clearInterval(interval); window.removeEventListener("admin-activity-cleaned", fetchCounts); };
   }, []);
 
   return (
@@ -120,7 +121,8 @@ export function AdminMobileNav() {
     }
     fetchCounts();
     const interval = setInterval(fetchCounts, 10000);
-    return () => clearInterval(interval);
+    window.addEventListener("admin-activity-cleaned", fetchCounts);
+    return () => { clearInterval(interval); window.removeEventListener("admin-activity-cleaned", fetchCounts); };
   }, []);
 
   return (

@@ -7,24 +7,28 @@ import { projectSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { projectIconOptions } from "@/lib/project-icons";
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 const siteOptions = [
   { label: "Martin Mukoya", value: "martin-mukoya" },
   { label: "FlexTech Media", value: "flextech-media" }
 ] as const;
-const projectFormSchema = projectSchema.omit({ gallery: true, techStack: true, services: true }).extend({
+const projectFormSchema = projectSchema.omit({ gallery: true, techStack: true, services: true, deliverables: true }).extend({
   galleryInput: z.string().optional(),
   techStackInput: z.string().optional(),
-  servicesInput: z.string().optional()
+  servicesInput: z.string().optional(),
+  deliverablesInput: z.string().optional()
 }).transform((values) => ({
   ...values,
   gallery: splitCsv(values.galleryInput ?? ""),
   techStack: splitCsv(values.techStackInput ?? ""),
-  services: splitCsv(values.servicesInput ?? "")
+  services: splitCsv(values.servicesInput ?? ""),
+  deliverables: splitCsv(values.deliverablesInput ?? "")
 }));
 
 function csv(value?: string[]) {
@@ -48,6 +52,8 @@ function initialSiteSlugs(initialData?: { sites?: Array<{ slug: string }> }) {
   return slugs.length > 0 ? slugs : ["martin-mukoya"];
 }
 
+function jsonArray<T>(value: unknown): T[] { return Array.isArray(value) ? value as T[] : []; }
+
 export function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites?: Array<{ slug: string }> } }) {
   const router = useRouter();
   const [galleryUploadPreview, setGalleryUploadPreview] = useState("");
@@ -63,9 +69,24 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       outcome: initialData?.outcome ?? "",
       clientType: initialData?.clientType ?? "",
       industry: initialData?.industry ?? "",
+      eyebrow: initialData?.eyebrow ?? "",
+      timeline: initialData?.timeline ?? "",
+      role: initialData?.role ?? "",
+      stackSummary: initialData?.stackSummary ?? "",
+      benefits: jsonArray(initialData?.benefits),
+      capabilities: jsonArray(initialData?.capabilities),
       coverImage: initialData?.coverImage ?? "",
+      coverImageAlt: initialData?.coverImageAlt ?? "",
+      galleryImages: jsonArray(initialData?.galleryImages),
       liveUrl: initialData?.liveUrl ?? "",
       githubUrl: initialData?.githubUrl ?? "",
+      ctaEyebrow: initialData?.ctaEyebrow ?? "",
+      ctaTitle: initialData?.ctaTitle ?? "",
+      ctaDescription: initialData?.ctaDescription ?? "",
+      ctaPrimaryLabel: initialData?.ctaPrimaryLabel ?? "",
+      ctaPrimaryUrl: initialData?.ctaPrimaryUrl ?? "",
+      ctaSecondaryLabel: initialData?.ctaSecondaryLabel ?? "",
+      ctaSecondaryUrl: initialData?.ctaSecondaryUrl ?? "",
       caseStudyContent: initialData?.caseStudyContent ?? "",
       featured: initialData?.featured ?? false,
       published: initialData?.published ?? true,
@@ -73,9 +94,13 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       siteSlugs: initialSiteSlugs(initialData),
       galleryInput: csv(initialData?.gallery),
       techStackInput: csv(initialData?.techStack),
-      servicesInput: csv(initialData?.services)
+      servicesInput: csv(initialData?.services),
+      deliverablesInput: csv(initialData?.deliverables)
     }
   });
+  const benefits = useFieldArray({ control: form.control, name: "benefits" });
+  const capabilities = useFieldArray({ control: form.control, name: "capabilities" });
+  const galleryImages = useFieldArray({ control: form.control, name: "galleryImages" });
   const title = useWatch({ control: form.control, name: "title" });
   const coverImage = useWatch({ control: form.control, name: "coverImage" });
   const galleryInput = useWatch({ control: form.control, name: "galleryInput" });
@@ -91,6 +116,7 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       shouldDirty: true,
       shouldValidate: true
     });
+    galleryImages.append({ url: value, alt: "", caption: "", sortOrder: galleryImages.fields.length });
   }
 
   async function onSubmit(values: z.input<typeof projectFormSchema>) {
@@ -112,7 +138,8 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow-xs)]">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)] sm:p-6">
+      <FormSection title="Basic project details" description="Identity, ownership, visibility, and publication settings.">
       <Field label="Title" error={form.formState.errors.title?.message}>
         <input {...form.register("title")} className={inputClass} />
       </Field>
@@ -145,9 +172,19 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
           <input {...form.register("clientType")} className={inputClass} />
         </Field>
       </div>
+      </FormSection>
+      <FormSection title="Project overview" description="The compact facts shown immediately below the hero.">
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Eyebrow label"><input {...form.register("eyebrow")} className={inputClass} placeholder="Featured project" /></Field>
+          <Field label="Timeline"><input {...form.register("timeline")} className={inputClass} placeholder="4–6 weeks" /></Field>
+          <Field label="Role"><input {...form.register("role")} className={inputClass} placeholder="Full-stack developer" /></Field>
+          <Field label="Deliverables, comma-separated"><input {...form.register("deliverablesInput")} className={inputClass} placeholder="Web app, admin panel" /></Field>
+        </div>
       <Field label="Description" error={form.formState.errors.description?.message}>
         <textarea {...form.register("description")} className={textareaClass} />
       </Field>
+      </FormSection>
+      <FormSection title="Case-study story" description="Problem, response, result, and the detailed narrative.">
       <Field label="Problem" error={form.formState.errors.problem?.message}>
         <textarea {...form.register("problem")} className={textareaClass} />
       </Field>
@@ -160,6 +197,16 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       <Field label="Case study content" error={form.formState.errors.caseStudyContent?.message}>
         <textarea {...form.register("caseStudyContent")} className={textareaClass} />
       </Field>
+      </FormSection>
+      <RepeatableItems title="Benefits / impact cards" fields={benefits.fields} register={form.register} append={() => benefits.append({ title: "", description: "", iconKey: "auto", sortOrder: benefits.fields.length })} remove={benefits.remove} move={benefits.move} name="benefits" />
+      <FormSection title="Features and stack" description="Technology labels and a short implementation summary.">
+        <Field label="Stack summary"><textarea {...form.register("stackSummary")} className={textareaClass} /></Field>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="Tech stack, comma-separated"><input {...form.register("techStackInput")} className={inputClass} /></Field>
+          <Field label="Services, comma-separated"><input {...form.register("servicesInput")} className={inputClass} /></Field>
+        </div>
+      </FormSection>
+      <RepeatableItems title="What was built" fields={capabilities.fields} register={form.register} append={() => capabilities.append({ title: "", description: "", iconKey: "auto", sortOrder: capabilities.fields.length })} remove={capabilities.remove} move={capabilities.move} name="capabilities" />
       <section className="grid gap-4 rounded-[calc(var(--radius)*0.85)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/40 p-4">
         <div>
           <h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">Project media</h2>
@@ -175,6 +222,7 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
             onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
             cropAspect={false}
           />
+          <Field label="Cover image alt text"><input {...form.register("coverImageAlt")} className={inputClass} placeholder="Describe the project preview" /></Field>
           <ImageUploadField
             label="Add gallery image"
             folder="projects/gallery"
@@ -188,15 +236,19 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
               <input {...form.register("galleryInput")} className={inputClass} />
             </Field>
           </div>
+          <div className="grid gap-3 md:col-span-2">
+            {galleryImages.fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1.3fr_1fr_1fr_auto]">
+              <Field label="Image URL"><input {...form.register(`galleryImages.${index}.url`)} className={inputClass} /></Field>
+              <Field label="Alt text"><input {...form.register(`galleryImages.${index}.alt`)} className={inputClass} /></Field>
+              <Field label="Caption"><input {...form.register(`galleryImages.${index}.caption`)} className={inputClass} /></Field>
+              <ReorderButtons index={index} count={galleryImages.fields.length} move={galleryImages.move} remove={galleryImages.remove} />
+              <input type="hidden" {...form.register(`galleryImages.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly />
+            </div>)}
+          </div>
         </div>
       </section>
+      <FormSection title="Project links" description="Public destinations are only rendered when valid URLs exist.">
       <div className="grid gap-5 md:grid-cols-2">
-        <Field label="Tech stack, comma-separated">
-          <input {...form.register("techStackInput")} className={inputClass} />
-        </Field>
-        <Field label="Services, comma-separated">
-          <input {...form.register("servicesInput")} className={inputClass} />
-        </Field>
         <Field label="Live URL">
           <input {...form.register("liveUrl")} className={inputClass} />
         </Field>
@@ -204,6 +256,17 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
           <input {...form.register("githubUrl")} className={inputClass} />
         </Field>
       </div>
+      </FormSection>
+      <FormSection title="CTA overrides" description="Optional. Empty fields fall back to the active site’s CTA settings.">
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="CTA eyebrow"><input {...form.register("ctaEyebrow")} className={inputClass} /></Field>
+          <Field label="CTA title"><input {...form.register("ctaTitle")} className={inputClass} /></Field>
+          <Field label="CTA description"><textarea {...form.register("ctaDescription")} className={textareaClass} /></Field>
+          <div className="grid gap-5"><Field label="Primary label"><input {...form.register("ctaPrimaryLabel")} className={inputClass} /></Field><Field label="Primary URL"><input {...form.register("ctaPrimaryUrl")} className={inputClass} /></Field></div>
+          <Field label="Secondary label"><input {...form.register("ctaSecondaryLabel")} className={inputClass} /></Field>
+          <Field label="Secondary URL"><input {...form.register("ctaSecondaryUrl")} className={inputClass} /></Field>
+        </div>
+      </FormSection>
       <fieldset className="grid gap-2">
         <legend className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</legend>
         <div className="flex flex-wrap gap-5">
@@ -236,6 +299,18 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
       </div>
     </form>
   );
+}
+
+function FormSection({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  return <section className="grid gap-5 rounded-[calc(var(--radius)*0.85)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]/28 p-4 sm:p-5"><div><h2 className="font-display text-lg font-black text-[color:var(--text-strong)]">{title}</h2><p className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">{description}</p></div>{children}</section>;
+}
+
+function RepeatableItems({ title, fields, register, append, remove, move, name }: { title: string; fields: Array<{ id: string }>; register: ReturnType<typeof useForm<z.input<typeof projectFormSchema>>>["register"]; append: () => void; remove: (index: number) => void; move: (from: number, to: number) => void; name: "benefits" | "capabilities" }) {
+  return <FormSection title={title} description="Add 3–6 concise items. Auto icons use deterministic keyword matching."><div className="grid gap-3">{fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1fr_1.4fr_0.8fr_auto]"><Field label="Title"><input {...register(`${name}.${index}.title`)} className={inputClass} /></Field><Field label="Description"><input {...register(`${name}.${index}.description`)} className={inputClass} /></Field><Field label="Icon"><select {...register(`${name}.${index}.iconKey`)} className={inputClass}>{projectIconOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><ReorderButtons index={index} count={fields.length} move={move} remove={remove} /><input type="hidden" {...register(`${name}.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly /></div>)}<Button type="button" variant="secondary" className="w-fit" onClick={append}><Plus size={16} /> Add item</Button></div></FormSection>;
+}
+
+function ReorderButtons({ index, count, move, remove }: { index: number; count: number; move: (from: number, to: number) => void; remove: (index: number) => void }) {
+  return <div className="flex items-end gap-1"><Button type="button" size="icon" variant="ghost" aria-label="Move up" disabled={index === 0} onClick={() => move(index, index - 1)}><ArrowUp size={16} /></Button><Button type="button" size="icon" variant="ghost" aria-label="Move down" disabled={index === count - 1} onClick={() => move(index, index + 1)}><ArrowDown size={16} /></Button><Button type="button" size="icon" variant="ghost" aria-label="Remove item" onClick={() => remove(index)}><Trash2 size={16} /></Button></div>;
 }
 
 const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";

@@ -156,11 +156,14 @@ export function NotificationCenter() {
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
+    const onCleanup = () => fetchNotifications();
+    window.addEventListener("admin-activity-cleaned", onCleanup);
 
     return () => {
       clearInterval(countInterval);
       clearInterval(fullInterval);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("admin-activity-cleaned", onCleanup);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

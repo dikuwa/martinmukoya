@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { Globe, Plus, Clock, Database } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ActivityCleanup } from "@/components/admin/activity-cleanup";
 
 type PageProps = { searchParams: Promise<{ search?: string; site?: string }> };
 
@@ -96,6 +97,7 @@ export default function AdminSettingsPage(props: PageProps) {
           <SettingsTable {...props} />
         </Suspense>
       </ErrorBoundary>
+      <ActivityCleanup />
     </div>
   );
 }
