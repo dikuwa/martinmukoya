@@ -5,21 +5,28 @@ import { calculateDocumentTotals, type FinancialLineInput } from "@/lib/financia
 export type IssuerSnapshot = {
   name: string; logo: string; address: string; phone: string; email: string; registration: string;
   taxNumber: string; bankName: string; accountName: string; accountNumber: string; branch: string;
-  paymentInstructions: string; signerName: string; signerTitle: string; showSignature: boolean;
+  swiftCode: string; companyDetails: string; paymentMethods: string[]; paymentInstructions: string;
+  signerName: string; signerTitle: string; signatureMode: "text" | "image"; signatureImage: string; showSignature: boolean;
 };
 
 export const defaultIssuer: IssuerSnapshot = {
   name: "FlexTech Media", logo: "/assets/backgrounds/SVG/SVG/flex-dark.svg", address: "Windhoek, Namibia",
-  phone: "+264 81 227 1574", email: "info@martinmukoya.com", registration: "", taxNumber: "",
-  bankName: "", accountName: "FlexTech Media", accountNumber: "", branch: "",
+  phone: "+264 81 227 1574", email: "info@martinmukoya.com", registration: "CC/2024/00337", taxNumber: "",
+  bankName: "Standard Bank", accountName: "FlexTech Media", accountNumber: "60005541734", branch: "082172",
+  swiftCode: "SBNMNANX", companyDetails: "Reg. No. CC/2024/00337\nERF 234, Silver Avenue, Tamariskia, Swakopmund",
+  paymentMethods: ["Bank transfer", "Blue Wallet", "Wallet", "EasyWallet", "Cheque"],
   paymentInstructions: "Payment by bank transfer. Use the document number as your reference.",
-  signerName: "Martin Mukoya", signerTitle: "Managing Director", showSignature: true,
+  signerName: "Martin Mukoya", signerTitle: "Managing Director", signatureMode: "text", signatureImage: "", showSignature: true,
 };
 
 export async function getIssuerSnapshot(): Promise<IssuerSnapshot> {
   const settings = await db.siteSetting.findMany({ where: { siteId: null, key: { startsWith: "finance." } } });
   const values = Object.fromEntries(settings.map((setting) => [setting.key.slice(8), setting.value]));
-  return { ...defaultIssuer, ...values } as IssuerSnapshot;
+  let paymentMethods = defaultIssuer.paymentMethods;
+  if (typeof values.paymentMethods === "string") {
+    try { const parsed = JSON.parse(values.paymentMethods); if (Array.isArray(parsed)) paymentMethods = parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0); } catch {}
+  }
+  return { ...defaultIssuer, ...values, paymentMethods } as IssuerSnapshot;
 }
 
 function suffix(length: number) { return randomUUID().replace(/-/g, "").slice(0, length).toUpperCase(); }
@@ -104,4 +111,3 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
     return payment;
   });
 }
-
