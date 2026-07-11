@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,8 +32,12 @@ export function DashboardDatePicker({
   mode = "single",
   name,
 }: DashboardDatePickerProps) {
-  const formattedValue = value
-    ? value.toLocaleDateString("en-US", {
+  const [open, setOpen] = useState(false);
+  const [internalValue, setInternalValue] = useState<Date | undefined>(value);
+  const selectedValue = value === undefined ? internalValue : value;
+
+  const formattedValue = selectedValue
+    ? selectedValue.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -40,8 +45,8 @@ export function DashboardDatePicker({
     : "";
 
   return (
-    <Popover>
-      {name && <input type="hidden" name={name} value={value?.toISOString().split("T")[0] || ""} />}
+    <Popover open={open} onOpenChange={setOpen}>
+      {name && <input type="hidden" name={name} value={selectedValue ? formatDateValue(selectedValue) : ""} />}
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -67,21 +72,31 @@ export function DashboardDatePicker({
       >
         <Calendar
           mode={mode}
-          selected={value as Date | Date[] | undefined}
+          selected={selectedValue as Date | Date[] | undefined}
           onSelect={(date) => {
+            const nextDate = mode === "range" && Array.isArray(date) ? date[0] : date as Date;
+            if (value === undefined) setInternalValue(nextDate);
             if (mode === "range" && Array.isArray(date)) {
               onChange?.(date[0]);
             } else {
               onChange?.(date as Date);
             }
+            if (mode === "single") setOpen(false);
           }}
           disabled={disabledDates}
           minDate={minDate}
           maxDate={maxDate}
           fromToday={!!minDate}
-          initialMonth={value || new Date()}
+          initialMonth={selectedValue || new Date()}
         />
       </PopoverContent>
     </Popover>
   );
+}
+
+function formatDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

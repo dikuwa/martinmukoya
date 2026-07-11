@@ -9,6 +9,7 @@ import {
   endOfMonth,
   startOfWeek,
   endOfWeek,
+  addDays,
   addMonths,
   subMonths,
   isSameDay,
@@ -17,9 +18,7 @@ import {
   isBefore,
   isAfter,
   eachDayOfInterval,
-  getDay,
 } from "date-fns";
-import type { ReactNode } from "react";
 
 interface CalendarProps {
   mode?: "single" | "range";
@@ -225,48 +224,38 @@ export function Calendar({
               </tr>
             </thead>
             <tbody>
-              {eachDayOfInterval({
-                start: startOfWeek(startOfMonth(month), { weekStartsOn: 0 }),
-                end: endOfWeek(endOfMonth(month), { weekStartsOn: 0 }),
-              }).map((day, dayIndex) => {
-                const isWeekStart = getDay(day) === 0;
-                const isCurrentMonth = isSameMonth(day, month);
-                const isSelectedDay = isDateSelected(day);
-                const isInRange = isDateInRange(day);
-                const disabled = isDateDisabled(day);
-                const isFocused = focusedDate ? isSameDay(focusedDate, day) : false;
+              {getCalendarWeeks(month).map((week) => (
+                <tr key={`${week[0].toISOString()}-row`}>
+                  {showWeekNumbers && (
+                    <td className="p-1 text-center text-xs text-[color:var(--text-faint)]">
+                      {getWeekNumber(week[0])}
+                    </td>
+                  )}
+                  {week.map((day) => {
+                    const isCurrentMonth = isSameMonth(day, month);
+                    const isSelectedDay = isDateSelected(day);
+                    const isInRange = isDateInRange(day);
+                    const disabled = isDateDisabled(day);
+                    const isFocused = focusedDate ? isSameDay(focusedDate, day) : false;
 
-                if (isWeekStart) {
-                  return (
-                    <tr key={`${day.toISOString()}-row`}>
-                      {showWeekNumbers && (
-                        <td className="p-1 text-center text-xs text-[color:var(--text-faint)]">
-                          {getWeekNumber(day)}
-                        </td>
-                      )}
-                      <td
-                        key={day.toISOString()}
-                        className="p-1"
-                      >
+                    return (
+                      <td key={day.toISOString()} className="p-1" aria-selected={isSelectedDay}>
                         <button
                           type="button"
                           className={cn(
                             "dashboard-calendar-day w-full h-9 rounded-[6px] text-sm font-medium transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
                             !isCurrentMonth && "text-[color:var(--text-faint)]",
-                            isSelectedDay &&
-                              "bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-light)]",
-                            isInRange &&
-                              "bg-[color:var(--primary)]/10 text-[color:var(--primary)]",
-                            isToday(day) &&
-                              "ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-[color:var(--background)]",
+                            isSelectedDay && "bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-light)]",
+                            isInRange && "bg-[color:var(--primary)]/10 text-[color:var(--primary)]",
+                            isToday(day) && "ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-[color:var(--background)]",
                             disabled && "opacity-50 cursor-not-allowed",
                             isFocused && "ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-[color:var(--background)]"
                           )}
                           onClick={() => handleDayClick(day)}
                           onKeyDown={(e) => handleKeyDown(e, day)}
                           disabled={disabled}
-                          aria-selected={isSelectedDay}
+                          aria-current={isToday(day) ? "date" : undefined}
                           aria-disabled={disabled}
                           aria-label={format(day, "EEEE, MMMM d, yyyy")}
                           tabIndex={isFocused || isSelectedDay ? 0 : -1}
@@ -274,16 +263,26 @@ export function Calendar({
                           {format(day, "d")}
                         </button>
                       </td>
-                    </tr>
-                  );
-                }
-                return null;
-              })}
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       ))}
     </div>
+  );
+}
+
+export function getCalendarWeeks(month: Date) {
+  const days = eachDayOfInterval({
+    start: startOfWeek(startOfMonth(month), { weekStartsOn: 0 }),
+    end: endOfWeek(endOfMonth(month), { weekStartsOn: 0 }),
+  });
+
+  return Array.from({ length: days.length / 7 }, (_, index) =>
+    days.slice(index * 7, index * 7 + 7)
   );
 }
 
@@ -301,10 +300,4 @@ function startOfDay(date: Date) {
 
 function endOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-}
-
-function addDays(date: Date, days: number) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
 }
