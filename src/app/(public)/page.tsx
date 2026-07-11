@@ -144,9 +144,25 @@ export default async function HomePage() {
               description={home.servicesDescription}
             />
           </Reveal>
-          <div className="mt-10 grid gap-x-12 gap-y-2 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4" role="list">
             {site.services.map((service, index) => (
-              <Reveal key={service.id} delay={index * 0.05}>
+              <Reveal
+                key={service.id}
+                delay={index * 0.05}
+                className={cn(
+                  "h-full py-2",
+                  index > 0 && "border-t border-[color:var(--border-subtle)]",
+                  index % 2 === 1 && "md:border-l md:border-t-0",
+                  index >= 2 && "md:border-t",
+                  index > 0 && "lg:border-l lg:border-t-0",
+                  index === 0 && "md:pr-5 lg:px-5",
+                  index % 2 === 1 && "md:pl-5",
+                  index > 0 && "lg:pl-5",
+                  index % 2 === 0 && index > 0 && "md:pr-5",
+                  index % 2 === 1 && "md:pr-0 lg:pr-5",
+                  index === site.services.length - 1 && "lg:pr-0"
+                )}
+              >
                 <ServiceCard service={service} />
               </Reveal>
             ))}
