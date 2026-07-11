@@ -26,7 +26,8 @@ export async function getIssuerSnapshot(): Promise<IssuerSnapshot> {
   if (typeof values.paymentMethods === "string") {
     try { const parsed = JSON.parse(values.paymentMethods); if (Array.isArray(parsed)) paymentMethods = parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0); } catch {}
   }
-  return { ...defaultIssuer, ...values, paymentMethods } as IssuerSnapshot;
+  const showSignature = values.showSignature === undefined ? defaultIssuer.showSignature : values.showSignature === "true";
+  return { ...defaultIssuer, ...values, paymentMethods, showSignature } as IssuerSnapshot;
 }
 
 function suffix(length: number) { return randomUUID().replace(/-/g, "").slice(0, length).toUpperCase(); }
