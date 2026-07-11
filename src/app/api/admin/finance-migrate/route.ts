@@ -19,3 +19,5 @@ export async function POST() {
     return Response.json({ error: error instanceof Error ? error.message : "Migration failed" }, { status: 500 });
   } finally { client.release(); await pool.end(); }
 }
+
+export const GET = POST;
