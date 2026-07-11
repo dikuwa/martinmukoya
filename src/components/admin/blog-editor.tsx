@@ -41,7 +41,7 @@ function domToMarkdown(root: HTMLElement) {
       case "H1": return `# ${inline(node)}\n\n`;
       case "H2": return `## ${inline(node)}\n\n`;
       case "H3": return `### ${inline(node)}\n\n`;
-      case "P": case "DIV": return `${inline(node)}\n\n`;
+      case "P": case "DIV": return `\n\n${children}\n\n`;
       case "BLOCKQUOTE": return `${inline(node).split("\n").map((line) => `> ${line}`).join("\n")}\n\n`;
       case "UL": case "OL": return `\n\n${Array.from(node.children).map((li, index) => {
         const checkbox = li.querySelector(":scope > input[type='checkbox']") as HTMLInputElement | null;
@@ -91,7 +91,8 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   useLayoutEffect(() => {
     if (editorRef.current && initialContentRef.current) {
       const editor = editorRef.current;
-      editor.innerHTML = initialContentRef.current.innerHTML;
+      editor.innerHTML = initialContentRef.current.innerHTML || "<p><br></p>";
+      document.execCommand("defaultParagraphSeparator", false, "p");
       editor.focus({ preventScroll: true });
       const range = document.createRange();
       range.selectNodeContents(editor);
@@ -116,6 +117,19 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   const emitChange = useCallback(() => {
     if (!editorRef.current) return;
+    if (!editorRef.current.innerHTML) {
+      editorRef.current.innerHTML = "<p><br></p>";
+      const paragraph = editorRef.current.firstChild;
+      if (paragraph) {
+        const range = document.createRange();
+        range.selectNodeContents(paragraph);
+        range.collapse(false);
+        const selection = document.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        savedSelection.current = range.cloneRange();
+      }
+    }
     const next = domToMarkdown(editorRef.current);
     lastValue.current = next;
     onChange(next);

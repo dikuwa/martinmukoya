@@ -1123,4 +1123,5 @@ select:not([class*="appearance-none"]) {
 .rich-blog-editor th, .rich-blog-preview th { background: var(--surface-soft); font-weight: 700; }
 .rich-blog-editor pre, .rich-blog-preview pre { background: var(--surface-soft); border-radius: .75rem; margin: 1rem 0; overflow-x: auto; padding: 1rem; }
 .rich-blog-editor:empty::before { color: var(--editor-placeholder); content: "Start writing your article…"; pointer-events: none; }
+.rich-blog-editor > p:only-child:has(> br:only-child)::before { color: var(--editor-placeholder); content: "Start writing your article…"; pointer-events: none; }
 .rich-blog-editor img:hover { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 3px; }
