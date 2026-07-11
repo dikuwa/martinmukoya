@@ -82,6 +82,8 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const [dragging, setDragging] = useState(false);
   const [editorWidth, setEditorWidth] = useState(66.67);
   const [resizing, setResizing] = useState(false);
+  const [urlAction, setUrlAction] = useState<"link" | "image" | null>(null);
+  const [urlValue, setUrlValue] = useState("");
 
   useEffect(() => { lastValue.current = value; }, [value]);
 
@@ -136,8 +138,14 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }, [emitChange]);
 
-  const insertLink = () => { const url = window.prompt("Link URL (https://…)"); if (url && /^https?:\/\/|^\//i.test(url)) command("createLink", url); else if (url) toast.error("Enter a valid HTTP(S) or internal URL."); };
-  const insertImageUrl = () => { const url = window.prompt("Image URL (https://…)"); if (url && /^https:\/\//i.test(url)) command("insertImage", url); else if (url) toast.error("Enter a valid HTTPS image URL."); };
+  const openUrlInput = (action: "link" | "image") => { setUrlValue(""); setUrlAction(action); };
+  const submitUrl = () => {
+    const url = urlValue.trim();
+    const valid = urlAction === "link" ? /^https?:\/\/|^\//i.test(url) : /^https:\/\//i.test(url);
+    if (!valid) { toast.error(urlAction === "link" ? "Enter a valid HTTP(S) or internal URL." : "Enter a valid HTTPS image URL."); return; }
+    command(urlAction === "link" ? "createLink" : "insertImage", url);
+    setUrlAction(null); setUrlValue("");
+  };
   const insertTable = () => command("insertHTML", "<table><thead><tr><th>Heading</th><th>Heading</th></tr></thead><tbody><tr><td>Cell</td><td>Cell</td></tr></tbody></table><p><br></p>");
   const insertChecklist = () => command("insertHTML", '<ul><li><input type="checkbox"> Task</li></ul><p><br></p>');
 
@@ -167,7 +175,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
     ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
     ["Bold", Bold, () => command("bold")], ["Italic", Italic, () => command("italic")], ["Underline", Underline, () => command("underline")], ["Strikethrough", Strikethrough, () => command("strikeThrough")],
     ["Bulleted list", List, () => command("insertUnorderedList")], ["Numbered list", ListOrdered, () => command("insertOrderedList")], ["Checklist", ListChecks, insertChecklist],
-    ["Blockquote", Quote, () => command("formatBlock", "blockquote")], ["Link", LinkIcon, insertLink], ["Image URL", ImageIcon, insertImageUrl], ["Table", Table2, insertTable], ["Code block", Code2, () => command("formatBlock", "pre")],
+    ["Blockquote", Quote, () => command("formatBlock", "blockquote")], ["Link", LinkIcon, () => openUrlInput("link")], ["Image URL", ImageIcon, () => openUrlInput("image")], ["Table", Table2, insertTable], ["Code block", Code2, () => command("formatBlock", "pre")],
     ["Undo", Undo2, () => command("undo")], ["Redo", Redo2, () => command("redo")],
   ] as const;
 
@@ -179,6 +187,12 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
       <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
     </div>
+    {urlAction ? <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-2">
+      <label htmlFor="blog-editor-url" className="text-xs font-bold text-[color:var(--text-muted)]">{urlAction === "link" ? "Link URL" : "Image URL"}</label>
+      <input id="blog-editor-url" autoFocus value={urlValue} onChange={(event) => setUrlValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); submitUrl(); } if (event.key === "Escape") setUrlAction(null); }} placeholder={urlAction === "link" ? "https://example.com or /page" : "https://example.com/image.jpg"} className="h-9 min-w-64 flex-1 rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]" />
+      <button type="button" onClick={submitUrl} className="h-9 rounded-md bg-[color:var(--primary)] px-4 text-xs font-bold text-white">Insert</button>
+      <button type="button" onClick={() => setUrlAction(null)} className="h-9 rounded-md px-3 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]">Cancel</button>
+    </div> : null}
     <div
       ref={splitRef}
       className={`grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,var(--editor-fr))_1rem_minmax(0,var(--preview-fr))] lg:gap-0 ${resizing ? "lg:cursor-col-resize lg:select-none" : ""}`}
