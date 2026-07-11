@@ -207,7 +207,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
           onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); e.preventDefault(); if(file) void upload(file); else command("insertText", e.clipboardData.getData("text/plain")); }}
           onDragOver={(e: DragEvent) => {e.preventDefault(); setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={(e: DragEvent) => {e.preventDefault(); setDragging(false); const file=Array.from(e.dataTransfer.files).find((f)=>f.type.startsWith("image/")); if(file) void upload(file);}}
-          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base font-medium leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]" />
+          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base font-normal leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]" />
       </div>
       <div
         role="separator"
@@ -227,7 +227,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
         <span className={`h-20 w-1 rounded-full transition ${resizing ? "bg-[color:var(--primary)]" : "bg-[color:var(--border-subtle)] group-hover:bg-[color:var(--primary)] group-focus-visible:bg-[color:var(--primary)]"}`} />
       </div>
       <div className={`${preview ? "block" : "hidden lg:block"} min-w-0 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`} role="region" aria-label="Live article preview">
-        <article className="rich-blog-preview p-6 text-base font-medium leading-8"><ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{value || "Preview will appear here as you type…"}</ReactMarkdown></article>
+        <article className="rich-blog-preview p-6 text-base font-normal leading-8"><ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{value || "Preview will appear here as you type…"}</ReactMarkdown></article>
       </div>
     </div>
     {error ? <span className="text-xs text-[color:var(--destructive)]">{error}</span> : null}
