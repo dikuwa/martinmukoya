@@ -1,6 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { remarkUnderline } from "@/lib/remark-underline";
 import { CodeBlock } from "@/components/ui/code-block";
 
 interface MarkdownRendererProps {
@@ -11,7 +12,7 @@ interface MarkdownRendererProps {
 export function MarkdownRenderer({ content, isUser }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkUnderline]}
       components={{
         p: ({ children }) => (
           <p className={`mb-1.5 last:mb-0 leading-6 ${isUser ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-muted)]"}`}>

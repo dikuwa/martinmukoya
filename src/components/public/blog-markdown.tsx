@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { remarkUnderline } from "@/lib/remark-underline";
 import { CodeBlock } from "@/components/ui/code-block";
 
 function isInternalHref(href?: string) {
@@ -10,7 +11,7 @@ function isInternalHref(href?: string) {
 export function BlogMarkdown({ content }: { content: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkUnderline]}
       components={{
         h1: ({ children }) => <h2 className="text-balance font-display text-3xl font-black leading-tight text-[color:var(--text-strong)]">{children}</h2>,
         h2: ({ children }) => <h2 className="text-balance font-display text-2xl font-black leading-tight text-[color:var(--text-strong)]">{children}</h2>,
