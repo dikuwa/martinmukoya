@@ -42,7 +42,11 @@ function domToMarkdown(root: HTMLElement) {
       case "H3": return `### ${inline(node)}\n\n`;
       case "P": case "DIV": return `${inline(node)}\n\n`;
       case "BLOCKQUOTE": return `${inline(node).split("\n").map((line) => `> ${line}`).join("\n")}\n\n`;
-      case "UL": case "OL": return `${Array.from(node.children).map((li, index) => `${"  ".repeat(depth)}${node.tagName === "OL" ? `${index + 1}.` : "-"} ${inline(li)}\n`).join("")}\n`;
+      case "UL": case "OL": return `\n\n${Array.from(node.children).map((li, index) => {
+        const checkbox = li.querySelector(":scope > input[type='checkbox']") as HTMLInputElement | null;
+        const marker = checkbox ? `- [${checkbox.checked ? "x" : " "}]` : node.tagName === "OL" ? `${index + 1}.` : "-";
+        return `${"  ".repeat(depth)}${marker} ${inline(li).trim()}\n`;
+      }).join("")}\n`;
       case "PRE": return `\`\`\`\n${node.textContent ?? ""}\n\`\`\`\n\n`;
       case "TABLE": {
         const rows = Array.from(node.querySelectorAll("tr")).map((row) => Array.from(row.children).map((cell) => inline(cell).trim()));
