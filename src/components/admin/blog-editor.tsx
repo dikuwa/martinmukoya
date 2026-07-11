@@ -10,7 +10,7 @@ import { remarkUnderline } from "@/lib/remark-underline";
 import {
   Bold, Code2, Eye, Heading1, Heading2, Heading3, Image as ImageIcon,
   Italic, Link as LinkIcon, List, ListChecks, ListOrdered, Loader2,
-  Quote, Redo2, Strikethrough, Table2, Underline, Undo2,
+  Pilcrow, Quote, Redo2, Strikethrough, Table2, Underline, Undo2,
 } from "lucide-react";
 
 interface BlogEditorProps { value: string; onChange: (value: string) => void; error?: string }
@@ -90,7 +90,16 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   useLayoutEffect(() => {
     if (editorRef.current && initialContentRef.current) {
-      editorRef.current.innerHTML = initialContentRef.current.innerHTML;
+      const editor = editorRef.current;
+      editor.innerHTML = initialContentRef.current.innerHTML;
+      editor.focus({ preventScroll: true });
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      savedSelection.current = range.cloneRange();
     }
   }, []);
 
@@ -173,7 +182,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   };
 
   const tools = [
-    ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
+    ["Paragraph", Pilcrow, () => command("formatBlock", "p")], ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
     ["Bold", Bold, () => command("bold")], ["Italic", Italic, () => command("italic")], ["Underline", Underline, () => command("underline")], ["Strikethrough", Strikethrough, () => command("strikeThrough")],
     ["Bulleted list", List, () => command("insertUnorderedList")], ["Numbered list", ListOrdered, () => command("insertOrderedList")], ["Checklist", ListChecks, insertChecklist],
     ["Blockquote", Quote, () => command("formatBlock", "blockquote")], ["Link", LinkIcon, () => openUrlInput("link")], ["Image URL", ImageIcon, () => openUrlInput("image")], ["Table", Table2, insertTable], ["Code block", Code2, () => command("formatBlock", "pre")],
@@ -182,8 +191,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   return <div className="grid min-w-0 gap-2">
     <div role="toolbar" aria-label="Rich text formatting" className="flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1.5">
-      <select aria-label="Paragraph style" onChange={(e) => command("formatBlock", e.target.value)} defaultValue="p" className="h-9 rounded-md bg-[color:var(--surface-soft)] px-2 text-xs font-bold"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option></select>
-      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={action} aria-label={label} title={label} className={`${i === 3 || i === 7 || i === 10 || i === 15 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
+      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={action} aria-label={label} title={label} className={`${i === 4 || i === 8 || i === 11 || i === 16 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
       <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} aria-label="Upload and insert image" title="Upload image" className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] disabled:opacity-50">{uploading ? <Loader2 size={16} className="animate-spin"/> : <ImageIcon size={16}/>} Upload</button>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
       <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>

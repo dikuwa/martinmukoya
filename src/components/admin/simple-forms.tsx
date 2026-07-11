@@ -253,12 +253,14 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
         </p>
       </div>
       <Field label="Excerpt" error={form.formState.errors.excerpt?.message}><textarea {...form.register("excerpt")} className={textareaClass} rows={3} /></Field>
-      <Field label="Content (Markdown)" error={form.formState.errors.content?.message}>
+      <div className="grid gap-2 text-sm font-bold text-[color:var(--text-strong)]">
+        <span>Content (Markdown)</span>
         <BlogEditor
           value={content ?? ""}
           onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
+          error={form.formState.errors.content?.message}
         />
-      </Field>
+      </div>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Category"><input {...form.register("category")} className={inputClass} /></Field>
         <Field label="Tags, comma-separated"><input {...form.register("tagsInput")} className={inputClass} /></Field>
