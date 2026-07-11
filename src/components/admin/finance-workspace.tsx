@@ -10,8 +10,8 @@ type Invoice = { id:string; label:string; balance:number };
 type Line = { description:string; category:string; quantity:string; unitPrice:string };
 const input="h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
 
-export function CreateDocumentPanel({sources,initialBooking}:{sources:Source[];initialBooking?:string}){
-  const router=useRouter(); const [sourceKey,setSourceKey]=useState(initialBooking?`booking:${initialBooking}`:sources[0]?.key||""); const [type,setType]=useState("QUOTE"); const [lines,setLines]=useState<Line[]>([{description:"Project services",category:"service",quantity:"1",unitPrice:"0"}]); const [saving,setSaving]=useState(false);
+export function CreateDocumentPanel({sources,initialBooking,initialLead}:{sources:Source[];initialBooking?:string;initialLead?:string}){
+  const router=useRouter(); const [sourceKey,setSourceKey]=useState(initialBooking?`booking:${initialBooking}`:initialLead?`lead:${initialLead}`:sources[0]?.key||""); const [type,setType]=useState("QUOTE"); const [lines,setLines]=useState<Line[]>([{description:"Project services",category:"service",quantity:"1",unitPrice:"0"}]); const [saving,setSaving]=useState(false);
   const source=useMemo(()=>sources.find(item=>item.key===sourceKey),[sources,sourceKey]);
   function updateLine(index:number,key:keyof Line,value:string){setLines(current=>current.map((line,i)=>i===index?{...line,[key]:value}:line))}
   async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();if(!source)return;setSaving(true);const form=new FormData(event.currentTarget);let bookingId=source.id;if(source.kind==="lead"){const conversion=await fetch("/api/admin/bookings/from-lead",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({leadId:source.id})});const converted=await conversion.json();if(!conversion.ok){setSaving(false);return toast.error(converted.error||"Lead could not be converted")};bookingId=converted.id}

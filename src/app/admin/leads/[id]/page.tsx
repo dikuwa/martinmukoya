@@ -6,6 +6,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { Button } from "@/components/ui/button";
 import { stripMarkdown } from "@/lib/utils";
 import { db } from "@/lib/db";
+import { formatNad } from "@/lib/financial";
 import { BadgeCheck, BadgeX, Calendar, Clock, Globe, Mail, MessageSquare, Phone, User, Building2, Target, Wallet, ArrowLeft, ExternalLink, Hash, Users } from "lucide-react";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -49,7 +50,7 @@ function formatDate(date: Date) {
 
 export default async function LeadDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const lead = await db.lead.findUnique({ where: { id }, include: { chatSessions: true } });
+  const lead = await db.lead.findUnique({ where: { id }, include: { chatSessions: true, financialBooking: { include: { documents: { orderBy: { createdAt: "desc" } }, payments: { where: { reversedAt: null } } } } } });
   if (!lead) notFound();
 
   const mailtoHref = `mailto:${lead.email}?subject=${encodeURIComponent(`Re: ${lead.projectGoal.slice(0, 70)}`)}`;
@@ -129,6 +130,11 @@ export default async function LeadDetailPage({ params }: PageProps) {
               <Mail size={14} />
               Email Lead
             </a>
+          </Button>
+          <Button asChild size="sm" variant="secondary">
+            <Link href={lead.financialBooking ? `/admin/documents?booking=${lead.financialBooking.id}` : `/admin/documents?lead=${lead.id}`}>
+              Create document
+            </Link>
           </Button>
           <DeleteButton endpoint={`/api/leads/${lead.id}`} redirectTo="/admin/leads" />
         </div>
@@ -337,6 +343,12 @@ export default async function LeadDetailPage({ params }: PageProps) {
           </section>
         </aside>
       </div>
+      {lead.financialBooking ? (
+        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-display text-lg font-black">Documents and payments</h2><p className="text-xs text-[color:var(--text-muted)]">{lead.financialBooking.number}</p></div><Button asChild size="sm"><Link href={`/admin/bookings/${lead.financialBooking.id}`}>Open booking</Link></Button></div>
+          <div className="mt-4 grid gap-2">{lead.financialBooking.documents.map((document)=><Link key={document.id} href={`/admin/documents/${document.id}`} className="flex justify-between rounded-xl bg-[color:var(--surface-soft)] p-3 text-sm"><span className="font-bold">{document.number||"Draft"} · {document.type}</span><span>{document.status} · {formatNad(String(document.total))}</span></Link>)}{!lead.financialBooking.documents.length?<p className="text-sm text-[color:var(--text-muted)]">No documents yet.</p>:null}</div>
+        </section>
+      ) : null}
     </div>
   );
 }
