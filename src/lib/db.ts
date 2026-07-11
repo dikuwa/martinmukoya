@@ -6,8 +6,12 @@ const globalForPrisma = globalThis as unknown as { pgPool?: Pool; prisma?: Prism
 
 function getPgPool() {
   if (!globalForPrisma.pgPool) {
+    const configuredUrl = process.env.DATABASE_URL!;
+    const connectionString = configuredUrl.includes("pooler.supabase.com")
+      ? configuredUrl.replace(":5432/", ":6543/")
+      : configuredUrl;
     globalForPrisma.pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL!,
+      connectionString,
       max: 1,
       idleTimeoutMillis: 5_000,
       connectionTimeoutMillis: 10_000,
