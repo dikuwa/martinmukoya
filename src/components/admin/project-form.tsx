@@ -3,6 +3,7 @@
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button } from "@/components/ui/button";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
 import type { Project } from "@/generated/prisma/client";
 import { projectSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -311,7 +312,7 @@ function FormSection({ title, description, children }: { title: string; descript
 }
 
 function RepeatableItems({ title, fields, register, append, remove, move, name }: { title: string; fields: Array<{ id: string }>; register: ReturnType<typeof useForm<z.input<typeof projectFormSchema>>>["register"]; append: () => void; remove: (index: number) => void; move: (from: number, to: number) => void; name: "benefits" | "capabilities" }) {
-  return <FormSection title={title} description="Add 3-6 concise items. Auto icons use deterministic keyword matching."><div className="grid gap-3">{fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1fr_1.4fr_0.8fr_auto]"><Field label="Title"><input {...register(`${name}.${index}.title`)} className={inputClass} /></Field><Field label="Description"><input {...register(`${name}.${index}.description`)} className={inputClass} /></Field><Field label="Icon"><select {...register(`${name}.${index}.iconKey`)} className={inputClass}>{projectIconOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><ReorderButtons index={index} count={fields.length} move={move} remove={remove} /><input type="hidden" {...register(`${name}.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly /></div>)}<Button type="button" variant="secondary" className="w-fit" onClick={append}><Plus size={16} /> Add item</Button></div></FormSection>;
+  return <FormSection title={title} description="Add 3-6 concise items. Auto icons use deterministic keyword matching."><div className="grid gap-3">{fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1fr_1.4fr_0.8fr_auto]"><Field label="Title"><input {...register(`${name}.${index}.title`)} className={inputClass} /></Field><Field label="Description"><input {...register(`${name}.${index}.description`)} className={inputClass} /></Field><Field label="Icon"><DashboardSelect {...register(`${name}.${index}.iconKey`)} options={projectIconOptions} className={inputClass} /></Field><ReorderButtons index={index} count={fields.length} move={move} remove={remove} /><input type="hidden" {...register(`${name}.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly /></div>)}<Button type="button" variant="secondary" className="w-fit" onClick={append}><Plus size={16} /> Add item</Button></div></FormSection>;
 }
 
 function ReorderButtons({ index, count, move, remove }: { index: number; count: number; move: (from: number, to: number) => void; remove: (index: number) => void }) {

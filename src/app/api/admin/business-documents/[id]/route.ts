@@ -3,11 +3,12 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { updateBusinessDocument } from "@/lib/business-document-service";
 import { z } from "zod";
+import { BusinessDocumentType } from "@/generated/prisma/client";
 
 type Context = { params: Promise<{ id: string }> };
 
 const updateSchema = z.object({
-  documentType: z.string().min(1).optional(),
+  documentType: z.enum(BusinessDocumentType).optional(),
   title: z.string().trim().min(1).max(300).optional(),
   subject: z.string().trim().max(500).optional(),
   contactId: z.string().optional(),

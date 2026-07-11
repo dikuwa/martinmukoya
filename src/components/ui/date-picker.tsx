@@ -16,6 +16,7 @@ interface DashboardDatePickerProps {
   disabledDates?: Date[];
   className?: string;
   mode?: "single" | "range";
+  name?: string;
 }
 
 export function DashboardDatePicker({
@@ -28,6 +29,7 @@ export function DashboardDatePicker({
   disabledDates = [],
   className,
   mode = "single",
+  name,
 }: DashboardDatePickerProps) {
   const formattedValue = value
     ? value.toLocaleDateString("en-US", {
@@ -39,11 +41,13 @@ export function DashboardDatePicker({
 
   return (
     <Popover>
+      {name && <input type="hidden" name={name} value={value?.toISOString().split("T")[0] || ""} />}
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal text-sm font-normal",
+            "w-full justify-start text-left font-normal text-sm",
             !value && "text-[color:var(--text-faint)]",
             className
           )}
@@ -54,7 +58,13 @@ export function DashboardDatePicker({
           {formattedValue || placeholder}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" sideOffset={5}>
+      <PopoverContent
+        className="w-[320px] max-w-[calc(100vw-2rem)] p-3"
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        collisionPadding={12}
+      >
         <Calendar
           mode={mode}
           selected={value as Date | Date[] | undefined}

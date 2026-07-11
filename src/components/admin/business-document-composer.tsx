@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
+import { ManualLeadForm, type LeadOption } from "@/components/admin/manual-lead-form";
 
 type Template = {
   id: string; name: string; documentCategory: string; defaultTitle?: string | null;
@@ -17,8 +18,9 @@ type Template = {
   signatureRequired?: boolean; senderName?: string | null; senderRole?: string | null;
 };
 
-type Lead = { id: string; name: string; email: string; phone?: string | null; company?: string | null; whatsAppNumber?: string | null; phoneIsWhatsApp?: boolean; };
+type Lead = LeadOption & { phoneIsWhatsApp?: boolean; };
 type Project = { id: string; title: string; slug: string; };
+type Site = { id: string; name: string };
 
 const docTypes = [
   { value: "PROPOSAL", label: "Project proposal" },
@@ -40,29 +42,6 @@ const docTypes = [
   { value: "MAINTENANCE_REPORT", label: "Website maintenance report" },
   { value: "NDA", label: "Confidentiality agreement (NDA)" },
   { value: "CUSTOM", label: "Custom document" },
-];
-
-const toneOptions = [
-  { value: "Professional", label: "Professional" },
-  { value: "Formal", label: "Formal" },
-  { value: "Friendly", label: "Friendly" },
-  { value: "Persuasive", label: "Persuasive" },
-  { value: "Direct", label: "Direct" },
-  { value: "Technical", label: "Technical" },
-];
-
-const styleOptions = [
-  { value: "Structured", label: "Structured" },
-  { value: "Concise", label: "Concise" },
-  { value: "Detailed", label: "Detailed" },
-  { value: "Conversational", label: "Conversational" },
-  { value: "Marketing-style", label: "Marketing-style" },
-];
-
-const lengthOptions = [
-  { value: "Short", label: "Short" },
-  { value: "Medium", label: "Medium" },
-  { value: "Long", label: "Long" },
 ];
 
 const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
@@ -99,13 +78,17 @@ type Props = {
   templates: Template[];
   leads: Lead[];
   projects: Project[];
+  sites: Site[];
   initial?: InitialDoc | null;
 };
 
-export function BusinessDocumentComposer({ templates, leads, projects, initial }: Props) {
+export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, sites, initial }: Props) {
   const router = useRouter();
   const isEdit = !!initial?.id;
   const [saving, setSaving] = useState(false);
+  const [leads, setLeads] = useState(initialLeads);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [pendingLead, setPendingLead] = useState<Lead | null>(null);
 
   // Form state
   const [documentType, setDocumentType] = useState(initial?.documentType || "PROPOSAL");
@@ -122,8 +105,8 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
   const [contentMarkdown, setContentMarkdown] = useState(initial?.contentMarkdown || "");
   const [internalNotes, setInternalNotes] = useState(initial?.internalNotes || "");
   const [expiryDate, setExpiryDate] = useState(initial?.expiryDate ? initial.expiryDate.slice(0, 10) : "");
-  const [issueDate, setIssueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : "");
-  const [reviewDate, setReviewDate] = useState(initial?.reviewDate ? initial.reviewDate.slice(0, 10) : "");
+  const [issueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : "");
+  const [reviewDate] = useState(initial?.reviewDate ? initial.reviewDate.slice(0, 10) : "");
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
   const [senderRole, setSenderRole] = useState(initial?.senderRole || "");
@@ -152,8 +135,9 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
     setRecipientWhatsApp(ld.whatsAppNumber || "");
     setCompanyName(ld.company || "");
   }, []);
+  const recipientHasValues = Boolean(recipientName || recipientEmail || recipientPhone || recipientWhatsApp || companyName);
 
-  const handleSave = useCallback(async (_action: "draft" | "save") => {
+  const handleSave = useCallback(async () => {
     if (!title.trim()) { toast.error("Title is required"); return; }
     setSaving(true);
     try {
@@ -161,9 +145,9 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
         documentType,
         title: title.trim(),
         subject: subject.trim() || undefined,
-        templateId: selectedTemplate || undefined,
-        leadId: selectedLead || undefined,
-        projectId: selectedProject || undefined,
+        templateId: selectedTemplate || null,
+        leadId: selectedLead || null,
+        projectId: selectedProject || null,
         companyName: companyName.trim() || undefined,
         recipientName: recipientName.trim() || undefined,
         recipientEmail: recipientEmail.trim() || undefined,
@@ -242,15 +226,16 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
 
       {/* Client info from lead */}
       <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
-        <label className="grid gap-2 text-sm font-bold">
+        <div className="grid gap-2 text-sm font-bold">
           Link to lead <span className="text-[color:var(--text-faint)] font-normal">(auto-fills details)</span>
           <DashboardSelect
             value={selectedLead}
-            onChange={e => { setSelectedLead(e.target.value); const ld = leads.find((l) => l.id === e.target.value); if (ld) fillFromLead(ld); }}
-            options={[{ label: "None selected", value: "" }, ...leads.map((ld) => ({ label: `${ld.name} — ${ld.email}`, value: ld.id }))]}
+            onChange={e => { setSelectedLead(e.target.value); const ld = leads.find((l) => l.id === e.target.value); if (ld) { if (recipientHasValues) setPendingLead(ld); else fillFromLead(ld); } }}
+            options={[{ label: "None selected", value: "" }, ...leads.map((ld) => ({ label: `${ld.name}${ld.company ? ` · ${ld.company}` : ""} — ${ld.email || ld.phone || ld.whatsAppNumber || "No contact"}${ld.source ? ` · ${ld.source}` : ""}`, value: ld.id }))]}
             className={inputClass}
           />
-        </label>
+          <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={() => setShowLeadForm(true)}>Create new lead</Button>
+        </div>
         <label className="grid gap-2 text-sm font-bold">
           Link to project
           <DashboardSelect
@@ -261,6 +246,9 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
           />
         </label>
       </div>
+
+      {showLeadForm && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Create new lead"><div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-5 shadow-xl"><h2 className="mb-5 font-display text-2xl font-black">Create new lead</h2><ManualLeadForm sites={sites.map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/></div></div>}
+      {pendingLead && <div className="fixed inset-0 z-[110] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Replace recipient details"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Replace recipient details?</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">You already entered recipient information. Replace it with details from {pendingLead.name}?</p><div className="mt-5 flex gap-3"><Button type="button" onClick={() => { fillFromLead(pendingLead); setPendingLead(null); }}>Replace details</Button><Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button></div></div></div>}
 
       {/* Recipient details */}
       <div className="grid gap-5 md:grid-cols-3">
@@ -348,12 +336,10 @@ export function BusinessDocumentComposer({ templates, leads, projects, initial }
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => handleSave("save")} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? <><Loader2 size={15} className="animate-spin" /> Saving...</> : <><Save size={15} /> {isEdit ? "Save draft" : "Create draft"}</>}
         </Button>
-        <Button variant="secondary" disabled={saving} onClick={() => handleSave("draft")}>
-          {isEdit ? "Save & continue editing" : "Save draft"}
-        </Button>
+        {isEdit && <Button variant="secondary" disabled={saving} onClick={handleSave}>Save & continue editing</Button>}
         <Button variant="secondary" onClick={() => router.push("/admin/business-documents")}>Cancel</Button>
       </div>
     </div>

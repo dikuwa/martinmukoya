@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Plus, Trash2 } from "lucide-react";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
+import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 
 type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string };
@@ -22,6 +23,12 @@ const paymentMethodOptions = [
   { value: "BANK_TRANSFER", label: "Bank transfer" },
   { value: "CARD", label: "Card" },
   { value: "OTHER", label: "Other" }
+];
+
+const categoryOptions = [
+  { value: "service", label: "Service" },
+  { value: "product", label: "Product" },
+  { value: "other", label: "Other" }
 ];
 
 export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { sources: Source[]; initialBooking?: string; initialLead?: string }) {
@@ -109,7 +116,10 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
         </label>
         <label className="grid gap-2 text-sm font-bold">
           {type === "QUOTE" ? "Valid until" : "Due date"}
-          <input name={type === "QUOTE" ? "validUntil" : "dueDate"} type="date" className={input} />
+          <DashboardDatePicker
+            name={type === "QUOTE" ? "validUntil" : "dueDate"}
+            className={input}
+          />
         </label>
         <label className="grid gap-2 text-sm font-bold">Customer address
           <input name="customerAddress" className={input} />
@@ -125,11 +135,12 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
         {lines.map((line, index) => (
           <div key={index} className="grid gap-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
             <input value={line.description} onChange={e => updateLine(index, "description", e.target.value)} placeholder="Description" className={input} />
-            <select value={line.category} onChange={e => updateLine(index, "category", e.target.value)} className={input}>
-              <option value="service">Service</option>
-              <option value="product">Product</option>
-              <option value="other">Other</option>
-            </select>
+            <DashboardSelect
+              value={line.category}
+              onChange={e => updateLine(index, "category", e.target.value)}
+              options={categoryOptions}
+              className={input}
+            />
             <input value={line.quantity} onChange={e => updateLine(index, "quantity", e.target.value)} type="number" min="0" step="0.01" className={input} />
             <input value={line.unitPrice} onChange={e => updateLine(index, "unitPrice", e.target.value)} type="number" min="0" step="0.01" className={input} />
             <Button type="button" variant="ghost" size="icon" onClick={() => setLines(current => current.filter((_, i) => i !== index))} aria-label="Remove line item">
@@ -212,7 +223,10 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
             <input name="reference" className={input} />
           </label>
           <label className="grid gap-2 text-sm font-bold">Payment date
-            <input name="paidAt" type="date" className={input} />
+            <DashboardDatePicker
+              name="paidAt"
+              className={input}
+            />
           </label>
           <label className="grid gap-2 text-sm font-bold">Notes
             <textarea name="notes" className={`${input} min-h-20 py-3`} />

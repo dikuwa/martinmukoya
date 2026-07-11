@@ -6,11 +6,8 @@ import type { ComponentPropsWithoutRef, ForwardRefExoticComponent, RefAttributes
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
-
-const PopoverContent = PopoverPrimitive.Content as ForwardRefExoticComponent<
-  ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & RefAttributes<HTMLElement>
->;
-
+const PopoverContent = PopoverPrimitive.Content;
+const PopoverPortal = PopoverPrimitive.Portal;
 const PopoverClose = PopoverPrimitive.Close;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverClose };
+export { Popover, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose };

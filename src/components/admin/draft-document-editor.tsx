@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Plus, Trash2 } from "lucide-react";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
+import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 
 const input = "h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
@@ -85,10 +86,18 @@ export function DraftDocumentEditor({ initial }: { initial: Initial }) {
           <input name="customerAddress" defaultValue={initial.customerAddress || ""} className={input} />
         </label>
         <label className="grid gap-2 text-sm font-bold">Valid until
-          <input name="validUntil" type="date" defaultValue={initial.validUntil} className={input} />
+          <DashboardDatePicker
+            value={initial.validUntil ? new Date(initial.validUntil) : undefined}
+            onChange={date => date && date.toISOString().split("T")[0]}
+            className={input}
+          />
         </label>
         <label className="grid gap-2 text-sm font-bold">Due date
-          <input name="dueDate" type="date" defaultValue={initial.dueDate} className={input} />
+          <DashboardDatePicker
+            value={initial.dueDate ? new Date(initial.dueDate) : undefined}
+            onChange={date => date && date.toISOString().split("T")[0]}
+            className={input}
+          />
         </label>
       </div>
       <div className="grid gap-2">

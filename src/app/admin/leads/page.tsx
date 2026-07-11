@@ -48,7 +48,7 @@ async function LeadsTable({ searchParams }: PageProps) {
   const budgetOptions = await db.lead.findMany({ distinct: ["budgetRange"], select: { budgetRange: true }, where: { budgetRange: { not: null } } });
   const sites = await db.site.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } });
   const where = {
-    ...(params.search ? { OR: [{ name: { contains: params.search, mode: "insensitive" as const } }, { email: { contains: params.search, mode: "insensitive" as const } }, { company: { contains: params.search, mode: "insensitive" as const } }, { message: { contains: params.search, mode: "insensitive" as const } }] } : {}),
+    ...(params.search ? { OR: [{ name: { contains: params.search, mode: "insensitive" as const } }, { email: { contains: params.search, mode: "insensitive" as const } }, { phone: { contains: params.search } }, { whatsAppNumber: { contains: params.search } }, { company: { contains: params.search, mode: "insensitive" as const } }, { message: { contains: params.search, mode: "insensitive" as const } }] } : {}),
     ...(params.status && params.status in LeadStatus ? { status: params.status as LeadStatus } : {}),
     ...(params.serviceType && params.serviceType in ServiceType ? { serviceType: params.serviceType as ServiceType } : {}),
     ...(params.budget ? { budgetRange: params.budget } : {}),
@@ -88,7 +88,7 @@ async function LeadsTable({ searchParams }: PageProps) {
             </span>
             <div className="min-w-0">
               <p className="truncate font-bold text-[color:var(--text-strong)]">{item.name}</p>
-              <p className="truncate text-xs text-[color:var(--text-muted)]">{item.email}</p>
+              <p className="truncate text-xs text-[color:var(--text-muted)]">{item.email || item.phone || item.whatsAppNumber || "No contact method"}</p>
               {item.company ? (
                 <p className="truncate text-xs text-[color:var(--text-faint)]">{item.company}</p>
               ) : null}
@@ -122,12 +122,12 @@ async function LeadsTable({ searchParams }: PageProps) {
           </span>
         )},
         { header: "Quick contact", cell: (item) => (
-          <Button asChild size="sm" variant="secondary" className="rounded-[10px]">
+          item.email ? <Button asChild size="sm" variant="secondary" className="rounded-[10px]">
             <Link href={`mailto:${item.email}`} className="inline-flex items-center gap-1.5">
               <Mail size={13} />
               Email
             </Link>
-          </Button>
+          </Button> : <span className="text-xs text-[color:var(--text-faint)]">—</span>
         )}
       ]} />
       <AdminPagination page={page} pageCount={pageCount} params={params} basePath="/admin/leads" />
@@ -138,7 +138,7 @@ async function LeadsTable({ searchParams }: PageProps) {
 export default function AdminLeadsPage(props: PageProps) {
   return (
     <div className="grid gap-8">
-      <PageHeader title="Leads" description="Review project requests, contact status, notes, and follow-up outcomes." />
+      <PageHeader title="Leads" description="Review project requests, contact status, notes, and follow-up outcomes." actions={<Button asChild><Link href="/admin/leads/new">Create lead</Link></Button>} />
       <ErrorBoundary>
         <Suspense fallback={<SkeletonCard />}>
           <LeadsTable {...props} />

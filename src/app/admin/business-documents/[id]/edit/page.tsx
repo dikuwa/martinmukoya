@@ -13,10 +13,11 @@ export default async function EditBusinessDocumentPage({ params }: Props) {
   });
   if (!doc || doc.status !== "DRAFT") notFound();
 
-  const [templates, leads, projects] = await Promise.all([
+  const [templates, leads, projects, sites] = await Promise.all([
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
+    db.site.findMany({ orderBy: { name: "asc" } })
   ]);
 
   return (
@@ -26,6 +27,7 @@ export default async function EditBusinessDocumentPage({ params }: Props) {
         templates={templates}
         leads={leads}
         projects={projects}
+        sites={sites}
         initial={JSON.parse(JSON.stringify(doc))}
       />
     </div>

@@ -334,6 +334,8 @@ model Lead {
   phoneValid       Boolean          @default(true)
   status           LeadStatus       @default(NEW)
   internalNotes    String?
+  linkedProjectId  String?
+  followUpAt       DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   site             Site?            @relation(fields: [siteId], references: [id], onDelete: SetNull)
@@ -345,6 +347,7 @@ model Lead {
   @@index([serviceType])
   @@index([source])
   @@index([email])
+  @@index([followUpAt])
 }
 
 model Contact {
@@ -667,6 +670,8 @@ model BusinessDocument {
   projectId         String?
   serviceId         String?
   templateId        String?
+  templateVersion   Int?
+  templateSnapshot  Json?
   revisionOfId      String?
 
   companyName       String?

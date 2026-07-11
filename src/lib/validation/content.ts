@@ -110,6 +110,35 @@ export const leadSchema = z.object({
 
 export const leadUpdateSchema = leadSchema.partial();
 
+export const manualLeadSchema = z.object({
+  name: z.string().trim().min(2, "Contact name is required"),
+  company: z.string().trim().optional().default(""),
+  email: z.string().trim().email("Enter a valid email address").optional().or(z.literal("")),
+  phone: z.string().trim().optional().default(""),
+  whatsAppNumber: z.string().trim().optional().default(""),
+  preferredContact: preferredContactEnum.default("EMAIL"),
+  source: z.enum(["website", "contact-form", "booking-form", "chatbot", "referral", "phone", "WhatsApp", "email", "walk-in", "manual", "other"]).default("manual"),
+  serviceType: serviceTypeEnum.default("OTHER"),
+  projectGoal: z.string().trim().min(2, "Add a short enquiry summary"),
+  message: z.string().trim().optional().default(""),
+  internalNotes: z.string().trim().optional().default(""),
+  status: leadStatusEnum.default("NEW"),
+  siteId: z.string().trim().min(1, "Select a site"),
+  linkedProjectId: z.string().trim().optional().or(z.literal("")),
+  followUpAt: z.string().trim().optional().or(z.literal("")),
+  createAnyway: z.boolean().optional().default(false)
+}).superRefine((value, context) => {
+  if (!value.email && !value.phone && !value.whatsAppNumber) {
+    context.addIssue({ code: "custom", path: ["email"], message: "Enter an email, phone, or WhatsApp number" });
+  }
+  for (const key of ["phone", "whatsAppNumber"] as const) {
+    const phone = value[key];
+    if (phone && !/^(?:\+264|0)[0-9\s()-]{6,15}$/.test(phone)) {
+      context.addIssue({ code: "custom", path: [key], message: "Use a Namibia number such as 081… or +264…" });
+    }
+  }
+});
+
 export const contactMessageSchema = z.object({
   name: z.string().trim().min(2),
   email: z.string().trim().email(),

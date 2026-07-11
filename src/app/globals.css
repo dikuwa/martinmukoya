@@ -254,6 +254,168 @@ body {
   }
 }
 
+/* ── Dashboard Calendar isolation ── */
+.dashboard-calendar {
+  isolation: isolate;
+}
+
+.dashboard-calendar .dashboard-calendar-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.dashboard-calendar .dashboard-calendar-table thead th {
+  padding: 0.25rem 0.125rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-align: center;
+  border: none;
+  background: transparent;
+}
+
+.dashboard-calendar .dashboard-calendar-table tbody td {
+  padding: 0.125rem;
+  border: none;
+  background: transparent;
+  vertical-align: middle;
+}
+
+.dashboard-calendar .dashboard-calendar-table tbody tr {
+  border: none;
+  background: transparent;
+}
+
+.dashboard-calendar .dashboard-calendar-day {
+  width: 100%;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  max-height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  box-shadow: none;
+}
+
+.dashboard-calendar .dashboard-calendar-day:hover:not(:disabled) {
+  background-color: var(--surface-soft);
+  color: var(--text-strong);
+}
+
+.dashboard-calendar .dashboard-calendar-day:focus-visible {
+  outline: none;
+  ring: 2px;
+  ring-color: var(--primary);
+  ring-offset: 2px;
+  ring-offset-color: var(--background);
+}
+
+.dashboard-calendar .dashboard-calendar-day:disabled,
+.dashboard-calendar .dashboard-calendar-day[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.dashboard-calendar .dashboard-calendar-day[aria-selected="true"] {
+  background-color: var(--primary);
+  color: white;
+}
+
+.dashboard-calendar .dashboard-calendar-day[aria-selected="true"]:hover:not(:disabled) {
+  background-color: var(--primary-light);
+  color: white;
+}
+
+.dashboard-calendar .dashboard-calendar-day[aria-current="date"] {
+  ring: 2px;
+  ring-color: var(--primary);
+  ring-offset: 2px;
+  ring-offset-color: var(--background);
+}
+
+.dashboard-calendar .dashboard-calendar-day:not([aria-current="date"]):not([aria-selected="true"]):not([aria-disabled="true"]):hover {
+  background-color: var(--surface-soft);
+}
+
+.dashboard-calendar .dashboard-calendar-table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.dashboard-calendar .dashboard-calendar-table * {
+  box-sizing: border-box;
+}
+
+.dashboard-calendar .dashboard-calendar-table tr {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.dashboard-calendar .dashboard-calendar-table td {
+  padding: 0.125rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.dashboard-calendar .dashboard-calendar-table th {
+  padding: 0.25rem 0.125rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Prevent global button styles from affecting calendar day buttons */
+.dashboard-calendar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Prevent global table styles from affecting calendar */
+.dashboard-calendar table {
+  display: table !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.dashboard-calendar thead {
+  display: table-header-group !important;
+}
+
+.dashboard-calendar tbody {
+  display: table-row-group !important;
+}
+
+.dashboard-calendar tr {
+  display: table-row !important;
+  height: auto !important;
+}
+
+.dashboard-calendar th,
+.dashboard-calendar td {
+  display: table-cell !important;
+  vertical-align: middle !important;
+  padding: 0.125rem !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+@layer base {
+
 .text-balance {
   text-wrap: balance;
 }
@@ -293,6 +455,8 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
 }
 
 /* ── Chatbot action pill — unlayered so it beats both Tailwind's layered utilities and `button { font: inherit }` ── */

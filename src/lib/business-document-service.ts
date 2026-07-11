@@ -3,9 +3,10 @@ import "server-only";
 import { randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { getIssuerSnapshot } from "@/lib/finance-service";
+import { BusinessDocumentType, Prisma } from "@/generated/prisma/client";
 
 export type BusinessDocInput = {
-  documentType: string;
+  documentType: BusinessDocumentType;
   title: string;
   subject?: string;
   siteId?: string;
@@ -14,6 +15,8 @@ export type BusinessDocInput = {
   projectId?: string;
   serviceId?: string;
   templateId?: string;
+  templateVersion?: number;
+  templateSnapshot?: Prisma.InputJsonObject;
   companyName?: string;
   recipientName?: string;
   recipientEmail?: string;
@@ -41,7 +44,7 @@ function shortCode(): string {
 function docNumber(type: string): string {
   const prefix = type === "PROPOSAL" ? "PRO" : type === "SERVICE_AGREEMENT" ? "AGR" : type === "NDA" ? "NDA" : type === "BUSINESS_LETTER" ? "LET" : type === "AUDIT_REPORT" ? "AUD" : "DOC";
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
-  return `${prefix}-${stamp}`;
+  return `${prefix}-${stamp}-${randomBytes(2).toString("hex").toUpperCase()}`;
 }
 
 function slugify(text: string): string {
@@ -54,7 +57,7 @@ export async function createBusinessDocument(input: BusinessDocInput) {
   return db.businessDocument.create({
     data: {
       documentNumber: docNumber(input.documentType),
-      documentType: input.documentType as any,
+      documentType: input.documentType,
       title: input.title,
       slug,
       subject: input.subject,
@@ -64,6 +67,8 @@ export async function createBusinessDocument(input: BusinessDocInput) {
       projectId: input.projectId,
       serviceId: input.serviceId,
       templateId: input.templateId,
+      templateVersion: input.templateVersion,
+      templateSnapshot: input.templateSnapshot,
       companyName: input.companyName,
       recipientName: input.recipientName,
       recipientEmail: input.recipientEmail,
@@ -94,12 +99,12 @@ export async function createBusinessDocument(input: BusinessDocInput) {
   });
 }
 
-export async function updateBusinessDocument(id: string, input: Partial<BusinessDocInput> & Record<string, any>) {
-  const data: Record<string, any> = {};
+export async function updateBusinessDocument(id: string, input: Partial<BusinessDocInput> & Record<string, unknown>) {
+  const data: Prisma.BusinessDocumentUncheckedUpdateInput = {};
   for (const [key, value] of Object.entries(input)) {
     if (key === "userId" || key === "issueDate" || key === "expiryDate" || key === "reviewDate") continue;
     if (value === undefined) continue; // undefined = don't update
-    data[key] = value;
+    (data as Record<string, unknown>)[key] = value;
   }
   if (input.issueDate !== undefined) data.issueDate = input.issueDate ? new Date(input.issueDate) : null;
   if (input.expiryDate !== undefined) data.expiryDate = input.expiryDate ? new Date(input.expiryDate) : null;

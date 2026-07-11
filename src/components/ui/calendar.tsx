@@ -154,7 +154,7 @@ export function Calendar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4",
+        "dashboard-calendar flex flex-col gap-4",
         numberOfMonths > 1 && "md:flex-row",
         className
       )}
@@ -213,7 +213,7 @@ export function Calendar({
               </span>
             )}
           </div>
-          <table className="w-full border-collapse" role="grid">
+          <table className="dashboard-calendar-table w-full border-collapse" role="grid">
             <thead>
               <tr className="text-[color:var(--text-faint)] text-xs font-semibold">
                 {showWeekNumbers && <th className="p-1" aria-label="Week" />}
@@ -251,7 +251,7 @@ export function Calendar({
                         <button
                           type="button"
                           className={cn(
-                            "w-full h-9 rounded-[6px] text-sm font-medium transition-colors",
+                            "dashboard-calendar-day w-full h-9 rounded-[6px] text-sm font-medium transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
                             !isCurrentMonth && "text-[color:var(--text-faint)]",
                             isSelectedDay &&
