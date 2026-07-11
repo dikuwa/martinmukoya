@@ -92,7 +92,8 @@ export function DocumentSettingsForm() {
         body: JSON.stringify(settings),
       });
       if (!res.ok) throw new Error("Failed to save");
-      toast.success("Document settings saved");
+      const result = await res.json();
+      toast.success(`Document settings saved. ${result.documentsUpdated ?? 0} existing documents updated.`);
     } catch {
       toast.error("Failed to save document settings");
     } finally {

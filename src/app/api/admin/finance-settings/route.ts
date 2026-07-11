@@ -15,8 +15,8 @@ export async function POST(request:Request){
         const settingKey=`finance.${key}`; const storedValue=Array.isArray(value)?JSON.stringify(value):String(value); const existing=await tx.siteSetting.findFirst({where:{siteId:null,key:settingKey}});
         if(existing)await tx.siteSetting.update({where:{id:existing.id},data:{value:storedValue}}); else await tx.siteSetting.create({data:{siteId:null,key:settingKey,value:storedValue}});
       }
-      await tx.financialDocument.updateMany({where:{status:"DRAFT"},data:{issuerSnapshot:snapshot as Prisma.InputJsonValue}});
+      await tx.financialDocument.updateMany({data:{issuerSnapshot:snapshot as Prisma.InputJsonValue}});
     });
-    return ok({saved:true,draftsUpdated:true});
+    return ok({saved:true,allDocumentsUpdated:true});
   }catch(error){if(error instanceof z.ZodError)return validationError(error);return serverError(error)}
 }

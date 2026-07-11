@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { defaultDocumentSettings } from "@/lib/document-settings";
 
 const settingsSchema = z.object({
   defaultSenderName: z.string().min(1).max(200),
@@ -25,21 +26,7 @@ export async function GET() {
     if (error) return error;
 
     const settings = await db.documentSettings.findFirst();
-    return NextResponse.json(settings || {
-      defaultSenderName: "Martin Mukoya",
-      defaultSenderRole: "Managing Director",
-      defaultSignature: "",
-      backdropEnabled: true,
-      defaultBusinessExpiryDays: 30,
-      defaultProposalValidity: 30,
-      defaultEmailSubject: "Document {{documentNumber}} from FlexTech Media",
-      defaultEmailBody: "Hello {{recipientName}},\n\nPlease find the document below.\n\n{{shareLink}}\n\nRegards,\n{{senderName}}",
-      defaultWhatsAppMsg: "Good afternoon {{recipientName}},\n\nPlease find your document below:\n{{shareLink}}\n\nRegards,\n{{senderName}}",
-      aiDefaultTone: "Professional",
-      aiDefaultStyle: "Structured",
-      aiDefaultLength: "Medium",
-      acceptanceEnabled: true,
-    });
+    return NextResponse.json(settings || defaultDocumentSettings);
   } catch (error) {
     console.error("[document-settings] GET error:", error);
     return NextResponse.json({ error: "Failed to load settings" }, { status: 500 });
@@ -55,13 +42,21 @@ export async function POST(request: Request) {
     const parsed = settingsSchema.parse(body);
     const existing = await db.documentSettings.findFirst();
 
-    if (existing) {
-      await db.documentSettings.update({ where: { id: existing.id }, data: parsed });
-    } else {
-      await db.documentSettings.create({ data: parsed });
-    }
+    const result = await db.$transaction(async (tx) => {
+      if (existing) await tx.documentSettings.update({ where: { id: existing.id }, data: parsed });
+      else await tx.documentSettings.create({ data: parsed });
+      return tx.businessDocument.updateMany({
+        data: {
+          senderName: parsed.defaultSenderName,
+          senderRole: parsed.defaultSenderRole,
+          aiTone: parsed.aiDefaultTone,
+          aiStyle: parsed.aiDefaultStyle,
+          aiLength: parsed.aiDefaultLength
+        }
+      });
+    });
 
-    return NextResponse.json({ saved: true });
+    return NextResponse.json({ saved: true, documentsUpdated: result.count });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message || "Validation failed" }, { status: 400 });

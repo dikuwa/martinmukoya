@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { getIssuerSnapshot } from "@/lib/finance-service";
 import { BusinessDocumentType, Prisma } from "@/generated/prisma/client";
+import { getDocumentSettings } from "@/lib/document-settings";
 
 export type BusinessDocInput = {
   documentType: BusinessDocumentType;
@@ -53,6 +54,7 @@ function slugify(text: string): string {
 
 export async function createBusinessDocument(input: BusinessDocInput) {
   const issuer = await getIssuerSnapshot();
+  const settings = await getDocumentSettings();
   const slug = slugify(input.title) + "-" + shortCode().slice(0, 4);
   return db.businessDocument.create({
     data: {
@@ -80,12 +82,12 @@ export async function createBusinessDocument(input: BusinessDocInput) {
       contentMarkdown: input.contentMarkdown,
       internalNotes: input.internalNotes,
       aiPromptContext: input.aiPromptContext,
-      aiTone: input.aiTone || "Professional",
-      aiStyle: input.aiStyle || "Structured",
-      aiLength: input.aiLength || "Medium",
+      aiTone: input.aiTone || settings.aiDefaultTone,
+      aiStyle: input.aiStyle || settings.aiDefaultStyle,
+      aiLength: input.aiLength || settings.aiDefaultLength,
       signatureRequired: input.signatureRequired ?? false,
-      senderName: input.senderName || issuer.signerName,
-      senderRole: input.senderRole || issuer.signerTitle,
+      senderName: input.senderName || settings.defaultSenderName || issuer.signerName,
+      senderRole: input.senderRole || settings.defaultSenderRole || issuer.signerTitle,
       senderUserId: input.userId,
       createdById: input.userId,
       auditLog: {

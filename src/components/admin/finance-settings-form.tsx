@@ -52,7 +52,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
     const payload = await response.json();
     setSaving(false);
     if (!response.ok) return toast.error(payload.error || "Settings could not be saved");
-    toast.success("Financial identity saved for drafts and future documents");
+    toast.success("Financial identity saved and applied to all existing documents");
   }
 
   return (
