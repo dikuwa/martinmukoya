@@ -64,5 +64,5 @@ export function calculateDocumentTotals(input: {
 }
 
 export function formatNad(value: string | number) {
-  return new Intl.NumberFormat("en-NA", { style: "currency", currency: "NAD", minimumFractionDigits: 2 }).format(Number(value));
+  return `N$${new Intl.NumberFormat("en-NA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))}`;
 }
