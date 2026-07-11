@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { type ClipboardEvent, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type ClipboardEvent, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import toast from "react-hot-toast";
@@ -65,6 +65,7 @@ const contentComponents: Components = {
 
 export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const initialContentRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const splitRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
@@ -79,6 +80,12 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const [resizing, setResizing] = useState(false);
 
   useEffect(() => { lastValue.current = value; }, [value]);
+
+  useLayoutEffect(() => {
+    if (editorRef.current && initialContentRef.current) {
+      editorRef.current.innerHTML = initialContentRef.current.innerHTML;
+    }
+  }, []);
 
   useEffect(() => {
     const rememberSelection = () => {
@@ -173,14 +180,15 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       className={`grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,var(--editor-fr))_1rem_minmax(0,var(--preview-fr))] lg:gap-0 ${resizing ? "lg:cursor-col-resize lg:select-none" : ""}`}
       style={{ "--editor-fr": `${editorWidth}fr`, "--preview-fr": `${100 - editorWidth}fr` } as CSSProperties}
     >
+      <div ref={initialContentRef} className="hidden" aria-hidden="true">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
+      </div>
       <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
         {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
           onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); e.preventDefault(); if(file) void upload(file); else command("insertText", e.clipboardData.getData("text/plain")); }}
           onDragOver={(e: DragEvent) => {e.preventDefault(); setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={(e: DragEvent) => {e.preventDefault(); setDragging(false); const file=Array.from(e.dataTransfer.files).find((f)=>f.type.startsWith("image/")); if(file) void upload(file);}}
-          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
-        </div>
+          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]" />
       </div>
       <div
         role="separator"
