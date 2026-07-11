@@ -13,21 +13,21 @@ function scaledInteger(value: string | number, scale: number) {
   const negative = normalized.startsWith("-");
   const [whole, fraction = ""] = normalized.replace("-", "").split(".");
   const padded = `${fraction}${"0".repeat(scale)}`.slice(0, scale);
-  const result = BigInt(whole) * 10n ** BigInt(scale) + BigInt(padded || "0");
+  const result = BigInt(whole) * BigInt(10) ** BigInt(scale) + BigInt(padded || "0");
   return negative ? -result : result;
 }
 
 function roundDivide(value: bigint, divisor: bigint) {
-  const negative = value < 0n;
+  const negative = value < BigInt(0);
   const absolute = negative ? -value : value;
-  const rounded = (absolute + divisor / 2n) / divisor;
+  const rounded = (absolute + divisor / BigInt(2)) / divisor;
   return negative ? -rounded : rounded;
 }
 
 function centsToString(cents: bigint) {
-  const negative = cents < 0n;
+  const negative = cents < BigInt(0);
   const absolute = negative ? -cents : cents;
-  return `${negative ? "-" : ""}${absolute / 100n}.${String(absolute % 100n).padStart(2, "0")}`;
+  return `${negative ? "-" : ""}${absolute / BigInt(100)}.${String(absolute % BigInt(100)).padStart(2, "0")}`;
 }
 
 export function calculateDocumentTotals(input: {
@@ -41,17 +41,17 @@ export function calculateDocumentTotals(input: {
     if (!line.description.trim()) throw new Error("Every line item needs a description.");
     const quantity = scaledInteger(line.quantity, 3);
     const unitPrice = scaledInteger(line.unitPrice, 2);
-    if (quantity <= 0n || unitPrice < 0n) throw new Error("Quantities must be positive and prices cannot be negative.");
-    return { ...line, description: line.description.trim(), amount: centsToString(roundDivide(quantity * unitPrice, 1000n)), sortOrder };
+    if (quantity <= BigInt(0) || unitPrice < BigInt(0)) throw new Error("Quantities must be positive and prices cannot be negative.");
+    return { ...line, description: line.description.trim(), amount: centsToString(roundDivide(quantity * unitPrice, BigInt(1000))), sortOrder };
   });
-  const subtotal = lines.reduce((sum, line) => sum + scaledInteger(line.amount, 2), 0n);
+  const subtotal = lines.reduce((sum, line) => sum + scaledInteger(line.amount, 2), BigInt(0));
   const discount = scaledInteger(input.discountAmount ?? 0, 2);
   const extras = scaledInteger(input.additionalCharges ?? 0, 2);
   const taxBasisPoints = scaledInteger(input.taxRate ?? 0, 2);
-  if (discount < 0n || extras < 0n || taxBasisPoints < 0n) throw new Error("Discounts, charges, and tax cannot be negative.");
+  if (discount < BigInt(0) || extras < BigInt(0) || taxBasisPoints < BigInt(0)) throw new Error("Discounts, charges, and tax cannot be negative.");
   const taxable = subtotal + extras - discount;
-  if (taxable < 0n) throw new Error("Discount cannot exceed subtotal plus additional charges.");
-  const tax = roundDivide(taxable * taxBasisPoints, 10000n);
+  if (taxable < BigInt(0)) throw new Error("Discount cannot exceed subtotal plus additional charges.");
+  const tax = roundDivide(taxable * taxBasisPoints, BigInt(10000));
   return {
     lines,
     subtotal: centsToString(subtotal),
