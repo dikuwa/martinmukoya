@@ -2,6 +2,7 @@
 
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button } from "@/components/ui/button";
+import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import type { Project } from "@/generated/prisma/client";
 import { projectSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -257,7 +258,7 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
         </Field>
       </div>
       </FormSection>
-      <FormSection title="CTA overrides" description="Optional. Empty fields fall back to the active site’s CTA settings.">
+      <FormSection title="CTA overrides" description="Optional. Empty fields fall back to the active site's CTA settings.">
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="CTA eyebrow"><input {...form.register("ctaEyebrow")} className={inputClass} /></Field>
           <Field label="CTA title"><input {...form.register("ctaTitle")} className={inputClass} /></Field>
@@ -271,20 +272,24 @@ export function ProjectForm({ initialData }: { initialData?: Partial<Project> & 
         <legend className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</legend>
         <div className="flex flex-wrap gap-5">
           {siteOptions.map((site) => (
-            <label key={site.value} className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-              <input type="checkbox" value={site.value} {...form.register("siteSlugs")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" />
-              {site.label}
-            </label>
+            <DashboardCheckbox
+              key={site.value}
+              label={site.label}
+              {...form.register("siteSlugs")}
+              value={site.value}
+            />
           ))}
         </div>
       </fieldset>
       <div className="flex flex-wrap gap-5">
-        <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-          <input type="checkbox" {...form.register("published")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" /> Published
-        </label>
-        <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-          <input type="checkbox" {...form.register("featured")} className="h-4 w-4 rounded border-[color:var(--border-subtle)] bg-[color:var(--surface)] accent-[color:var(--primary)]" /> Featured
-        </label>
+        <DashboardCheckbox
+          label="Published"
+          {...form.register("published")}
+        />
+        <DashboardCheckbox
+          label="Featured"
+          {...form.register("featured")}
+        />
         <Field label="Sort order">
           <input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={inputClass} />
         </Field>
@@ -306,7 +311,7 @@ function FormSection({ title, description, children }: { title: string; descript
 }
 
 function RepeatableItems({ title, fields, register, append, remove, move, name }: { title: string; fields: Array<{ id: string }>; register: ReturnType<typeof useForm<z.input<typeof projectFormSchema>>>["register"]; append: () => void; remove: (index: number) => void; move: (from: number, to: number) => void; name: "benefits" | "capabilities" }) {
-  return <FormSection title={title} description="Add 3–6 concise items. Auto icons use deterministic keyword matching."><div className="grid gap-3">{fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1fr_1.4fr_0.8fr_auto]"><Field label="Title"><input {...register(`${name}.${index}.title`)} className={inputClass} /></Field><Field label="Description"><input {...register(`${name}.${index}.description`)} className={inputClass} /></Field><Field label="Icon"><select {...register(`${name}.${index}.iconKey`)} className={inputClass}>{projectIconOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><ReorderButtons index={index} count={fields.length} move={move} remove={remove} /><input type="hidden" {...register(`${name}.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly /></div>)}<Button type="button" variant="secondary" className="w-fit" onClick={append}><Plus size={16} /> Add item</Button></div></FormSection>;
+  return <FormSection title={title} description="Add 3-6 concise items. Auto icons use deterministic keyword matching."><div className="grid gap-3">{fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 md:grid-cols-[1fr_1.4fr_0.8fr_auto]"><Field label="Title"><input {...register(`${name}.${index}.title`)} className={inputClass} /></Field><Field label="Description"><input {...register(`${name}.${index}.description`)} className={inputClass} /></Field><Field label="Icon"><select {...register(`${name}.${index}.iconKey`)} className={inputClass}>{projectIconOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><ReorderButtons index={index} count={fields.length} move={move} remove={remove} /><input type="hidden" {...register(`${name}.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly /></div>)}<Button type="button" variant="secondary" className="w-fit" onClick={append}><Plus size={16} /> Add item</Button></div></FormSection>;
 }
 
 function ReorderButtons({ index, count, move, remove }: { index: number; count: number; move: (from: number, to: number) => void; remove: (index: number) => void }) {

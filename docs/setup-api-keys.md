@@ -56,8 +56,10 @@ https://resend.com/domains
 - Paste it as:
 
 ```bash
-OPENAI_API_KEY="..."
-OPENAI_MODEL="gpt-4o"
+OPENAI_CHATBOT_API_KEY="..."
+OPENAI_CHATBOT_MODEL="gpt-4.1-mini"
+OPENAI_DOCUMENTS_API_KEY="..."
+OPENAI_DOCUMENTS_MODEL="gpt-4.1"
 ```
 
 ### 6. Public Website URL

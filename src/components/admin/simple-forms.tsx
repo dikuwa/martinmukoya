@@ -1,30 +1,46 @@
 "use client";
 
 import { BlogEditor } from "@/components/admin/blog-editor";
+import { AiWritingAssistant } from "@/components/admin/ai-writing-assistant";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button } from "@/components/ui/button";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
+import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import type { BlogPost, ChatSession, ContactMessage, FAQ, Lead, SiteSetting, Testimonial } from "@/generated/prisma/client";
 import { blogPostSchema, contactMessageUpdateSchema, faqSchema, leadUpdateSchema, siteSettingSchema, siteSettingUpdateSchema, testimonialSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch, type UseFormRegisterReturn } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
-const leadStatuses = ["NEW", "REVIEWING", "CONTACTED", "QUALIFIED", "WON", "LOST", "ARCHIVED"] as const;
-const messageStatuses = ["NEW", "READ", "REPLIED", "ARCHIVED"] as const;
+const leadStatuses = [
+  { value: "NEW", label: "NEW" },
+  { value: "REVIEWING", label: "REVIEWING" },
+  { value: "CONTACTED", label: "CONTACTED" },
+  { value: "QUALIFIED", label: "QUALIFIED" },
+  { value: "WON", label: "WON" },
+  { value: "LOST", label: "LOST" },
+  { value: "ARCHIVED", label: "ARCHIVED" }
+] as const;
+
+const messageStatuses = [
+  { value: "NEW", label: "NEW" },
+  { value: "READ", label: "READ" },
+  { value: "REPLIED", label: "REPLIED" },
+  { value: "ARCHIVED", label: "ARCHIVED" }
+] as const;
+
 const siteOptions = [
   { label: "Martin Mukoya", value: "martin-mukoya" },
   { label: "FlexTech Media", value: "flextech-media" }
 ] as const;
+
 const formShellClass = "grid gap-6 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow-xs)]";
 const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
-const selectClass = `${inputClass} bg-none appearance-none pr-10`;
 const textareaClass = "min-h-28 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
 const monoTextareaClass = `${textareaClass} font-mono`;
-const checkboxClass = "h-4 w-4 accent-[color:var(--primary)] rounded-[4px] border-[color:var(--border-subtle)] focus:ring-2 focus:ring-[color:var(--primary)]/30";
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -34,114 +50,6 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {error ? <span className="text-xs text-[color:var(--destructive)]">{error}</span> : null}
     </label>
   );
-}
-
-/**
- * Fully custom select dropdown. Works with react-hook-form via a hidden input,
- * so you can use it the same way as `<AdminSelect {...register("field")}>`.
- *
- * Children should be `<option value="...">Label</option>` elements just like
- * a native select, but they are rendered as styled dropdown items.
- */
-function AdminSelect({ children, className = "", value, onChange, onBlur, name, disabled }: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const [open, setOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(value?.toString() ?? "");
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Parse children to get options list
-  const options = useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [];
-    Children.forEach(children, (child) => {
-      if (isValidElement<{ value?: string | number; children?: React.ReactNode }>(child) && child.props.value !== undefined) {
-        opts.push({ value: String(child.props.value), label: String(child.props.children ?? "") });
-      }
-    });
-    return opts;
-  }, [children]);
-
-  const selectedLabel = useMemo(
-    () => options.find((o) => o.value === selectedValue)?.label ?? "Select...",
-    [options, selectedValue]
-  );
-
-  // Sync external value changes
-  useEffect(() => {
-    setSelectedValue(value?.toString() ?? "");
-  }, [value]);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  function choose(nextValue: string) {
-    setSelectedValue(nextValue);
-    setOpen(false);
-    // Synthesize a change event for react-hook-form
-    const syntheticEvent = {
-      target: { value: nextValue, name: name ?? "" }
-    } as React.ChangeEvent<HTMLSelectElement>;
-    onChange?.(syntheticEvent);
-    onBlur?.(syntheticEvent as unknown as React.FocusEvent<HTMLSelectElement>);
-  }
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      {/* Hidden native select for form integration */}
-      <select name={name} value={selectedValue} onChange={onChange} onBlur={onBlur} className="sr-only" tabIndex={-1} aria-hidden="true">
-        {children}
-      </select>
-
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
-        className={`${selectClass} flex w-full items-center justify-between gap-2 ${className || ""}`}
-      >
-        <span className="truncate">{selectedLabel}</span>
-        <ChevronDown
-          size={16}
-          className={`shrink-0 text-[color:var(--text-faint)] transition ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 grid w-full min-w-48 overflow-hidden rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]">
-          {options.map((option) => {
-            const active = option.value === selectedValue;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={active}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => choose(option.value)}
-                className="flex items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] aria-selected:bg-[color:var(--surface-soft)] aria-selected:text-[color:var(--text-strong)]"
-              >
-                <span className="w-4 text-[color:var(--primary)] shrink-0">
-                  {active ? "✓" : ""}
-                </span>
-                <span>{option.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AdminOption({ children, ...props }: React.OptionHTMLAttributes<HTMLOptionElement>) {
-  // Now a simple pass-through, kept for backward compatibility with existing usage
-  return <option {...props}>{children}</option>;
 }
 
 function splitCsv(value: string) {
@@ -167,10 +75,12 @@ function SiteCheckboxes({ register }: { register: (name: "siteSlugs") => UseForm
       <legend className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</legend>
       <div className="flex flex-wrap gap-5">
         {siteOptions.map((site) => (
-          <label key={site.value} className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]">
-            <input type="checkbox" value={site.value} {...register("siteSlugs")} className={checkboxClass} />
-            {site.label}
-          </label>
+          <DashboardCheckbox
+            key={site.value}
+            label={site.label}
+            {...register("siteSlugs")}
+            value={site.value}
+          />
         ))}
       </div>
     </fieldset>
@@ -197,6 +107,7 @@ function SettingsAssetUpload({ value, onChange, label }: { value: string; onChan
 
 export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> & { sites?: Array<{ slug: string }> } }) {
   const router = useRouter();
+  const [editorVersion, setEditorVersion] = useState(0);
   const formSchema = blogPostSchema.extend({ tagsInput: z.string().optional() }).transform((values) => ({
     ...values,
     tags: splitCsv(values.tagsInput ?? "")
@@ -220,6 +131,8 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
   const title = useWatch({ control: form.control, name: "title" });
   const coverImage = useWatch({ control: form.control, name: "coverImage" });
   const content = useWatch({ control: form.control, name: "content" });
+  const category = useWatch({ control: form.control, name: "category" });
+  const tagsInput = useWatch({ control: form.control, name: "tagsInput" });
 
   async function onSubmit(values: z.input<typeof formSchema>) {
     const payload = formSchema.parse(values);
@@ -255,7 +168,24 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
       <Field label="Excerpt" error={form.formState.errors.excerpt?.message}><textarea {...form.register("excerpt")} className={textareaClass} rows={3} /></Field>
       <div className="grid gap-2 text-sm font-bold text-[color:var(--text-strong)]">
         <span>Content (Markdown)</span>
+        <AiWritingAssistant
+          title={title ?? ""}
+          content={content ?? ""}
+          category={category ?? ""}
+          tags={splitCsv(tagsInput ?? "")}
+          onApplyContent={(value) => {
+            form.setValue("content", value, { shouldDirty: true, shouldValidate: true });
+            setEditorVersion((version) => version + 1);
+          }}
+          onApplyMetadata={(action, value) => {
+            if (action === "excerpt") form.setValue("excerpt", value, { shouldDirty: true, shouldValidate: true });
+            if (action === "seo-title") form.setValue("seoTitle", value, { shouldDirty: true, shouldValidate: true });
+            if (action === "seo-description") form.setValue("seoDescription", value, { shouldDirty: true, shouldValidate: true });
+            if (action === "tags") form.setValue("tagsInput", value.replace(/^tags:\s*/i, ""), { shouldDirty: true });
+          }}
+        />
         <BlogEditor
+          key={editorVersion}
           value={content ?? ""}
           onChange={(value) => form.setValue("content", value, { shouldDirty: true })}
           error={form.formState.errors.content?.message}
@@ -276,7 +206,10 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
       </div>
       <Field label="SEO description" error={form.formState.errors.seoDescription?.message}><textarea {...form.register("seoDescription")} className={textareaClass} rows={2} /></Field>
       <SiteCheckboxes register={form.register} />
-      <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]"><input type="checkbox" {...form.register("published")} className={checkboxClass} /> Published</label>
+      <DashboardCheckbox
+        label="Published"
+        {...form.register("published")}
+      />
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Save Post"}</Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin/blog")}>Cancel</Button>
@@ -334,8 +267,14 @@ export function TestimonialForm({ initialData }: { initialData?: Partial<Testimo
       <Field label="Quote" error={form.formState.errors.quote?.message}><textarea {...form.register("quote")} className={textareaClass} /></Field>
       <SiteCheckboxes register={form.register} />
       <div className="flex flex-wrap gap-5">
-        <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]"><input type="checkbox" {...form.register("published")} className={checkboxClass} /> Published</label>
-        <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]"><input type="checkbox" {...form.register("featured")} className={checkboxClass} /> Featured</label>
+        <DashboardCheckbox
+          label="Published"
+          {...form.register("published")}
+        />
+        <DashboardCheckbox
+          label="Featured"
+          {...form.register("featured")}
+        />
         <Field label="Sort order"><input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={inputClass} /></Field>
       </div>
       <div className="flex flex-wrap gap-3">
@@ -382,7 +321,10 @@ export function FAQForm({ initialData }: { initialData?: Partial<FAQ> & { sites?
         <Field label="Sort order"><input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={inputClass} /></Field>
       </div>
       <SiteCheckboxes register={form.register} />
-      <label className="flex items-center gap-2 text-sm font-bold text-[color:var(--text-strong)]"><input type="checkbox" {...form.register("published")} className={checkboxClass} /> Published</label>
+      <DashboardCheckbox
+        label="Published"
+        {...form.register("published")}
+      />
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Save FAQ"}</Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin/faqs")}>Cancel</Button>
@@ -413,9 +355,10 @@ export function LeadStatusForm({ lead }: { lead: Lead }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
-        <AdminSelect {...form.register("status")}>
-          {leadStatuses.map((status) => <AdminOption key={status} value={status}>{status}</AdminOption>)}
-        </AdminSelect>
+        <DashboardSelect
+          {...form.register("status")}
+          options={leadStatuses}
+        />
       </Field>
       <Field label="Internal notes"><textarea {...form.register("internalNotes")} className={textareaClass} /></Field>
       <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Update Lead"}</Button>
@@ -445,9 +388,10 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
-        <AdminSelect {...form.register("status")}>
-          {messageStatuses.map((status) => <AdminOption key={status} value={status}>{status}</AdminOption>)}
-        </AdminSelect>
+        <DashboardSelect
+          {...form.register("status")}
+          options={messageStatuses}
+        />
       </Field>
       <Field label="Internal notes">
         <textarea {...form.register("internalNotes")} className={textareaClass} placeholder="Private follow-up notes, actions taken..." />
@@ -617,11 +561,10 @@ export function SiteSettingCreateForm() {
         <input {...form.register("key")} className={inputClass} placeholder="homepage.hero" />
       </Field>
       <Field label="Site" error={form.formState.errors.siteSlug?.message}>
-        <AdminSelect {...form.register("siteSlug")}>
-          {siteOptions.map((site) => (
-            <AdminOption key={site.value} value={site.value}>{site.label}</AdminOption>
-          ))}
-        </AdminSelect>
+        <DashboardSelect
+          {...form.register("siteSlug")}
+          options={siteOptions}
+        />
       </Field>
       <Field label="JSON value" error={form.formState.errors.value?.message}>
         <textarea {...form.register("value")} className={`${monoTextareaClass} min-h-80`} />

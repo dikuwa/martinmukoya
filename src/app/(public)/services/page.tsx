@@ -1,6 +1,5 @@
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
-import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
 import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
@@ -100,100 +99,51 @@ export default async function ServicesPage() {
           </>
         )}
 
-        {isFlexTech ? (
-          <Container className="grid gap-6">
-            {site.services.map((service, index) => (
-              <Reveal key={service.id} delay={index * 0.05}>
-                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
-                  {/* Top: icon + title + description */}
+        <Container className="grid gap-6">
+          {site.services.map((service, index) => (
+            <Reveal key={service.id} delay={index * 0.05}>
+              <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
+                {/* Four-column grid: Identity | Who it helps | Common friction | Business results */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {/* Identity column */}
                   <div className="flex flex-col gap-4">
                     <div>
                       <ServiceIcon id={service.id} />
                     </div>
                     <div>
                       <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
-                      <p className="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
+                      <p className="mt-3 max-w-xs text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
                     </div>
                   </div>
 
-                  {/* Middle: three clean content blocks */}
-                  <div className="mt-8 grid gap-3 lg:grid-cols-3">
-                    <InfoBlock
-                      title="What it helps"
-                      description={service.who}
-                      variant="help"
-                    />
-                    <InfoBlock
-                      title="Common friction"
-                      items={service.problems}
-                      variant="friction"
-                    />
-                    <InfoBlock
-                      title="Business results"
-                      items={service.outcomes}
-                      variant="result"
-                    />
-                  </div>
+                  {/* Who it helps */}
+                  <InfoBlock title="Who it helps" description={service.who} variant="help" />
 
-                  {/* Bottom: CTA */}
-                  <div className="mt-8 flex justify-center">
-                    <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
-                      <TrackedLink
-                        siteSlug={site.slug}
-                        eventType="service_interest_clicked"
-                        eventPage="/services"
-                        eventSource="service_cta"
-                        eventMetadata={{ service: service.id }}
-                        href={`/start-project?service=${service.id}`}
-                      >
-                        {page.ctaLabel} <ArrowRight size={16} />
-                      </TrackedLink>
-                    </Button>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </Container>
-        ) : (
-          <Container className="grid gap-6">
-            {site.services.map((service, index) => (
-              <Reveal key={service.id} delay={index * 0.05}>
-                <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/88 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-10">
-                  <div className="flex flex-col items-center text-center gap-4">
-                    <div className="mb-2">
-                      <ServiceIcon id={service.id} />
-                    </div>
-                    <div>
-                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
-                      <p className="mt-3 mx-auto max-w-3xl text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
-                    </div>
-                  </div>
+                  {/* Common friction */}
+                  <InfoBlock title="Common friction" items={service.problems} variant="friction" />
 
-                  <div className="mt-10 grid gap-4 lg:grid-cols-3">
-                    <InfoBlock title="Who it helps" description={service.who} />
-                    <InfoBlock title="Common friction" items={service.problems} variant="friction" />
-                    <InfoBlock title="Business results" items={service.outcomes} variant="result" />
-                  </div>
+                  {/* Business results */}
+                  <InfoBlock title="Business results" items={service.outcomes} variant="result" />
+                </div>
 
-                  <div className="mt-8 flex justify-center">
-                    <Button asChild size="md" variant="secondary" className="rounded-full px-6 py-3">
-                      <TrackedLink
-                        siteSlug={site.slug}
-                        eventType="service_interest_clicked"
-                        eventPage="/services"
-                        eventSource="service_cta"
-                        eventMetadata={{ service: service.id }}
-                        href={`/start-project?service=${service.id}`}
-                      >
-                        {page.ctaLabel} <ArrowRight size={16} />
-                      </TrackedLink>
-                    </Button>
-                  </div>
-                </article>
-              </Reveal>
-            ))}
-          </Container>
-        )}
+                {/* Learn more - centered plain link */}
+                <div className="mt-8 flex justify-center">
+                  <TrackedLink
+                    siteSlug={site.slug}
+                    eventType="service_interest_clicked"
+                    eventPage="/services"
+                    eventSource="service_cta"
+                    eventMetadata={{ service: service.id }}
+                    href={`/start-project?service=${service.id}`}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--primary)] hover:text-[color:var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--background)] rounded-md px-3 py-2 transition-colors"
+                  >
+                    {page.ctaLabel} <ArrowRight size={16} aria-hidden="true" />
+                  </TrackedLink>
+                </div>
+              </article>
+            </Reveal>
+          ))}
+        </Container>
       </Section>
     </>
   );
@@ -253,7 +203,7 @@ function InfoBlock({
         <div className="mt-4 space-y-2">
           {items.map((item) => (
             <div key={item} className={"flex gap-3 rounded-[20px] border p-4 " + rowClass}>
-              <span className="mt-1 grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] shrink-0">
+              <span className="mt-1 grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] shrink-0" aria-hidden="true">
                 {isResult ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
               </span>
               <p className="text-sm leading-6 text-[color:var(--text-muted)]">{item}</p>

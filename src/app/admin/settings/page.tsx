@@ -84,12 +84,19 @@ export default function AdminSettingsPage(props: PageProps) {
         title="Settings"
         description="Manage availability, contact details, social links, and homepage copy."
         actions={
-          <Button asChild>
-            <Link href="/admin/settings/new">
-              <Plus size={16} />
-              New Setting
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/admin/documents/settings/document-settings">
+                Document settings
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/admin/settings/new">
+                <Plus size={16} />
+                New Setting
+              </Link>
+            </Button>
+          </div>
         }
       />
       <ErrorBoundary>

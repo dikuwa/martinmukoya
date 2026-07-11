@@ -85,6 +85,60 @@ enum ChatMode {
   HUMAN
 }
 
+enum BusinessDocumentType {
+  PROPOSAL
+  SERVICE_AGREEMENT
+  WEB_DESIGN_CONTRACT
+  MAINTENANCE_AGREEMENT
+  HOSTING_AGREEMENT
+  SCOPE_OF_WORK
+  PROJECT_BRIEF
+  CHANGE_REQUEST
+  PROJECT_HANDOVER
+  CLIENT_ACCEPTANCE
+  BUSINESS_LETTER
+  PAYMENT_REMINDER
+  OVERDUE_NOTICE
+  MEETING_SUMMARY
+  PROGRESS_REPORT
+  AUDIT_REPORT
+  MAINTENANCE_REPORT
+  NDA
+  CUSTOM
+}
+
+enum BusinessDocumentStatus {
+  DRAFT
+  READY
+  ISSUED
+  SENT
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  SUPERSEDED
+  REVOKED
+  ARCHIVED
+}
+
+enum BusinessDocumentAuditAction {
+  CREATED
+  EDITED
+  AI_GENERATED
+  AI_REWRITTEN
+  ISSUED
+  EMAILED
+  WHATSAPP_SHARED
+  LINK_COPIED
+  VIEWED
+  DOWNLOADED
+  ACCEPTED
+  DECLINED
+  REVISED
+  REVOKED
+  ARCHIVED
+}
+
 model User {
   id            String    @id
   name          String
@@ -106,6 +160,9 @@ model User {
   financialBookings Booking[] @relation("BookingCreator")
   financialDocuments FinancialDocument[] @relation("DocumentCreator")
   recordedPayments Payment[] @relation("PaymentRecorder")
+  createdContacts Contact[]
+  createdBusinessDocuments BusinessDocument[]
+  createdBusinessTemplates BusinessDocumentTemplate[]
 }
 
 model Site {
@@ -130,6 +187,8 @@ model Site {
   financialBookings Booking[]
   financialDocuments FinancialDocument[]
   payments        Payment[]
+  businessDocuments BusinessDocument[]
+  documentSettings DocumentSettings[]
 
   @@index([slug])
   @@index([primaryDomain])
@@ -260,6 +319,9 @@ model Lead {
   name             String
   email            String
   phone            String?
+  whatsAppNumber   String?
+  phoneIsWhatsApp  Boolean          @default(true)
+  whatsAppConfirmed Boolean         @default(false)
   company          String?
   serviceType      ServiceType
   budgetRange      String?
@@ -283,6 +345,26 @@ model Lead {
   @@index([serviceType])
   @@index([source])
   @@index([email])
+}
+
+model Contact {
+  id              String   @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  whatsAppNumber  String?
+  phoneIsWhatsApp Boolean  @default(true)
+  whatsAppConfirmed Boolean @default(false)
+  company         String?
+  notes           String?
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([phone])
+  @@index([name])
 }
 
 model Booking {
@@ -354,6 +436,7 @@ model FinancialDocument {
   lineItems             DocumentLineItem[]
   payments              Payment[]      @relation("InvoicePayments")
   receiptForPayment     Payment?       @relation("PaymentReceipt")
+  sharedDocument        SharedDocument?
 
   @@index([siteId, createdAt])
   @@index([bookingId, type, status])
@@ -568,4 +651,171 @@ model CleanupRun {
 
   @@index([adminId, status, createdAt])
   @@index([expiresAt])
+}
+
+model BusinessDocument {
+  id                String                   @id @default(cuid())
+  documentNumber    String?                  @unique
+  documentType      BusinessDocumentType
+  status            BusinessDocumentStatus   @default(DRAFT)
+  title             String
+  slug              String?                  @unique
+  subject           String?
+  siteId            String?
+  contactId         String?
+  leadId            String?
+  projectId         String?
+  serviceId         String?
+  templateId        String?
+  revisionOfId      String?
+
+  companyName       String?
+  recipientName     String?
+  recipientEmail    String?
+  recipientPhone    String?
+  recipientWhatsApp String?
+
+  issueDate         DateTime?
+  expiryDate        DateTime?
+  reviewDate        DateTime?
+
+  contentMarkdown   String                   @default("")
+  contentHtml       String?
+  internalNotes     String?
+
+  aiPromptContext   String?
+  aiTone            String?
+  aiStyle           String?
+  aiLength          String?
+
+  signatureRequired Boolean                  @default(false)
+  senderName        String?
+  senderRole        String?
+  senderUserId      String?
+
+  publicShare       SharedDocument?
+
+  acceptedAt        DateTime?
+  declinedReason    String?
+  declinedComment   String?
+  declinedAt        DateTime?
+  revokedAt         DateTime?
+
+  createdById       String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  site              Site?                     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  template          BusinessDocumentTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  revisionOf        BusinessDocument?          @relation("BusinessDocumentRevisions", fields: [revisionOfId], references: [id], onDelete: SetNull)
+  revisions         BusinessDocument[]         @relation("BusinessDocumentRevisions")
+  createdBy         User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  auditLog          BusinessDocumentAuditLog[]
+
+  @@index([siteId, status, createdAt])
+  @@index([documentType, status])
+  @@index([slug])
+  @@index([recipientEmail])
+  @@index([createdById])
+}
+
+model BusinessDocumentTemplate {
+  id                  String               @id @default(cuid())
+  name                String               @unique
+  documentCategory    BusinessDocumentType
+  documentType        String?
+  defaultTitle        String?
+  defaultSubject      String?
+  defaultBodyMarkdown String               @default("")
+  aiInstructions      String?
+  requiredSections    String[]             @default([])
+  optionalSections    String[]             @default([])
+  defaultTone         String               @default("Professional")
+  defaultStyle        String               @default("Structured")
+  defaultLength       String               @default("Medium")
+  signatureRequired   Boolean              @default(false)
+  senderName          String?
+  senderRole          String?
+  defaultEmailSubject String?
+  defaultEmailBody    String?
+  defaultWhatsAppMsg  String?
+  headerFooterEnabled Boolean              @default(false)
+  active              Boolean              @default(true)
+  sortOrder           Int                  @default(0)
+  createdById         String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  createdBy           User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  documents           BusinessDocument[]
+
+  @@index([documentCategory, active])
+  @@index([name])
+}
+
+model BusinessDocumentAuditLog {
+  id         String                      @id @default(cuid())
+  documentId String
+  action     BusinessDocumentAuditAction
+  detail     String?
+  metadata   Json?
+  userId     String?
+  createdAt  DateTime                    @default(now())
+  document   BusinessDocument            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, createdAt])
+  @@index([action])
+}
+
+model SharedDocument {
+  id               String    @id @default(cuid())
+  shortCode        String    @unique
+  documentType     String    // "financial" | "business"
+  financialDocumentId String? @unique
+  businessDocumentId  String? @unique
+  passwordHash     String?
+  shareEnabled     Boolean   @default(true)
+  expiresAt        DateTime?
+  firstViewedAt    DateTime?
+  lastViewedAt     DateTime?
+  viewCount        Int       @default(0)
+  downloadCount    Int       @default(0)
+  acceptedAt       DateTime?
+  declinedAt       DateTime?
+  declinedReason   String?
+  acceptedName     String?
+  acceptedComment  String?
+  acceptedIp       String?
+  acceptedUserAgent String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  financialDocument FinancialDocument? @relation(fields: [financialDocumentId], references: [id], onDelete: Cascade)
+  businessDocument  BusinessDocument?  @relation(fields: [businessDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([shortCode])
+  @@index([expiresAt])
+  @@index([documentType])
+}
+
+model DocumentSettings {
+  id                        String   @id @default(cuid())
+  siteId                    String?  @unique
+  defaultSenderName         String   @default("Martin Mukoya")
+  defaultSenderRole         String   @default("Managing Director")
+  defaultSignature          String   @default("")
+  backdropEnabled           Boolean  @default(true)
+  defaultBusinessExpiryDays Int      @default(30)
+  defaultProposalValidity   Int      @default(30)
+  defaultEmailSubject       String   @default("Document {{documentNumber}} from FlexTech Media")
+  defaultEmailBody          String   @default("Hello {{recipientName}},\n\nPlease find the document below.\n\n{{shareLink}}\n\nRegards,\n{{senderName}}")
+  defaultWhatsAppMsg        String   @default("Good afternoon {{recipientName}},\n\nPlease find your document below:\n{{shareLink}}\n\nRegards,\n{{senderName}}")
+  aiDefaultTone             String   @default("Professional")
+  aiDefaultStyle            String   @default("Structured")
+  aiDefaultLength           String   @default("Medium")
+  acceptanceEnabled         Boolean  @default(true)
+  publicSharingDefaults     Json?    @default("{\"enabled\":true,\"expiryDays\":90}")
+  trackingDefaults          Json?    @default("{\"trackViews\":true,\"trackDownloads\":true}")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  site                      Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
 }

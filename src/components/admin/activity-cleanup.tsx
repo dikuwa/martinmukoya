@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 type Counts = {
   leads: number; contactMessages: number; chatSessions: number;
   chatMessages: number; analyticsEvents: number; notifications: number;
+  bookings: number; financialDocuments: number; documentLineItems: number; payments: number;
 };
 
 const labels: Record<keyof Counts, string> = {
   leads: "Leads", contactMessages: "Contact messages", chatSessions: "Chat sessions",
-  chatMessages: "Chat messages", analyticsEvents: "Analytics events", notifications: "Notifications"
+  chatMessages: "Chat messages", analyticsEvents: "Analytics events", notifications: "Notifications",
+  bookings: "Bookings", financialDocuments: "Financial documents", documentLineItems: "Document line items", payments: "Payments"
 };
 const confirmationPhrase = "RESET ALL ACTIVITY";
 
@@ -36,6 +38,7 @@ export function ActivityCleanup() {
     finally { setBusy(null); }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- initial server preview fetch owns the loading state
   useEffect(() => { void loadPreview(); }, [loadPreview]);
   const total = useMemo(() => counts ? Object.values(counts).reduce((sum, count) => sum + count, 0) : 0, [counts]);
 

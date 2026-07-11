@@ -34,11 +34,26 @@ export async function POST(request: Request) {
       const notifications = await tx.notification.deleteMany({ where: { createdAt } });
       const analyticsEvents = await tx.analyticsEvent.deleteMany({ where: { createdAt } });
       const contactMessages = await tx.contactMessage.deleteMany({ where: { createdAt } });
+      const eligibleBookings = await tx.booking.findMany({
+        where: {
+          createdAt,
+          documents: { none: { createdAt: { gt: run.cutoffAt } } },
+          payments: { none: { createdAt: { gt: run.cutoffAt } } }
+        },
+        select: { id: true }
+      });
+      const bookingIds = eligibleBookings.map((booking) => booking.id);
+      const payments = await tx.payment.deleteMany({ where: { bookingId: { in: bookingIds } } });
+      const documentLineItems = await tx.documentLineItem.deleteMany({ where: { document: { bookingId: { in: bookingIds } } } });
+      const financialDocuments = await tx.financialDocument.deleteMany({ where: { bookingId: { in: bookingIds } } });
+      const bookings = await tx.booking.deleteMany({ where: { id: { in: bookingIds } } });
       const leads = await tx.lead.deleteMany({ where: { createdAt } });
       const counts = {
         leads: leads.count, contactMessages: contactMessages.count,
         chatSessions: chatSessions.count, chatMessages: chatMessages.count,
-        analyticsEvents: analyticsEvents.count, notifications: notifications.count
+        analyticsEvents: analyticsEvents.count, notifications: notifications.count,
+        bookings: bookings.count, financialDocuments: financialDocuments.count,
+        documentLineItems: documentLineItems.count, payments: payments.count
       };
       await tx.$executeRaw`
         UPDATE "CleanupRun" SET "status" = 'COMPLETED', "deletedCounts" = ${JSON.stringify(counts)}::jsonb, "completedAt" = NOW()

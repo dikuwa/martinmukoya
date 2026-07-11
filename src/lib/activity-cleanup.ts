@@ -11,24 +11,32 @@ export type ActivityCounts = {
   chatMessages: number;
   analyticsEvents: number;
   notifications: number;
+  bookings: number;
+  financialDocuments: number;
+  documentLineItems: number;
+  payments: number;
 };
 
 export const preservedResources = [
   "Projects", "Blog posts", "Testimonials", "FAQs", "Site settings",
-  "Sites", "Uploaded media", "Admin accounts", "Active sessions", "Financial records"
+  "Sites", "Uploaded media", "Admin accounts", "Active sessions", "Business documents", "Document templates"
 ];
 
 export async function countActivity(cutoffAt = new Date()): Promise<ActivityCounts> {
   const createdAt = { lte: cutoffAt };
-  const [leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications] = await Promise.all([
+  const [leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications, bookings, financialDocuments, documentLineItems, payments] = await Promise.all([
     db.lead.count({ where: { createdAt } }),
     db.contactMessage.count({ where: { createdAt } }),
     db.chatSession.count({ where: { createdAt } }),
     db.chatMessage.count({ where: { createdAt } }),
     db.analyticsEvent.count({ where: { createdAt } }),
-    db.notification.count({ where: { createdAt } })
+    db.notification.count({ where: { createdAt } }),
+    db.booking.count({ where: { createdAt } }),
+    db.financialDocument.count({ where: { createdAt } }),
+    db.documentLineItem.count({ where: { document: { createdAt } } }),
+    db.payment.count({ where: { createdAt } })
   ]);
-  return { leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications };
+  return { leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications, bookings, financialDocuments, documentLineItems, payments };
 }
 
 function spreadsheetValue(value: unknown): string | number | boolean | Date | null {
@@ -45,18 +53,24 @@ function rowsForSheet(rows: object[]) {
 
 export async function createActivityWorkbook(cutoffAt: Date) {
   const createdAt = { lte: cutoffAt };
-  const [leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications] = await Promise.all([
+  const [leads, contactMessages, chatSessions, chatMessages, analyticsEvents, notifications, bookings, financialDocuments, documentLineItems, payments] = await Promise.all([
     db.lead.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
     db.contactMessage.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
     db.chatSession.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
     db.chatMessage.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
     db.analyticsEvent.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
-    db.notification.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } })
+    db.notification.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
+    db.booking.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
+    db.financialDocument.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } }),
+    db.documentLineItem.findMany({ where: { document: { createdAt } }, orderBy: { sortOrder: "asc" } }),
+    db.payment.findMany({ where: { createdAt }, orderBy: { createdAt: "asc" } })
   ]);
   const counts: ActivityCounts = {
     leads: leads.length, contactMessages: contactMessages.length,
     chatSessions: chatSessions.length, chatMessages: chatMessages.length,
-    analyticsEvents: analyticsEvents.length, notifications: notifications.length
+    analyticsEvents: analyticsEvents.length, notifications: notifications.length,
+    bookings: bookings.length, financialDocuments: financialDocuments.length,
+    documentLineItems: documentLineItems.length, payments: payments.length
   };
   const workbook = XLSX.utils.book_new();
   const summary = [
@@ -66,7 +80,8 @@ export async function createActivityWorkbook(cutoffAt: Date) {
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(summary), "Summary");
   const sheets: Array<[string, object[]]> = [
     ["Leads", leads], ["Contact Messages", contactMessages], ["Chat Sessions", chatSessions],
-    ["Chat Messages", chatMessages], ["Analytics", analyticsEvents], ["Notifications", notifications]
+    ["Chat Messages", chatMessages], ["Analytics", analyticsEvents], ["Notifications", notifications],
+    ["Bookings", bookings], ["Financial Documents", financialDocuments], ["Document Line Items", documentLineItems], ["Payments", payments]
   ];
   for (const [name, rows] of sheets) {
     const sheet = rows.length ? XLSX.utils.json_to_sheet(rowsForSheet(rows)) : XLSX.utils.aoa_to_sheet([["No records"]]);

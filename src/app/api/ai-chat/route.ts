@@ -8,6 +8,7 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCurrentSite } from "@/lib/sites";
 import { getSiteBySlug } from "@/lib/sites";
 import { newVisitorToken, requestHuman } from "@/lib/live-chat";
+import { createChatbotResponse } from "@/lib/ai/chatbot-service";
 
 // Basic content guardrails (simple black-list). For production replace with moderation API.
 const FORBIDDEN_RE = /\b(bomb|kill|terror|explosive|suicide|rape|child abuse)\b/i;
@@ -213,7 +214,7 @@ function publicApiErrorMessage() {
   return "The AI assistant is temporarily unavailable. Please try again later, or use the contact form to get in touch directly.";
 }
 
-type AIProvider = "openrouter" | "openai";
+type AIProvider = "openrouter";
 
 function getProviderConfig(): {
   provider: AIProvider | null;
@@ -222,18 +223,7 @@ function getProviderConfig(): {
   model: string;
   extraHeaders: Record<string, string>;
 } {
-  const openAIKey = process.env.OPENAI_API_KEY;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-
-  if (openAIKey) {
-    return {
-      provider: "openai",
-      endpoint: "https://api.openai.com/v1/chat/completions",
-      apiKey: openAIKey,
-      model: process.env.OPENAI_MODEL || "gpt-4o",
-      extraHeaders: {}
-    };
-  }
 
   if (openRouterKey) {
     return {
@@ -394,13 +384,6 @@ export async function POST(req: Request) {
     await invalidateTag(tags.chatSessions);
     await invalidateTag(tags.dashboard);
 
-    // Determine AI provider — prefer OpenAI, fall back to OpenRouter
-    const config = getProviderConfig();
-
-    if (!config.provider) {
-      return streamAndSaveFallback(activeSession.id, activeSession.visitorToken, content, fallbackAssistantReply(content, activeSiteSlug));
-    }
-
     const recentMessages = await db.chatMessage.findMany({
       where: { sessionId: activeSession.id },
       orderBy: { createdAt: "asc" },
@@ -409,6 +392,34 @@ export async function POST(req: Request) {
 
     // Call the AI provider's streaming API with site-aware system prompt
     const systemPrompt = buildSystemPrompt(activeSiteSlug);
+
+    if (process.env.OPENAI_CHATBOT_API_KEY?.trim()) {
+      try {
+        const reply = await createChatbotResponse(systemPrompt, recentMessages.map((message) => ({
+          role: message.role === "AI" ? "assistant" : "user",
+          content: message.content
+        })));
+        const response = await streamAndSaveFallback(activeSession.id, activeSession.visitorToken, content, reply);
+        response.headers.set("X-Assistant-Provider", "openai-chatbot");
+        return response;
+      } catch (error) {
+        console.error("[chatbot-ai] OpenAI response unavailable", {
+          name: error instanceof Error ? error.name : "UnknownError",
+          status: typeof error === "object" && error && "status" in error ? error.status : undefined,
+          code: typeof error === "object" && error && "code" in error ? error.code : undefined
+        });
+        const errorMessage = publicApiErrorMessage();
+        await db.chatMessage.create({ data: { sessionId: activeSession.id, role: "AI", content: errorMessage } });
+        return Response.json({ error: errorMessage }, {
+          status: 503,
+          headers: { "X-Chat-Session-Id": activeSession.id, "X-Chat-Visitor-Token": activeSession.visitorToken, "X-Assistant-Provider": "openai-chatbot-error" }
+        });
+      }
+    }
+
+    // Preserve the existing OpenRouter fallback when the chatbot OpenAI key is not configured.
+    const config = getProviderConfig();
+    if (!config.provider) return streamAndSaveFallback(activeSession.id, activeSession.visitorToken, content, fallbackAssistantReply(content, activeSiteSlug));
 
     const aiRes = await fetch(config.endpoint, {
       method: "POST",
