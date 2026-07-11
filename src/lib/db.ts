@@ -8,7 +8,10 @@ function getPgPool() {
   if (!globalForPrisma.pgPool) {
     globalForPrisma.pgPool = new Pool({
       connectionString: process.env.DATABASE_URL!,
-      max: 1
+      max: 1,
+      idleTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 10_000,
+      allowExitOnIdle: true
     });
   }
 
