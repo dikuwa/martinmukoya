@@ -15,6 +15,15 @@ import {
 
 interface BlogEditorProps { value: string; onChange: (value: string) => void; error?: string }
 
+type FormatKey = "paragraph" | "h1" | "h2" | "h3" | "bold" | "italic" | "underline" | "strike" | "bullet" | "numbered" | "checklist" | "blockquote" | "link" | "table" | "code";
+type FormatState = Record<FormatKey, boolean> & { undo: boolean; redo: boolean };
+
+const initialFormatState: FormatState = {
+  paragraph: true, h1: false, h2: false, h3: false, bold: false, italic: false, underline: false,
+  strike: false, bullet: false, numbered: false, checklist: false, blockquote: false, link: false,
+  table: false, code: false, undo: false, redo: false,
+};
+
 function inline(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
   if (!(node instanceof HTMLElement)) return "";
@@ -85,6 +94,24 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const [resizing, setResizing] = useState(false);
   const [urlAction, setUrlAction] = useState<"link" | "image" | null>(null);
   const [urlValue, setUrlValue] = useState("");
+  const [formats, setFormats] = useState<FormatState>(initialFormatState);
+
+  const updateFormats = useCallback(() => {
+    const editor = editorRef.current;
+    const selection = document.getSelection();
+    if (!editor || !selection?.anchorNode || !editor.contains(selection.anchorNode)) return;
+    const anchor = selection.anchorNode.nodeType === Node.ELEMENT_NODE ? selection.anchorNode as Element : selection.anchorNode.parentElement;
+    const block = document.queryCommandValue("formatBlock").toLowerCase().replace(/[<>]/g, "");
+    const inside = (selector: string) => Boolean(anchor?.closest(selector));
+    setFormats({
+      paragraph: !block || block === "p" || block === "div", h1: block === "h1", h2: block === "h2", h3: block === "h3",
+      bold: document.queryCommandState("bold"), italic: document.queryCommandState("italic"), underline: document.queryCommandState("underline"),
+      strike: document.queryCommandState("strikeThrough"), bullet: document.queryCommandState("insertUnorderedList") && !inside("li:has(input[type='checkbox'])"),
+      numbered: document.queryCommandState("insertOrderedList"), checklist: inside("li:has(input[type='checkbox'])"), blockquote: block === "blockquote",
+      link: inside("a"), table: inside("table"), code: block === "pre" || inside("pre"),
+      undo: document.queryCommandEnabled("undo"), redo: document.queryCommandEnabled("redo"),
+    });
+  }, []);
 
   useEffect(() => { lastValue.current = value; }, [value]);
 
@@ -101,8 +128,9 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       selection?.removeAllRanges();
       selection?.addRange(range);
       savedSelection.current = range.cloneRange();
+      updateFormats();
     }
-  }, []);
+  }, [updateFormats]);
 
   useEffect(() => {
     const rememberSelection = () => {
@@ -110,10 +138,11 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       const editor = editorRef.current;
       if (!editor || !selection?.rangeCount || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
       savedSelection.current = selection.getRangeAt(0).cloneRange();
+      updateFormats();
     };
     document.addEventListener("selectionchange", rememberSelection);
     return () => document.removeEventListener("selectionchange", rememberSelection);
-  }, []);
+  }, [updateFormats]);
 
   const emitChange = useCallback(() => {
     if (!editorRef.current) return;
@@ -133,7 +162,8 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
     const next = domToMarkdown(editorRef.current);
     lastValue.current = next;
     onChange(next);
-  }, [onChange]);
+    updateFormats();
+  }, [onChange, updateFormats]);
 
   const command = useCallback((name: string, argument?: string) => {
     editorRef.current?.focus();
@@ -196,19 +226,23 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   };
 
   const tools = [
-    ["Paragraph", Pilcrow, () => command("formatBlock", "p")], ["Heading 1", Heading1, () => command("formatBlock", "h1")], ["Heading 2", Heading2, () => command("formatBlock", "h2")], ["Heading 3", Heading3, () => command("formatBlock", "h3")],
-    ["Bold", Bold, () => command("bold")], ["Italic", Italic, () => command("italic")], ["Underline", Underline, () => command("underline")], ["Strikethrough", Strikethrough, () => command("strikeThrough")],
-    ["Bulleted list", List, () => command("insertUnorderedList")], ["Numbered list", ListOrdered, () => command("insertOrderedList")], ["Checklist", ListChecks, insertChecklist],
-    ["Blockquote", Quote, () => command("formatBlock", "blockquote")], ["Link", LinkIcon, () => openUrlInput("link")], ["Image URL", ImageIcon, () => openUrlInput("image")], ["Table", Table2, insertTable], ["Code block", Code2, () => command("formatBlock", "pre")],
-    ["Undo", Undo2, () => command("undo")], ["Redo", Redo2, () => command("redo")],
+    ["Paragraph", Pilcrow, () => command("formatBlock", "p"), "paragraph"], ["Heading 1", Heading1, () => command("formatBlock", "h1"), "h1"], ["Heading 2", Heading2, () => command("formatBlock", "h2"), "h2"], ["Heading 3", Heading3, () => command("formatBlock", "h3"), "h3"],
+    ["Bold", Bold, () => command("bold"), "bold"], ["Italic", Italic, () => command("italic"), "italic"], ["Underline", Underline, () => command("underline"), "underline"], ["Strikethrough", Strikethrough, () => command("strikeThrough"), "strike"],
+    ["Bulleted list", List, () => command("insertUnorderedList"), "bullet"], ["Numbered list", ListOrdered, () => command("insertOrderedList"), "numbered"], ["Checklist", ListChecks, insertChecklist, "checklist"],
+    ["Blockquote", Quote, () => command("formatBlock", "blockquote"), "blockquote"], ["Link", LinkIcon, () => openUrlInput("link"), "link"], ["Image URL", ImageIcon, () => openUrlInput("image"), null], ["Table", Table2, insertTable, "table"], ["Code block", Code2, () => command("formatBlock", "pre"), "code"],
+    ["Undo", Undo2, () => command("undo"), null], ["Redo", Redo2, () => command("redo"), null],
   ] as const;
 
   return <div className="grid min-w-0 gap-2">
     <div role="toolbar" aria-label="Rich text formatting" className="flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1.5">
-      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={action} aria-label={label} title={label} className={`${i === 4 || i === 8 || i === 11 || i === 16 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
+      {tools.map(([label, Icon, action, key], i) => {
+        const active = key ? formats[key] : false;
+        const disabled = label === "Undo" ? !formats.undo : label === "Redo" ? !formats.redo : false;
+        return <button key={label} type="button" disabled={disabled} onMouseDown={(event) => event.preventDefault()} onClick={action} aria-label={label} aria-pressed={key ? active : undefined} title={label} className={`${i === 4 || i === 8 || i === 11 || i === 16 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} ${active ? "bg-[color:var(--primary)] text-white shadow-sm" : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)]"} inline-flex h-9 min-w-9 items-center justify-center rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-35`}><Icon size={16}/></button>;
+      })}
       <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} aria-label="Upload and insert image" title="Upload image" className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] disabled:opacity-50">{uploading ? <Loader2 size={16} className="animate-spin"/> : <ImageIcon size={16}/>} Upload</button>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
-      <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
+      <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className={`${preview ? "bg-[color:var(--primary)] text-white" : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"} ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold transition`}><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
     </div>
     {urlAction ? <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-2">
       <label htmlFor="blog-editor-url" className="text-xs font-bold text-[color:var(--text-muted)]">{urlAction === "link" ? "Link URL" : "Image URL"}</label>
