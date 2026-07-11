@@ -67,6 +67,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const splitRef = useRef<HTMLDivElement>(null);
+  const savedSelection = useRef<Range | null>(null);
   const lastValue = useRef(value);
   // Keep React from reconciling the editable DOM on every keystroke (which
   // would move the browser selection/caret). The preview remains controlled.
@@ -79,6 +80,17 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   useEffect(() => { lastValue.current = value; }, [value]);
 
+  useEffect(() => {
+    const rememberSelection = () => {
+      const selection = document.getSelection();
+      const editor = editorRef.current;
+      if (!editor || !selection?.rangeCount || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
+      savedSelection.current = selection.getRangeAt(0).cloneRange();
+    };
+    document.addEventListener("selectionchange", rememberSelection);
+    return () => document.removeEventListener("selectionchange", rememberSelection);
+  }, []);
+
   const emitChange = useCallback(() => {
     if (!editorRef.current) return;
     const next = domToMarkdown(editorRef.current);
@@ -88,6 +100,11 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   const command = useCallback((name: string, argument?: string) => {
     editorRef.current?.focus();
+    if (savedSelection.current) {
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(savedSelection.current);
+    }
     document.execCommand(name, false, argument);
     emitChange();
   }, [emitChange]);
@@ -146,7 +163,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   return <div className="grid min-w-0 gap-2">
     <div role="toolbar" aria-label="Rich text formatting" className="flex flex-wrap items-center gap-1 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1.5">
       <select aria-label="Paragraph style" onChange={(e) => command("formatBlock", e.target.value)} defaultValue="p" className="h-9 rounded-md bg-[color:var(--surface-soft)] px-2 text-xs font-bold"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option></select>
-      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onClick={action} aria-label={label} title={label} className={`${i === 3 || i === 7 || i === 10 || i === 15 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
+      {tools.map(([label, Icon, action], i) => <button key={label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={action} aria-label={label} title={label} className={`${i === 3 || i === 7 || i === 10 || i === 15 ? "ml-1 border-l border-[color:var(--border-subtle)] pl-2" : ""} inline-flex h-9 min-w-9 items-center justify-center rounded-md text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]`}><Icon size={16}/></button>)}
       <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()} aria-label="Upload and insert image" title="Upload image" className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] disabled:opacity-50">{uploading ? <Loader2 size={16} className="animate-spin"/> : <ImageIcon size={16}/>} Upload</button>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); }}/>
       <button type="button" onClick={() => setPreview((v) => !v)} aria-pressed={preview} className="ml-auto inline-flex h-9 items-center gap-2 rounded-md px-2 text-xs font-bold text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)]"><Eye size={16}/>{preview ? "Editor" : "Preview"}</button>
@@ -159,7 +176,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
         {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
-          onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); if(file){e.preventDefault(); void upload(file);} }}
+          onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); e.preventDefault(); if(file) void upload(file); else command("insertText", e.clipboardData.getData("text/plain")); }}
           onDragOver={(e: DragEvent) => {e.preventDefault(); setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={(e: DragEvent) => {e.preventDefault(); setDragging(false); const file=Array.from(e.dataTransfer.files).find((f)=>f.type.startsWith("image/")); if(file) void upload(file);}}
           className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
