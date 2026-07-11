@@ -8,7 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 type Source = { key:string; kind:"booking"|"lead"; id:string; label:string; site:string; name:string; email:string; phone:string; company:string; description:string };
 type Invoice = { id:string; label:string; balance:number };
 type Line = { description:string; category:string; quantity:string; unitPrice:string };
-const input="h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
+const input="h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
 
 export function CreateDocumentPanel({sources,initialBooking,initialLead}:{sources:Source[];initialBooking?:string;initialLead?:string}){
   const router=useRouter(); const [sourceKey,setSourceKey]=useState(initialBooking?`booking:${initialBooking}`:initialLead?`lead:${initialLead}`:sources[0]?.key||""); const [type,setType]=useState("QUOTE"); const [lines,setLines]=useState<Line[]>([{description:"Project services",category:"service",quantity:"1",unitPrice:"0"}]); const [saving,setSaving]=useState(false);
