@@ -188,7 +188,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
           onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); e.preventDefault(); if(file) void upload(file); else command("insertText", e.clipboardData.getData("text/plain")); }}
           onDragOver={(e: DragEvent) => {e.preventDefault(); setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={(e: DragEvent) => {e.preventDefault(); setDragging(false); const file=Array.from(e.dataTransfer.files).find((f)=>f.type.startsWith("image/")); if(file) void upload(file);}}
-          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]" />
+          className="rich-blog-editor min-h-[560px] bg-[color:var(--editor-bg)] p-6 text-base font-normal leading-8 text-[color:var(--editor-text)] outline-none focus:bg-[color:var(--editor-bg-active)]" />
       </div>
       <div
         role="separator"
