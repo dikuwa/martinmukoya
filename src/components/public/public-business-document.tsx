@@ -90,7 +90,7 @@ export function PublicBusinessDocument({ document: doc, shortCode, hideDocumentC
   return (
     <div className="mx-auto max-w-[900px]">
       {/* Header bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white/80 px-5 py-3 shadow-sm backdrop-blur-sm">
+      <div className={`action-bar mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white/80 px-5 py-3 shadow-sm backdrop-blur-sm ${hideDocumentContent ? "mt-10 md:mt-14" : ""}`}>
         <div>
           <p className="text-xs font-bold uppercase tracking-[.2em] text-[color:var(--text-faint)]">
             {docTypeLabels[doc.documentType] || doc.documentType}

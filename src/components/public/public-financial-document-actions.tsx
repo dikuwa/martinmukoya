@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Download, Printer, Share2 } from "lucide-react";
+import { Check, Copy, Download, Printer } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Props = {
@@ -12,26 +12,6 @@ type Props = {
 
 export function PublicFinancialDocumentActions({ shortCode, documentNumber, documentType }: Props) {
   const [copied, setCopied] = useState(false);
-
-  async function shareDocument() {
-    const url = window.location.href;
-    const title = `${documentType} ${documentNumber || "document"}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        return;
-      }
-
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Share link copied");
-      window.setTimeout(() => setCopied(false), 2500);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      toast.error("Could not share this document");
-    }
-  }
 
   async function copyLink() {
     try {
@@ -64,13 +44,6 @@ export function PublicFinancialDocumentActions({ shortCode, documentNumber, docu
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2 md:mt-0 md:justify-end">
-        <button
-          type="button"
-          onClick={shareDocument}
-          className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--border-subtle)] bg-white px-4 py-2.5 text-sm font-bold text-[color:var(--text)] hover:bg-[color:var(--surface-soft)]"
-        >
-          <Share2 size={16} /> Share
-        </button>
         <button
           type="button"
           onClick={() => window.print()}

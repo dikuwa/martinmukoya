@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppShareDialog } from "@/components/admin/whatsapp-share-dialog";
 import { EmailShareDialog } from "@/components/admin/email-share-dialog";
@@ -28,22 +29,13 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
   const [emailOpen, setEmailOpen] = useState(false);
   const [unresolvedWarning, setUnresolvedWarning] = useState<string[] | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [activeLink, setActiveLink] = useState(shortLink || "");
 
   const getUnresolved = useCallback((): string[] => {
     if (!doc.contentMarkdown) return [];
     const content = `${doc.title}\n${doc.contentMarkdown}`;
     return findUnresolvedPlaceholders(content);
   }, [doc.contentMarkdown, doc.title]);
-
-  const checkAndExecute = useCallback(async (action: string, success: string) => {
-    const unresolved = getUnresolved();
-    if (unresolved.length > 0) {
-      setUnresolvedWarning(unresolved);
-      setPendingAction(action);
-      return;
-    }
-    await executeAction(action, success);
-  }, [getUnresolved]);
 
   const executeAction = useCallback(async (action: string, success: string) => {
     setBusy(true);
@@ -64,8 +56,18 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
     }
   }, [doc.id, router]);
 
+  const checkAndExecute = useCallback(async (action: string, success: string) => {
+    const unresolved = getUnresolved();
+    if (unresolved.length > 0) {
+      setUnresolvedWarning(unresolved);
+      setPendingAction(action);
+      return;
+    }
+    await executeAction(action, success);
+  }, [executeAction, getUnresolved]);
+
   const copyLink = useCallback(async () => {
-    if (!shortLink) {
+    if (!activeLink) {
       const unresolved = getUnresolved();
       if (unresolved.length > 0) {
         setUnresolvedWarning(unresolved);
@@ -81,7 +83,9 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to create link");
         const baseUrl = window.location.origin;
-        await navigator.clipboard.writeText(`${baseUrl}/d/${data.shortCode}`);
+        const link = `${baseUrl}/d/${data.shortCode}`;
+        setActiveLink(link);
+        await navigator.clipboard.writeText(link);
         toast.success("Share link copied");
         router.refresh();
       } catch (e) {
@@ -89,9 +93,9 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
       }
       return;
     }
-    await navigator.clipboard.writeText(shortLink);
+    await navigator.clipboard.writeText(activeLink);
     toast.success("Share link copied");
-  }, [shortLink, doc.id, router, getUnresolved]);
+  }, [activeLink, doc.id, router, getUnresolved]);
 
   const handleProceedAnyway = useCallback(() => {
     if (pendingAction === "copyLink") {
@@ -107,7 +111,9 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
         .then(res => res.json())
         .then(data => {
           const baseUrl = window.location.origin;
-          navigator.clipboard.writeText(`${baseUrl}/d/${data.shortCode}`);
+          const link = `${baseUrl}/d/${data.shortCode}`;
+          setActiveLink(link);
+          navigator.clipboard.writeText(link);
           toast.success("Share link copied");
           router.refresh();
         })
@@ -124,13 +130,23 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
         {doc.status === "DRAFT" ? (
           <>
             <Button onClick={() => checkAndExecute("issue", "")} disabled={busy}>Issue document</Button>
-            <Button variant="secondary" onClick={copyLink} disabled={busy}>Create share link</Button>
+            <Button variant="secondary" onClick={copyLink} disabled={busy}>{activeLink ? "Copy link" : "Create share link"}</Button>
+            {activeLink && (
+              <Button variant="secondary" onClick={() => window.open(activeLink, "_blank", "noopener,noreferrer")}>
+                <ExternalLink size={15} /> Open
+              </Button>
+            )}
           </>
         ) : (
           <>
             <Button variant="secondary" onClick={copyLink} disabled={busy}>
-              {shortLink ? "Copy link" : "Create link"}
+              {activeLink ? "Copy link" : "Create link"}
             </Button>
+            {activeLink && (
+              <Button variant="secondary" onClick={() => window.open(activeLink, "_blank", "noopener,noreferrer")}>
+                <ExternalLink size={15} /> Open
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setEmailOpen(true)} disabled={busy}>Email</Button>
             <Button variant="secondary" onClick={() => setWhatsappOpen(true)} disabled={busy}>WhatsApp</Button>
             {doc.status !== "DECLINED" && doc.status !== "REVOKED" && doc.status !== "ACCEPTED" && (
