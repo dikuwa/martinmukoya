@@ -9,6 +9,7 @@ import { DashboardSelect } from "@/components/ui/dashboard-select";
 type Action = "generate" | "improve" | "professional" | "concise" | "expand" | "grammar" | "structure" | "seo-title" | "excerpt" | "tags" | "seo-description";
 type Props = {
   title: string; content: string; category?: string; tags?: string[];
+  surface?: "blog" | "business-document" | "template";
   onApplyContent: (value: string) => void;
   onApplyMetadata: (action: Action, value: string) => void;
 };
@@ -26,7 +27,7 @@ const tones = ["Professional", "Formal", "Friendly", "Persuasive", "Direct", "Te
 const styles = ["Structured", "Concise", "Detailed", "Conversational", "Marketing-style"];
 const lengths = ["Short", "Medium", "Long"];
 
-export function AiWritingAssistant({ title, content, category, tags, onApplyContent, onApplyMetadata }: Props) {
+export function AiWritingAssistant({ title, content, category, tags, surface = "blog", onApplyContent, onApplyMetadata }: Props) {
   const [action, setAction] = useState<Action>("generate");
   const [tone, setTone] = useState("Professional");
   const [style, setStyle] = useState("Structured");
@@ -38,7 +39,7 @@ export function AiWritingAssistant({ title, content, category, tags, onApplyCont
     if (!title.trim() && !content.trim()) return toast.error("Add a title, rough idea, or existing content first.");
     setLoading(true); setSuggestion(null);
     try {
-      const response = await fetch("/api/admin/ai/writing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ surface: "blog", action, title, content, category, tags, tone, style, length }) });
+      const response = await fetch("/api/admin/ai/writing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ surface, action, title, content, category, tags, tone, style, length }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "AI request failed.");
       setSuggestion(payload.output);

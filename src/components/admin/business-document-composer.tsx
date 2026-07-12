@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import { Loader2, Save } from "lucide-react";
 import { BlogEditor } from "@/components/admin/blog-editor";
@@ -11,15 +11,17 @@ import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { ManualLeadForm, type LeadOption } from "@/components/admin/manual-lead-form";
+import { buildDocumentTemplateContext, findUnresolvedPlaceholders, getTemplateMarkdown, resolveTemplatePlaceholders } from "@/lib/business-document-templates";
 
 type Template = {
   id: string; name: string; documentCategory: string; defaultTitle?: string | null;
   defaultBodyMarkdown?: string; defaultTone?: string; defaultStyle?: string; defaultLength?: string;
+  defaultSubject?: string | null;
   signatureRequired?: boolean; senderName?: string | null; senderRole?: string | null;
 };
 
 type Lead = LeadOption & { phoneIsWhatsApp?: boolean; };
-type Project = { id: string; title: string; slug: string; };
+type Project = { id: string; title: string; slug: string; summary?: string; description?: string; };
 type Site = { id: string; name: string };
 
 const docTypes = [
@@ -80,15 +82,24 @@ type Props = {
   projects: Project[];
   sites: Site[];
   initial?: InitialDoc | null;
+  business: { name: string; email: string; phone: string; address: string };
+  currentUser: { name: string; roleTitle: string };
+  generatedIssueDate: string;
 };
 
-export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, sites, initial }: Props) {
+export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, sites, initial, business, currentUser, generatedIssueDate }: Props) {
   const router = useRouter();
   const isEdit = !!initial?.id;
   const [saving, setSaving] = useState(false);
   const [leads, setLeads] = useState(initialLeads);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [pendingLead, setPendingLead] = useState<Lead | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
+  const [unresolvedForSave, setUnresolvedForSave] = useState<string[]>([]);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
+  const lastAppliedContent = useRef(initial?.contentMarkdown || "");
+  const lastAppliedTitle = useRef(initial?.title || "");
+  const lastAppliedSubject = useRef(initial?.subject || "");
 
   // Form state
   const [documentType, setDocumentType] = useState(initial?.documentType || "PROPOSAL");
@@ -105,7 +116,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [contentMarkdown, setContentMarkdown] = useState(initial?.contentMarkdown || "");
   const [internalNotes, setInternalNotes] = useState(initial?.internalNotes || "");
   const [expiryDate, setExpiryDate] = useState(initial?.expiryDate ? initial.expiryDate.slice(0, 10) : "");
-  const [issueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : "");
+  const [issueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : generatedIssueDate);
   const [reviewDate] = useState(initial?.reviewDate ? initial.reviewDate.slice(0, 10) : "");
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
@@ -113,20 +124,55 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [tone, setTone] = useState(initial?.aiTone || "Professional");
   const [style, setStyle] = useState(initial?.aiStyle || "Structured");
   const [docLength, setDocLength] = useState(initial?.aiLength || "Medium");
+  const documentReference = initial?.documentNumber;
 
   // Find the selected template to pre-fill content
   const template = useMemo(() => templates.find((t) => t.id === selectedTemplate), [templates, selectedTemplate]);
 
-  const applyTemplate = useCallback((tpl: Template) => {
-    setTitle(tpl.defaultTitle || "");
-    setContentMarkdown(tpl.defaultBodyMarkdown || "");
-    setTone(tpl.defaultTone || "Professional");
-    setStyle(tpl.defaultStyle || "Structured");
-    setDocLength(tpl.defaultLength || "Medium");
-    setSignatureRequired(tpl.signatureRequired ?? false);
-    setSenderName(tpl.senderName || "");
-    setSenderRole(tpl.senderRole || "");
-  }, []);
+  const applyTemplate = useCallback(async (tpl: Template) => {
+    setApplyingTemplate(true);
+    try {
+      const response = await fetch(`/api/admin/business-templates/${tpl.id}`);
+      const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "Unable to load the selected template.");
+      if (!payload || typeof payload !== "object") throw new Error("The template response was invalid.");
+      const markdown = getTemplateMarkdown(payload);
+      if (!markdown) throw new Error("The selected template has no Markdown content.");
+      const lead = leads.find((item) => item.id === selectedLead);
+      const project = projects.find((item) => item.id === selectedProject);
+      const context = buildDocumentTemplateContext({
+        values: { title, subject, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, senderName: senderName || tpl.senderName || "", senderRole: senderRole || tpl.senderRole || "", issueDate, expiryDate, reviewDate },
+        lead, project, business, currentUser, documentReference,
+      });
+      const resolvedTitle = resolveTemplatePlaceholders(typeof payload.defaultTitle === "string" ? payload.defaultTitle : "", context);
+      const contextWithTitle = { ...context, document_title: resolvedTitle || title, document: { ...(context.document as Record<string, unknown>), title: resolvedTitle || title } };
+      const resolvedSubject = resolveTemplatePlaceholders(typeof payload.defaultSubject === "string" ? payload.defaultSubject : "", contextWithTitle);
+      const resolvedContent = resolveTemplatePlaceholders(markdown, { ...contextWithTitle, document_subject: resolvedSubject || subject, document: { ...(contextWithTitle.document as Record<string, unknown>), subject: resolvedSubject || subject } });
+      if (resolvedTitle.trim() && (!title.trim() || title === lastAppliedTitle.current)) { setTitle(resolvedTitle); lastAppliedTitle.current = resolvedTitle; }
+      if (resolvedSubject.trim() && (!subject.trim() || subject === lastAppliedSubject.current)) { setSubject(resolvedSubject); lastAppliedSubject.current = resolvedSubject; }
+      setContentMarkdown(resolvedContent);
+      lastAppliedContent.current = resolvedContent;
+      setTone(typeof payload.defaultTone === "string" ? payload.defaultTone : "Professional");
+      setStyle(typeof payload.defaultStyle === "string" ? payload.defaultStyle : "Structured");
+      setDocLength(typeof payload.defaultLength === "string" ? payload.defaultLength : "Medium");
+      setSignatureRequired(typeof payload.signatureRequired === "boolean" ? payload.signatureRequired : false);
+      if (!senderName && typeof payload.senderName === "string") setSenderName(payload.senderName);
+      if (!senderRole && typeof payload.senderRole === "string") setSenderRole(payload.senderRole);
+      toast.success("Template applied to the document.");
+    } catch (error) {
+      console.error("Failed to apply document template:", error);
+      toast.error(error instanceof Error ? error.message : "Unable to apply the selected template.");
+    } finally {
+      setApplyingTemplate(false);
+      setPendingTemplate(null);
+    }
+  }, [business, companyName, currentUser, documentReference, expiryDate, issueDate, leads, projects, recipientEmail, recipientName, recipientPhone, recipientWhatsApp, reviewDate, selectedLead, selectedProject, senderName, senderRole, subject, title]);
+
+  const requestApplyTemplate = useCallback(() => {
+    if (!template) { toast.error("Select a template first."); return; }
+    if (contentMarkdown.trim() && contentMarkdown !== lastAppliedContent.current) setPendingTemplate(template);
+    else void applyTemplate(template);
+  }, [applyTemplate, contentMarkdown, template]);
 
   const fillFromLead = useCallback((ld: Lead) => {
     setRecipientName(ld.name);
@@ -137,8 +183,11 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   }, []);
   const recipientHasValues = Boolean(recipientName || recipientEmail || recipientPhone || recipientWhatsApp || companyName);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (allowUnresolved = false) => {
     if (!title.trim()) { toast.error("Title is required"); return; }
+    const unresolved = findUnresolvedPlaceholders(`${title}\n${subject}\n${contentMarkdown}`);
+    if (unresolved.length && !allowUnresolved) { setUnresolvedForSave(unresolved); return; }
+    setUnresolvedForSave([]);
     setSaving(true);
     try {
       const body = {
@@ -204,8 +253,8 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
               className={`${inputClass} flex-1`}
             />
             {template && (
-              <Button type="button" variant="secondary" size="sm" onClick={() => applyTemplate(template)}>
-                Apply
+              <Button type="button" variant="secondary" size="sm" disabled={applyingTemplate} onClick={requestApplyTemplate}>
+                {applyingTemplate ? <><Loader2 size={14} className="animate-spin" /> Applying…</> : "Apply"}
               </Button>
             )}
           </div>
@@ -249,6 +298,8 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
 
       {showLeadForm && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Create new lead"><div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-5 shadow-xl"><h2 className="mb-5 font-display text-2xl font-black">Create new lead</h2><ManualLeadForm sites={sites.map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/></div></div>}
       {pendingLead && <div className="fixed inset-0 z-[110] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Replace recipient details"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Replace recipient details?</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">You already entered recipient information. Replace it with details from {pendingLead.name}?</p><div className="mt-5 flex gap-3"><Button type="button" onClick={() => { fillFromLead(pendingLead); setPendingLead(null); }}>Replace details</Button><Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button></div></div></div>}
+      {pendingTemplate && <div className="fixed inset-0 z-[110] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Replace document content"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Replace document content?</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">Applying {pendingTemplate.name} will replace your current document content. This cannot be undone after saving.</p><div className="mt-5 flex gap-3"><Button type="button" onClick={() => void applyTemplate(pendingTemplate)}>Replace content</Button><Button type="button" variant="secondary" onClick={() => setPendingTemplate(null)}>Cancel</Button></div></div></div>}
+      {unresolvedForSave.length > 0 && <div className="fixed inset-0 z-[120] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Unresolved template fields"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Unresolved template fields</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">Complete these fields before finalising the document:</p><ul className="mt-3 list-disc pl-5 text-sm text-[color:var(--text-muted)]">{unresolvedForSave.map((key) => <li key={key}>{key}</li>)}</ul><div className="mt-5 flex flex-wrap gap-3"><Button type="button" variant="secondary" onClick={() => setUnresolvedForSave([])}>Return to document</Button><Button type="button" onClick={() => void handleSave(true)}>Save as draft anyway</Button></div></div></div>}
 
       {/* Recipient details */}
       <div className="grid gap-5 md:grid-cols-3">
@@ -299,6 +350,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
 
       {/* AI Writing Assistant */}
       <AiWritingAssistant
+        surface="business-document"
         title={title}
         content={contentMarkdown}
         onApplyContent={(value) => {
@@ -336,10 +388,10 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={() => void handleSave()} disabled={saving}>
           {saving ? <><Loader2 size={15} className="animate-spin" /> Saving...</> : <><Save size={15} /> {isEdit ? "Save draft" : "Create draft"}</>}
         </Button>
-        {isEdit && <Button variant="secondary" disabled={saving} onClick={handleSave}>Save & continue editing</Button>}
+        {isEdit && <Button variant="secondary" disabled={saving} onClick={() => void handleSave()}>Save & continue editing</Button>}
         <Button variant="secondary" onClick={() => router.push("/admin/business-documents")}>Cancel</Button>
       </div>
     </div>

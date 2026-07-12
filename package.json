@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test tests/*.test.ts",
     "remotion:studio": "remotion studio remotion/index.ts",
     "remotion:render:wide": "remotion render remotion/index.ts MartinOutcomeWide out/martin-outcome-wide.mp4",
     "remotion:render:vertical": "remotion render remotion/index.ts MartinOutcomeVertical out/martin-outcome-vertical.mp4",

@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element, react-hooks/refs */
 
 import { type ClipboardEvent, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -86,7 +86,6 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
   const lastValue = useRef(value);
   // Keep React from reconciling the editable DOM on every keystroke (which
   // would move the browser selection/caret). The preview remains controlled.
-  const initialValue = useRef(value);
   const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -113,7 +112,14 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
     });
   }, []);
 
-  useEffect(() => { lastValue.current = value; }, [value]);
+  // Template and AI actions update the controlled value outside the editable
+  // DOM. Rehydrate only for genuine external changes so typing keeps its caret.
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || value === lastValue.current) return;
+    if (initialContentRef.current) editor.innerHTML = initialContentRef.current.innerHTML || "<p><br></p>";
+    lastValue.current = value;
+  }, [value]);
 
   useLayoutEffect(() => {
     if (editorRef.current && initialContentRef.current) {
@@ -256,7 +262,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       style={{ "--editor-fr": `${editorWidth}fr`, "--preview-fr": `${100 - editorWidth}fr` } as CSSProperties}
     >
       <div ref={initialContentRef} className="hidden" aria-hidden="true">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{initialValue.current}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{value}</ReactMarkdown>
       </div>
       <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
         {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
