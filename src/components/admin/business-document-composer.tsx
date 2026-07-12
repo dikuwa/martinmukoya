@@ -21,7 +21,7 @@ type Template = {
 };
 
 type Lead = LeadOption & { phoneIsWhatsApp?: boolean; };
-type Project = { id: string; title: string; slug: string; summary?: string; description?: string; };
+type Project = { id: string; title: string; slug: string; summary?: string; description?: string; outcome?: string | null; };
 type Site = { id: string; name: string };
 
 const docTypes = [

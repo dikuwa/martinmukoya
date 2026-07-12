@@ -38,3 +38,36 @@ test("form recipient values override linked lead values and project data is norm
   assert.equal(context.project_name, "Catering website");
   assert.equal((context.project as Record<string, unknown>).description, "A modern catering site");
 });
+
+test("maps every saved-template client alias from form and lead values", () => {
+  const context = buildDocumentTemplateContext({
+    values: { recipientName: "Manual Contact" },
+    lead: { name: "Lead Contact", email: "client@example.com", phone: "0852942473", company: "Client Company", address: "Windhoek" },
+  });
+  assert.equal(context.client_name, "Manual Contact");
+  assert.equal(context.client_contact_name, "Manual Contact");
+  assert.equal(context.client_email, "client@example.com");
+  assert.equal(context.client_phone, "0852942473");
+  assert.equal(context.client_company, "Client Company");
+  assert.equal(context.client_address, "Windhoek");
+  assert.equal((context.client as Record<string, unknown>).contact_name, "Manual Contact");
+});
+
+test("uses subject as project name only when no linked project exists", () => {
+  const fallback = buildDocumentTemplateContext({ values: { subject: "Website redesign project" } });
+  const linked = buildDocumentTemplateContext({ values: { subject: "Fallback" }, project: { title: "Linked project" } });
+  assert.equal(fallback.project_name, "Website redesign project");
+  assert.equal(linked.project_name, "Linked project");
+});
+
+test("maps real project fields without inventing unavailable project facts", () => {
+  const context = buildDocumentTemplateContext({
+    values: {},
+    project: { title: "Portal", summary: "Operations overview", description: "Detailed portal", outcome: "Faster processing" },
+  });
+  assert.equal(context.project_overview, "Operations overview");
+  assert.equal(context.expected_outcome, "Faster processing");
+  assert.equal(context.project_objective, "");
+  assert.equal(context.target_audience, "");
+  assert.equal(context.project_scope, "");
+});

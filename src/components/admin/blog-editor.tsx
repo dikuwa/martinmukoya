@@ -114,7 +114,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
 
   // Template and AI actions update the controlled value outside the editable
   // DOM. Rehydrate only for genuine external changes so typing keeps its caret.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const editor = editorRef.current;
     if (!editor || value === lastValue.current) return;
     if (initialContentRef.current) editor.innerHTML = initialContentRef.current.innerHTML || "<p><br></p>";
