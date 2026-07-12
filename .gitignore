@@ -10,3 +10,5 @@ pnpm-lock.yaml
 .DS_Store
 src/generated/prisma/
 .vercel
+test-results/
+playwright-report/

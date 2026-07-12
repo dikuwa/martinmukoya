@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { BusinessDocumentActions } from "@/components/admin/business-document-actions";
+import { BusinessDocumentPreview } from "@/components/documents/business-document-preview";
+import { getIssuerSnapshot } from "@/lib/finance-service";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -28,41 +30,76 @@ export default async function BusinessDocumentPage({ params }: Props) {
   });
   if (!doc) notFound();
 
+  const issuer = await getIssuerSnapshot();
   const shortLink = doc.publicShare ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${doc.publicShare.shortCode}` : null;
+
+  const previewDoc = {
+    id: doc.id,
+    documentNumber: doc.documentNumber,
+    documentType: doc.documentType,
+    status: doc.status,
+    title: doc.title,
+    subject: doc.subject,
+    recipientName: doc.recipientName,
+    companyName: doc.companyName,
+    recipientEmail: doc.recipientEmail,
+    recipientPhone: doc.recipientPhone,
+    issueDate: doc.issueDate?.toISOString() || null,
+    expiryDate: doc.expiryDate?.toISOString() || null,
+    contentMarkdown: doc.contentMarkdown,
+    senderName: doc.senderName,
+    senderRole: doc.senderRole,
+    signatureRequired: doc.signatureRequired,
+    recipientWhatsApp: doc.recipientWhatsApp,
+  };
+
+  const businessIdentity = {
+    name: issuer.name,
+    logo: issuer.logo,
+    phone: issuer.phone,
+    email: issuer.email,
+    address: issuer.address,
+    companyDetails: issuer.companyDetails,
+    signerName: issuer.signerName,
+    signerTitle: issuer.signerTitle,
+    signatureMode: issuer.signatureMode,
+    signatureImage: issuer.signatureImage,
+    showSignature: issuer.showSignature,
+    registration: issuer.registration,
+  };
 
   return (
     <div className="grid gap-6">
       <PageHeader
         title={doc.title}
-        description={`${docTypeLabels[doc.documentType] || doc.documentType}${doc.documentNumber ? ` · ${doc.documentNumber}` : ""} · ${doc.status}`}
+        description={`${docTypeLabels[doc.documentType] || doc.documentType}${doc.documentNumber ? ` · ${doc.documentNumber}` : ""} · ${doc.status.toLowerCase()}`}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {doc.status === "DRAFT" && (
               <>
                 <Button asChild variant="secondary"><Link href={`/admin/business-documents/${id}/edit`}>Edit draft</Link></Button>
+                <Button asChild variant="secondary"><Link href={`/api/admin/business-documents/${id}/pdf`}>Download PDF</Link></Button>
                 <BusinessDocumentActions doc={JSON.parse(JSON.stringify(doc))} shortLink={shortLink} />
               </>
             )}
-            {doc.status !== "DRAFT" && <BusinessDocumentActions doc={JSON.parse(JSON.stringify(doc))} shortLink={shortLink} />}
+            {doc.status !== "DRAFT" && (
+              <>
+                <Button asChild variant="secondary"><Link href={`/api/admin/business-documents/${id}/pdf`}>Download PDF</Link></Button>
+                <BusinessDocumentActions doc={JSON.parse(JSON.stringify(doc))} shortLink={shortLink} />
+              </>
+            )}
           </div>
         }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        {/* Document Content */}
-        <article className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[#fffdf8] p-8">
-          <div className="prose prose-sm max-w-none">
-            {doc.contentMarkdown.split("\n").map((line, i) => {
-              if (line.startsWith("# ")) return <h1 key={i} className="text-3xl font-black mb-4">{line.slice(2)}</h1>;
-              if (line.startsWith("## ")) return <h2 key={i} className="text-xl font-bold mt-6 mb-3">{line.slice(3)}</h2>;
-              if (line.startsWith("### ")) return <h3 key={i} className="text-lg font-semibold mt-4 mb-2">{line.slice(4)}</h3>;
-              if (line.startsWith("---")) return <hr key={i} className="my-6 border-[color:var(--border-subtle)]" />;
-              if (line.startsWith("| ")) return <p key={i} className="text-sm font-mono">{line}</p>;
-              if (line.trim()) return <p key={i} className="leading-7 mb-2">{line}</p>;
-              return <br key={i} />;
-            })}
-          </div>
-        </article>
+        {/* Full Document Preview */}
+        <div className="min-w-0">
+          <BusinessDocumentPreview
+            document={JSON.parse(JSON.stringify(previewDoc))}
+            business={businessIdentity}
+          />
+        </div>
 
         {/* Sidebar */}
         <aside className="grid gap-4">

@@ -27,6 +27,7 @@ export async function GET(request: Request, context: Context) {
         subject={doc.subject}
         recipientName={doc.recipientName}
         companyName={doc.companyName}
+        recipientEmail={doc.recipientEmail}
         issueDate={doc.issueDate?.toISOString() || null}
         expiryDate={doc.expiryDate?.toISOString() || null}
         contentMarkdown={doc.contentMarkdown}
@@ -36,6 +37,8 @@ export async function GET(request: Request, context: Context) {
         issuerLogo={issuer.logo}
         issuerName={issuer.name}
         issuerDetails={issuer.companyDetails}
+        issuerPhone={issuer.phone}
+        issuerEmail={issuer.email}
       />
     );
 

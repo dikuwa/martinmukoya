@@ -27,6 +27,8 @@ type Props = {
   document: BusinessDoc;
   shortCode: string;
   shortLink?: string;
+  /** When true, only the header bar and acceptance UI render (no document body) */
+  hideDocumentContent?: boolean;
 };
 
 const docTypeLabels: Record<string, string> = {
@@ -36,7 +38,7 @@ const docTypeLabels: Record<string, string> = {
   AUDIT_REPORT: "Audit Report", NDA: "Confidentiality Agreement", CUSTOM: "Document",
 };
 
-export function PublicBusinessDocument({ document: doc, shortCode }: Props) {
+export function PublicBusinessDocument({ document: doc, shortCode, hideDocumentContent }: Props) {
   const [accepting, setAccepting] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
   const [acceptName, setAcceptName] = useState("");
@@ -106,51 +108,53 @@ export function PublicBusinessDocument({ document: doc, shortCode }: Props) {
         </div>
       </div>
 
-      {/* Document body */}
-      <article className="relative isolate overflow-hidden rounded-sm border border-[#ddd8cf] bg-[#fffdf8] p-6 text-[#242424] shadow-sm md:p-10">
-        <DocumentPageBackdrop />
-        <div className="relative z-10">
-          {/* Header info */}
-          <div className="mb-6 border-b border-[#ded9cf] pb-5">
-            {doc.recipientName && (
-              <div className="text-sm mb-1">
-                <span className="text-[#777]">To: </span>
-                <span className="font-semibold">{doc.recipientName}</span>
-                {doc.companyName && <span className="text-[#777]">, {doc.companyName}</span>}
+      {/* Document body - only shown when hideDocumentContent is false */}
+      {!hideDocumentContent && (
+        <article className="relative isolate overflow-hidden rounded-sm border border-[#ddd8cf] bg-[#fffdf8] p-6 text-[#242424] shadow-sm md:p-10">
+          <DocumentPageBackdrop />
+          <div className="relative z-10">
+            {/* Header info */}
+            <div className="mb-6 border-b border-[#ded9cf] pb-5">
+              {doc.recipientName && (
+                <div className="text-sm mb-1">
+                  <span className="text-[#777]">To: </span>
+                  <span className="font-semibold">{doc.recipientName}</span>
+                  {doc.companyName && <span className="text-[#777]">, {doc.companyName}</span>}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-4 text-xs text-[#777]">
+                {doc.issueDate && <span>Date: {new Date(doc.issueDate).toLocaleDateString("en-GB")}</span>}
+                {doc.expiryDate && <span>Valid until: {new Date(doc.expiryDate).toLocaleDateString("en-GB")}</span>}
+                {doc.documentNumber && <span>Ref: {doc.documentNumber}</span>}
+              </div>
+              {doc.subject && <p className="mt-3 text-sm font-semibold">{doc.subject}</p>}
+            </div>
+
+            {/* Content */}
+            <div className="prose prose-sm max-w-none">
+              {doc.contentMarkdown.split("\n").map((line, i) => {
+                if (line.startsWith("# ")) return <h1 key={i} className="text-2xl font-black mb-4">{line.slice(2)}</h1>;
+                if (line.startsWith("## ")) return <h2 key={i} className="text-xl font-bold mt-6 mb-3">{line.slice(3)}</h2>;
+                if (line.startsWith("### ")) return <h3 key={i} className="text-lg font-semibold mt-4 mb-2">{line.slice(4)}</h3>;
+                if (line.startsWith("---")) return <hr key={i} className="my-6 border-[#ded9cf]" />;
+                if (line.startsWith("- [ ] ")) return <div key={i} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled className="accent-[color:var(--primary)]" /><span>{line.slice(6)}</span></div>;
+                if (line.startsWith("- [x] ")) return <div key={i} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled checked className="accent-[color:var(--primary)]" /><span>{line.slice(6)}</span></div>;
+                if (line.startsWith("- ")) return <li key={i} className="text-sm ml-4">{line.slice(2)}</li>;
+                if (line.startsWith("| ")) return <p key={i} className="text-xs font-mono">{line}</p>;
+                if (line.trim()) return <p key={i} className="leading-7 mb-2 text-sm">{line}</p>;
+                return <br key={i} />;
+              })}
+            </div>
+
+            {/* Signature */}
+            {doc.senderName && (
+              <div className="mt-10 border-t border-[#ded9cf] pt-5">
+                <p className="text-sm font-semibold">{doc.senderName}</p>
               </div>
             )}
-            <div className="flex flex-wrap gap-4 text-xs text-[#777]">
-              {doc.issueDate && <span>Date: {new Date(doc.issueDate).toLocaleDateString("en-GB")}</span>}
-              {doc.expiryDate && <span>Valid until: {new Date(doc.expiryDate).toLocaleDateString("en-GB")}</span>}
-              {doc.documentNumber && <span>Ref: {doc.documentNumber}</span>}
-            </div>
-            {doc.subject && <p className="mt-3 text-sm font-semibold">{doc.subject}</p>}
           </div>
-
-          {/* Content */}
-          <div className="prose prose-sm max-w-none">
-            {doc.contentMarkdown.split("\n").map((line, i) => {
-              if (line.startsWith("# ")) return <h1 key={i} className="text-2xl font-black mb-4">{line.slice(2)}</h1>;
-              if (line.startsWith("## ")) return <h2 key={i} className="text-xl font-bold mt-6 mb-3">{line.slice(3)}</h2>;
-              if (line.startsWith("### ")) return <h3 key={i} className="text-lg font-semibold mt-4 mb-2">{line.slice(4)}</h3>;
-              if (line.startsWith("---")) return <hr key={i} className="my-6 border-[#ded9cf]" />;
-              if (line.startsWith("- [ ] ")) return <div key={i} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled className="accent-[color:var(--primary)]" /><span>{line.slice(6)}</span></div>;
-              if (line.startsWith("- [x] ")) return <div key={i} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled checked className="accent-[color:var(--primary)]" /><span>{line.slice(6)}</span></div>;
-              if (line.startsWith("- ")) return <li key={i} className="text-sm ml-4">{line.slice(2)}</li>;
-              if (line.startsWith("| ")) return <p key={i} className="text-xs font-mono">{line}</p>;
-              if (line.trim()) return <p key={i} className="leading-7 mb-2 text-sm">{line}</p>;
-              return <br key={i} />;
-            })}
-          </div>
-
-          {/* Signature */}
-          {doc.senderName && (
-            <div className="mt-10 border-t border-[#ded9cf] pt-5">
-              <p className="text-sm font-semibold">{doc.senderName}</p>
-            </div>
-          )}
-        </div>
-      </article>
+        </article>
+      )}
 
       {/* Acceptance section */}
       {isAccepted && (

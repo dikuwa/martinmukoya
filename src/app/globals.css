@@ -1029,6 +1029,76 @@ option:checked {
   }
 }
 
+/* ── Document print styles (multi-page support) ── */
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all non-document UI when printing */
+  nav, header.admin-header, footer:not([class*="document-footer"]),
+  .sidebar, .toast, .dialog-overlay, .sonner-toaster,
+  button, .action-bar, .editor-panel, .tab-bar {
+    display: none !important;
+  }
+
+  /* Document preview articles become full pages */
+  article[class*="rounded-sm"] {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 auto !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    max-width: 210mm !important;
+    overflow: visible !important;
+  }
+
+  /* Last page should not force a page break */
+  article[class*="rounded-sm"]:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Keep backdrop visible during print */
+  article[class*="rounded-sm"] img[class*="backdrop"] {
+    display: block !important;
+    opacity: 0.35 !important;
+  }
+
+  /* Ensure document text is dark on white */
+  body, article, article *, p, h1, h2, h3, h4, li {
+    color: #242424 !important;
+  }
+
+  /* Remove grid gaps between document preview pages */
+  div.grid:has(> article[class*="rounded-sm"]) {
+    gap: 0 !important;
+  }
+
+  @page {
+    margin: 0;
+    size: A4 portrait;
+  }
+
+  /* Prevent orphaned headings */
+  h1, h2, h3, h4 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  /* Avoid breaking list items across pages */
+  ul, ol, li {
+    page-break-inside: avoid;
+  }
+}
+
 /* ── Admin-specific styles ── */
 
 /* Input/textarea/select focus ring consistency */
