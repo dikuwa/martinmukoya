@@ -14,6 +14,8 @@ import {
   Filter,
 } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type CountData = {
@@ -73,13 +75,17 @@ export function NotificationCenter() {
   const [dismissing, setDismissing] = useState<Set<string>>(new Set());
   const [siteFilter, setSiteFilter] = useState<SiteFilter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [clearConfirmationOpen, setClearConfirmationOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
   const siteFilterRef = useRef<SiteFilter>(siteFilter);
   const sitesRef = useRef<Array<{ slug: string; name: string }>>([]);
 
-  // Keep refs in sync with state
-  siteFilterRef.current = siteFilter;
+  // Keep the polling callback in sync without recreating its interval.
+  useEffect(() => {
+    siteFilterRef.current = siteFilter;
+  }, [siteFilter]);
 
   const fetchNotifications = useCallback(
     async (filter?: SiteFilter) => {
@@ -249,25 +255,33 @@ export function NotificationCenter() {
       return { ...prev, totalRead: 0, hasRead: false };
     });
     try {
-      await fetch("/api/admin/notifications", { method: "DELETE" });
+      const res = await fetch("/api/admin/notifications", { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to clear read notifications");
+      toast.success("Read notifications cleared");
     } catch {
       setData(prevData);
+      toast.error("Could not clear notifications");
     }
   }, [data]);
 
   const clearAll = useCallback(async () => {
-    if (!window.confirm("Clear all notifications? This cannot be undone.")) return;
-
     const prevData = data;
+    setClearing(true);
     setData((prev) => {
       if (!prev) return null;
       return { ...prev, total: 0, totalRead: 0, hasRead: false, items: [] };
     });
     try {
-      await fetch("/api/admin/notifications?all=true", { method: "DELETE" });
+      const res = await fetch("/api/admin/notifications?all=true", { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to clear notifications");
       await fetchNotifications();
+      setClearConfirmationOpen(false);
+      toast.success("All notifications cleared");
     } catch {
       setData(prevData);
+      toast.error("Could not clear notifications");
+    } finally {
+      setClearing(false);
     }
   }, [data, fetchNotifications]);
 
@@ -416,7 +430,7 @@ export function NotificationCenter() {
               {data && (data.total > 0 || data.hasRead) && (
                 <button
                   type="button"
-                  onClick={data.total > 0 ? clearAll : clearRead}
+                  onClick={data.total > 0 ? () => setClearConfirmationOpen(true) : clearRead}
                   className="flex items-center rounded-md px-1.5 py-1 text-[color:var(--destructive)] transition hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
                   title={data.total > 0 ? "Clear all notifications" : "Clear read notifications"}
                   aria-label={data.total > 0 ? "Clear all notifications" : "Clear read notifications"}
@@ -551,6 +565,40 @@ export function NotificationCenter() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {clearConfirmationOpen && (
+        <div
+          className="fixed inset-0 z-[120] grid place-items-center bg-black/45 p-4"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="clear-notifications-title"
+          aria-describedby="clear-notifications-description"
+          onClick={() => !clearing && setClearConfirmationOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 grid h-11 w-11 place-items-center rounded-full bg-[color:var(--destructive)]/10 text-[color:var(--destructive)]">
+              <Trash2 size={20} />
+            </div>
+            <h2 id="clear-notifications-title" className="font-display text-xl font-black">
+              Clear all notifications?
+            </h2>
+            <p id="clear-notifications-description" className="mt-2 text-sm text-[color:var(--text-muted)]">
+              This permanently removes all read and unread notifications. This action cannot be undone.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={() => setClearConfirmationOpen(false)} disabled={clearing}>
+                Cancel
+              </Button>
+              <Button type="button" variant="danger" onClick={clearAll} disabled={clearing}>
+                {clearing ? <><Loader2 size={15} className="animate-spin" /> Clearing…</> : <><Trash2 size={15} /> Clear notifications</>}
+              </Button>
+            </div>
           </div>
         </div>
       )}

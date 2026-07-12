@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
 import { SharedDocumentActions } from "@/components/admin/shared-document-actions";
@@ -27,26 +29,40 @@ export default async function SharedDocumentsPage({ searchParams }: Props) {
     },
   });
 
-  const filterClass = "h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm";
+  const filterClass = "h-10 min-w-[11rem]";
 
   return (
     <div className="grid gap-8">
       <PageHeader title="Shared documents" description="View all shared document links, track views and downloads, and manage sharing." />
 
       <form className="flex flex-wrap gap-2 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
-        <select name="type" defaultValue={type || ""} className={filterClass}>
-          <option value="">All types</option>
-          <option value="financial">Financial</option>
-          <option value="business">Business</option>
-        </select>
-        <select name="status" defaultValue={status || ""} className={filterClass}>
-          <option value="">All status</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-          <option value="revoked">Revoked</option>
-        </select>
-        <button className="rounded-xl bg-[color:var(--primary)] px-4 text-sm font-bold text-white">Filter</button>
-        <Link href="/admin/shared-documents" className="grid place-items-center rounded-xl px-4 text-sm font-bold">Clear</Link>
+        <DashboardSelect
+          name="type"
+          defaultValue={type}
+          aria-label="Document type"
+          className={filterClass}
+          options={[
+            { value: "", label: "All types" },
+            { value: "financial", label: "Financial" },
+            { value: "business", label: "Business" },
+          ]}
+        />
+        <DashboardSelect
+          name="status"
+          defaultValue={status}
+          aria-label="Sharing status"
+          className={filterClass}
+          options={[
+            { value: "", label: "All statuses" },
+            { value: "active", label: "Active" },
+            { value: "expired", label: "Expired" },
+            { value: "revoked", label: "Revoked" },
+          ]}
+        />
+        <Button type="submit" className="h-10">Filter</Button>
+        <Button asChild type="button" variant="ghost" className="h-10">
+          <Link href="/admin/shared-documents">Clear</Link>
+        </Button>
       </form>
 
       <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
