@@ -102,18 +102,28 @@ export default async function ServicesPage() {
         <Container className="grid gap-6">
           {site.services.map((service, index) => (
             <Reveal key={service.id} delay={index * 0.05}>
-              <article id={service.id} className="mx-auto max-w-4xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-8 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-12">
+              <article id={service.id} className="mx-auto max-w-6xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-8">
                 {/* Four-column grid: Identity | Who it helps | Common friction | Business results */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid items-stretch gap-5 md:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))] lg:gap-6">
                   {/* Identity column */}
-                  <div className="flex flex-col gap-4">
-                    <div>
+                  <div className="flex h-full flex-col p-1 lg:pr-2">
+                    <div className="flex items-center gap-4">
                       <ServiceIcon id={service.id} />
+                      <h2 className="text-balance font-display text-2xl font-black leading-tight text-[color:var(--text-strong)] lg:text-3xl">{service.title}</h2>
                     </div>
-                    <div>
-                      <h2 className="text-balance text-3xl font-display font-black text-[color:var(--text-strong)]">{service.title}</h2>
-                      <p className="mt-3 max-w-xs text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
-                    </div>
+                    <p className="mt-4 max-w-sm text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
+                    <TrackedLink
+                      siteSlug={site.slug}
+                      eventType="service_interest_clicked"
+                      eventPage="/services"
+                      eventSource="service_cta"
+                      eventMetadata={{ service: service.id }}
+                      href={`/start-project?service=${service.id}`}
+                      className="group mt-5 inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-bold text-[color:var(--primary)] outline-offset-4 transition-colors hover:text-[color:var(--primary-dark)] focus-visible:outline-2 focus-visible:outline-[color:var(--primary)] lg:mt-auto lg:pt-6"
+                    >
+                      {page.ctaLabel}
+                      <ArrowRight size={15} aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
+                    </TrackedLink>
                   </div>
 
                   {/* Who it helps */}
@@ -124,21 +134,6 @@ export default async function ServicesPage() {
 
                   {/* Business results */}
                   <InfoBlock title="Business results" items={service.outcomes} variant="result" />
-                </div>
-
-                {/* Learn more - centered plain link */}
-                <div className="mt-8 flex justify-center">
-                  <TrackedLink
-                    siteSlug={site.slug}
-                    eventType="service_interest_clicked"
-                    eventPage="/services"
-                    eventSource="service_cta"
-                    eventMetadata={{ service: service.id }}
-                    href={`/start-project?service=${service.id}`}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--primary)] hover:text-[color:var(--primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--background)] rounded-md px-3 py-2 transition-colors"
-                  >
-                    {page.ctaLabel} <ArrowRight size={16} aria-hidden="true" />
-                  </TrackedLink>
                 </div>
               </article>
             </Reveal>
@@ -184,13 +179,10 @@ function InfoBlock({
   variant?: "friction" | "result" | "help";
 }) {
   const isResult = variant === "result";
-  const rowClass = isResult
-    ? "border-[color:var(--primary-light)] bg-[color:var(--primary-light)]/10 text-[color:var(--text-strong)]"
-    : "border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)]/12 text-[color:var(--text-normal)]";
 
   return (
     <div className={cn(
-      "rounded-[24px] border border-[color:var(--border-subtle)] p-5",
+      "h-full rounded-[18px] border border-[color:var(--border-subtle)] p-5 lg:p-6",
       variant === "help"
         ? "bg-[color:var(--surface-soft)]"
         : "bg-white/[0.03]"
@@ -200,12 +192,12 @@ function InfoBlock({
         <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
       ) : null}
       {items ? (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-4">
           {items.map((item) => (
-            <div key={item} className={"flex gap-3 rounded-[20px] border p-4 " + rowClass}>
-              <span className="mt-1 grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)] shrink-0" aria-hidden="true">
-                {isResult ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-              </span>
+            <div key={item} className="flex items-start gap-3">
+              {isResult
+                ? <CheckCircle2 size={19} strokeWidth={1.8} className="mt-0.5 shrink-0 text-[color:var(--primary)]" aria-hidden="true" />
+                : <XCircle size={19} strokeWidth={1.8} className="mt-0.5 shrink-0 text-[color:var(--primary)]" aria-hidden="true" />}
               <p className="text-sm leading-6 text-[color:var(--text-muted)]">{item}</p>
             </div>
           ))}
