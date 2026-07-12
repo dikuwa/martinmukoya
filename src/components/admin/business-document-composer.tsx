@@ -97,7 +97,9 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
   const [unresolvedForSave, setUnresolvedForSave] = useState<string[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
-  const lastAppliedContent = useRef(initial?.contentMarkdown || "");
+  // Existing drafts are user-owned content, not an unchanged template result.
+  // Only content applied during this composer session may be replaced silently.
+  const lastAppliedContent = useRef("");
   const lastAppliedTitle = useRef(initial?.title || "");
   const lastAppliedSubject = useRef(initial?.subject || "");
 
