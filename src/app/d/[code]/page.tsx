@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { FinancialDocumentPreview } from "@/components/admin/financial-document-preview";
 import { BusinessDocumentPreview } from "@/components/documents/business-document-preview";
 import { PublicBusinessDocument } from "@/components/public/public-business-document";
+import { PublicFinancialDocumentActions } from "@/components/public/public-financial-document-actions";
 import { trackSharedDocumentView } from "@/lib/business-document-service";
 import { getIssuerSnapshot } from "@/lib/finance-service";
 
@@ -47,8 +48,13 @@ export default async function SharedDocumentPage({ params }: Props) {
     if (!document || document.status === "DRAFT") notFound();
 
     return (
-      <main className="min-h-screen bg-[#f3f0e9] p-4 md:p-10">
+      <main className="min-h-screen bg-[#f3f0e9] px-4 py-6 md:px-10 md:py-10">
         <FinancialDocumentPreview document={document} />
+        <PublicFinancialDocumentActions
+          shortCode={code}
+          documentNumber={document.number}
+          documentType={document.type}
+        />
       </main>
     );
   }
