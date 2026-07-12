@@ -21,9 +21,10 @@ type Props = {
   onClose: () => void;
   doc: Doc;
   shortLink: string;
+  saveNumberEndpoint?: string;
 };
 
-export function WhatsAppShareDialog({ open, onClose, doc, shortLink }: Props) {
+export function WhatsAppShareDialog({ open, onClose, doc, shortLink, saveNumberEndpoint }: Props) {
   const [whatsAppNumber, setWhatsAppNumber] = useState(() => {
     const formatted = formatWhatsAppNumber(doc.recipientPhone, doc.recipientWhatsApp);
     return formatted || "";
@@ -42,8 +43,9 @@ export function WhatsAppShareDialog({ open, onClose, doc, shortLink }: Props) {
   };
 
   const saveNumber = async () => {
+    if (!saveNumberEndpoint) return;
     try {
-      const res = await fetch(`/api/admin/business-documents/${doc.id}`, {
+      const res = await fetch(saveNumberEndpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipientWhatsApp: whatsAppNumber }),
@@ -78,7 +80,9 @@ export function WhatsAppShareDialog({ open, onClose, doc, shortLink }: Props) {
                 className="h-10 flex-1 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]"
                 placeholder="+264812271574"
               />
-              <button onClick={saveNumber} className="rounded-xl border border-[color:var(--border-subtle)] px-3 text-sm hover:bg-[color:var(--surface-soft)]"><Save size={16} /></button>
+              {saveNumberEndpoint && (
+                <button onClick={saveNumber} aria-label="Save WhatsApp number" className="rounded-xl border border-[color:var(--border-subtle)] px-3 text-sm hover:bg-[color:var(--surface-soft)]"><Save size={16} /></button>
+              )}
             </div>
             {!formatWhatsAppNumber(whatsAppNumber) && <p className="mt-1 text-xs text-[color:var(--destructive)]">Enter a valid international phone number</p>}
           </div>

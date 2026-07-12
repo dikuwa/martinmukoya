@@ -5,23 +5,26 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Copy, ExternalLink, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WhatsAppShareDialog } from "@/components/admin/whatsapp-share-dialog";
 
 type Props = {
   id: string;
   type: string;
   status: string;
   number: string | null;
+  customerName: string;
+  customerPhone: string | null;
   email: string | null;
-  shareToken: string | null;
   shortLink?: string | null;
-  shortCode?: string | null;
 };
 
-export function DocumentActions({ id, type, status, number, email, shareToken, shortLink, shortCode }: Props) {
+export function DocumentActions({ id, type, status, number, customerName, customerPhone, email, shortLink }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [whatsappOpen, setWhatsappOpen] = useState(false);
+  const [activeLink, setActiveLink] = useState("");
 
   async function call(action: string, success: string) {
     setBusy(true);
@@ -56,7 +59,7 @@ export function DocumentActions({ id, type, status, number, email, shareToken, s
     }
   }
 
-  async function generateAndCopyLink() {
+  async function createShareLink() {
     setGeneratingLink(true);
     try {
       const res = await fetch("/api/admin/shared-documents", {
@@ -67,33 +70,46 @@ export function DocumentActions({ id, type, status, number, email, shareToken, s
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create link");
       const baseUrl = window.location.origin;
-      await navigator.clipboard.writeText(`${baseUrl}/d/${data.shortCode}`);
-      setCopied(true);
-      toast.success("Share link copied");
-      setTimeout(() => setCopied(false), 2500);
+      const link = `${baseUrl}/d/${data.shortCode}`;
+      setActiveLink(link);
       router.refresh();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to create share link");
+      return link;
     } finally {
       setGeneratingLink(false);
     }
   }
 
+  async function generateAndCopyLink() {
+    try {
+      const link = await createShareLink();
+      if (!link) return;
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast.success("Share link copied");
+      setTimeout(() => setCopied(false), 2500);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create share link");
+    }
+  }
+
   async function copyExistingLink() {
-    if (!shortLink) { await generateAndCopyLink(); return; }
-    await navigator.clipboard.writeText(shortLink);
+    const link = activeLink || shortLink;
+    if (!link) { await generateAndCopyLink(); return; }
+    const absoluteLink = new URL(link, window.location.origin).toString();
+    setActiveLink(absoluteLink);
+    await navigator.clipboard.writeText(absoluteLink);
     setCopied(true);
     toast.success("Share link copied");
     setTimeout(() => setCopied(false), 2500);
   }
 
-  async function shareNative() {
-    const url = shortLink || `${window.location.origin}/admin/documents/${id}`;
-    if (navigator.share) {
-      await navigator.share({ title: number || "FlexTech document", url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied");
+  async function openWhatsApp() {
+    try {
+      if (!activeLink && shortLink) setActiveLink(new URL(shortLink, window.location.origin).toString());
+      else if (!activeLink) await createShareLink();
+      setWhatsappOpen(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create share link");
     }
   }
 
@@ -119,22 +135,22 @@ export function DocumentActions({ id, type, status, number, email, shareToken, s
       {/* Share link generation */}
       <Button
         variant="secondary"
-        onClick={shortLink ? copyExistingLink : generateAndCopyLink}
+        onClick={(activeLink || shortLink) ? copyExistingLink : generateAndCopyLink}
         disabled={generatingLink}
       >
         {generatingLink ? (
           <><Loader2 size={15} className="animate-spin" /> Generating…</>
         ) : copied ? (
           <><Check size={15} /> Copied</>
-        ) : shortLink ? (
+        ) : (activeLink || shortLink) ? (
           <><Copy size={15} /> Copy link</>
         ) : (
           <><Copy size={15} /> Create link</>
         )}
       </Button>
 
-      {shortLink && (
-        <Button variant="secondary" onClick={() => window.open(shortLink, "_blank")}>
+      {(activeLink || shortLink) && (
+        <Button variant="secondary" onClick={() => window.open(activeLink || shortLink || "", "_blank")}>
           <ExternalLink size={15} /> Open
         </Button>
       )}
@@ -146,9 +162,8 @@ export function DocumentActions({ id, type, status, number, email, shareToken, s
         </Button>
       )}
 
-      {/* Native share fallback */}
-      <Button variant="secondary" onClick={shareNative}>
-        Share
+      <Button variant="secondary" onClick={openWhatsApp} disabled={generatingLink}>
+        {generatingLink ? <><Loader2 size={15} className="animate-spin" /> Preparing…</> : "WhatsApp"}
       </Button>
 
       {/* Quote-specific: convert to invoice */}
@@ -171,6 +186,21 @@ export function DocumentActions({ id, type, status, number, email, shareToken, s
           Void
         </Button>
       )}
+
+      <WhatsAppShareDialog
+        key={`${activeLink || shortLink || "no-link"}-${whatsappOpen ? "open" : "closed"}`}
+        open={whatsappOpen}
+        onClose={() => setWhatsappOpen(false)}
+        doc={{
+          id,
+          documentNumber: number,
+          documentType: type,
+          recipientName: customerName,
+          recipientPhone: customerPhone,
+          recipientWhatsApp: null,
+        }}
+        shortLink={activeLink || shortLink || ""}
+      />
     </div>
   );
 }

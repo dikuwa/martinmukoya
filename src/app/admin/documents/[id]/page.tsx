@@ -20,8 +20,6 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const shortLink = document.sharedDocument
     ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${document.sharedDocument.shortCode}`
     : null;
-  const shortCode = document.sharedDocument?.shortCode || null;
-
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -41,10 +39,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           type={document.type}
           status={document.status}
           number={document.number}
+          customerName={document.customerName}
+          customerPhone={document.customerPhone}
           email={document.customerEmail}
-          shareToken={document.shareToken}
           shortLink={shortLink}
-          shortCode={shortCode}
         />
       </div>
 

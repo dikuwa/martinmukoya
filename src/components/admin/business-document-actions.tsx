@@ -174,10 +174,12 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
         onSent={() => router.refresh()}
       />
       <WhatsAppShareDialog
+        key={`${shortLink || "no-link"}-${whatsappOpen ? "open" : "closed"}`}
         open={whatsappOpen}
         onClose={() => setWhatsappOpen(false)}
         doc={doc}
         shortLink={shortLink || ""}
+        saveNumberEndpoint={`/api/admin/business-documents/${doc.id}`}
       />
     </>
   );
