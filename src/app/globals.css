@@ -1402,6 +1402,49 @@ input[type="date"]::-moz-calendar-picker-indicator {
   background-size: 200% 100%;
   animation: admin-shimmer 1.5s ease-in-out infinite;
 }
+
+/* ── Public skeleton loader ────────────────────────────────────────────────
+   Used by `(public)/loading.tsx`. Tuned to the dark, premium brand: a deep
+   surface base with a soft violet sheen (the primary token), kept slow and
+   calm so it reads as intentional rather than flickery. */
+@keyframes public-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.public-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    100deg,
+    var(--surface-soft) 24%,
+    color-mix(in oklch, var(--primary) 20%, transparent) 50%,
+    var(--surface-soft) 76%
+  );
+  background-size: 240% 100%;
+  animation: public-shimmer 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* A soft radial glow used behind the skeleton avatar for a premium halo. */
+.public-skeleton-halo {
+  background: radial-gradient(
+    circle at 32% 28%,
+    color-mix(in oklch, var(--primary) 26%, transparent),
+    transparent 68%
+  );
+}
+
+/* Scoped reduced-motion fallback: a calm, static block instead of a shimmer. */
+@media (prefers-reduced-motion: reduce) {
+  .public-skeleton {
+    animation: none;
+    background: var(--surface-soft);
+  }
+}
 /* Rich blog editor and the live article preview share the same document rhythm. */
 .rich-blog-editor :is(h1, h2, h3), .rich-blog-preview :is(h1, h2, h3) { color: var(--text-strong); font-weight: 800; line-height: 1.2; margin: 1.5em 0 .55em; }
 .rich-blog-editor h1, .rich-blog-preview h1 { font-size: 2rem; }

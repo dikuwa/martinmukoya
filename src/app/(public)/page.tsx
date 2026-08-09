@@ -1,4 +1,5 @@
 import { FAQList } from "@/components/public/faq-list";
+import { GsapStagger } from "@/components/public/gsap";
 import { Reveal } from "@/components/public/motion";
 import { FlexTechProjectCard, ProjectCard } from "@/components/public/project-card";
 import { SectionHeading } from "@/components/public/section-heading";
@@ -144,11 +145,15 @@ export default async function HomePage() {
               description={home.servicesDescription}
             />
           </Reveal>
-          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4" role="list">
+          <GsapStagger
+            role="list"
+            className="mt-10 grid md:grid-cols-2 lg:grid-cols-4"
+            y={30}
+            stagger={0.07}
+          >
             {site.services.map((service, index) => (
-              <Reveal
+              <div
                 key={service.id}
-                delay={index * 0.05}
                 className={cn(
                   "h-full py-2",
                   index > 0 && "border-t border-[color:var(--border-subtle)]",
@@ -164,9 +169,9 @@ export default async function HomePage() {
                 )}
               >
                 <ServiceCard service={service} />
-              </Reveal>
+              </div>
             ))}
-          </div>
+          </GsapStagger>
         </Container>
       </Section>
 
@@ -179,17 +184,19 @@ export default async function HomePage() {
               description={home.workDescription}
             />
           </Reveal>
-          <div className="mt-10 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {featuredProjects.map((project, index) => (
-              <Reveal key={project.slug} delay={index * 0.05}>
-                {site.slug === "flextech-media" ? (
-                  <FlexTechProjectCard project={project} siteSlug={site.slug} />
-                ) : (
-                  <ProjectCard project={project} siteSlug={site.slug} />
-                )}
-              </Reveal>
-            ))}
-          </div>
+          <GsapStagger
+            className="mt-10 grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3"
+            y={34}
+            stagger={0.08}
+          >
+            {featuredProjects.map((project) =>
+              site.slug === "flextech-media" ? (
+                <FlexTechProjectCard key={project.slug} project={project} siteSlug={site.slug} />
+              ) : (
+                <ProjectCard key={project.slug} project={project} siteSlug={site.slug} />
+              )
+            )}
+          </GsapStagger>
         </Container>
       </Section>
 
@@ -205,42 +212,38 @@ export default async function HomePage() {
           </Reveal>
 
           {site.slug === "flextech-media" ? (
-            <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3">
+            <GsapStagger className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3" y={30} stagger={0.1}>
               {home.reasons.map(({ title, description }, index) => {
                 const Icon = [Target, Smartphone, Zap][index] ?? Target;
                 return (
-                  <Reveal key={title} delay={index * 0.05}>
-                    <div className="group relative h-full rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-7 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:border-[color:var(--primary)]/40 hover:shadow-[0_8px_30px_rgba(107,38,217,0.12)]">
-                      <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-[color:var(--primary)]/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <div className="relative">
-                        <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] shadow-[0_0_20px_rgba(107,38,217,0.08)]">
-                          <Icon size={20} />
-                        </div>
-                        <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+                  <div key={title} className="group relative h-full rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-7 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:border-[color:var(--primary)]/40 hover:shadow-[0_8px_30px_rgba(107,38,217,0.12)]">
+                    <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-[color:var(--primary)]/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative">
+                      <div className="grid h-12 w-12 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] shadow-[0_0_20px_rgba(107,38,217,0.08)]">
+                        <Icon size={20} />
                       </div>
+                      <h3 className="text-balance mt-5 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
                     </div>
-                  </Reveal>
+                  </div>
                 );
               })}
-            </div>
+            </GsapStagger>
           ) : (
-            <div className="mx-auto mt-10 grid max-w-5xl gap-10 text-center md:grid-cols-3">
+            <GsapStagger className="mx-auto mt-10 grid max-w-5xl gap-10 text-center md:grid-cols-3" y={30} stagger={0.1}>
               {home.reasons.map(({ title, description }, index) => {
                 const Icon = [Target, Smartphone, Handshake][index] ?? Target;
                 return (
-                  <Reveal key={title} delay={index * 0.05}>
-                    <div>
-                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
-                        <Icon size={28} />
-                      </div>
-                      <h3 className="text-balance mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+                  <div key={title}>
+                    <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
+                      <Icon size={28} />
                     </div>
-                  </Reveal>
+                    <h3 className="text-balance mt-6 font-display text-xl font-black text-[color:var(--text-strong)]">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
+                  </div>
                 );
               })}
-            </div>
+            </GsapStagger>
           )}
         </Container>
       </Section>
