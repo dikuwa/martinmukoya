@@ -181,3 +181,154 @@ export function PublicSkeletonSection({
     </div>
   );
 }
+
+/** Page hero skeleton — centered eyebrow, big title lines, subtext. */
+export function PublicSkeletonPageHeader({
+  align = "center",
+  className,
+}: {
+  align?: "center" | "left";
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "mx-auto w-full max-w-[1200px] px-4 pb-6 pt-12 sm:px-6 lg:pb-8 lg:pt-16",
+        align === "center" ? "text-center" : "text-left",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "space-y-3",
+          align === "center" ? "mx-auto" : ""
+        )}
+      >
+        <div
+          className={cn(
+            "public-skeleton h-4 w-24 rounded-full",
+            align === "center" ? "mx-auto" : ""
+          )}
+        />
+        <div
+          className={cn(
+            "public-skeleton h-9 w-3/4 rounded-lg",
+            align === "center" ? "mx-auto" : ""
+          )}
+        />
+        <div
+          className={cn(
+            "public-skeleton h-9 w-1/2 rounded-lg",
+            align === "center" ? "mx-auto" : ""
+          )}
+        />
+        <div className={cn("space-y-2 pt-2", align === "center" ? "mx-auto max-w-md" : "max-w-xl")}>
+          <div className="public-skeleton h-4 w-full rounded" />
+          <div className="public-skeleton h-4 w-3/5 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Blog/listing row skeleton — small thumbnail + title + meta lines. */
+export function PublicSkeletonArticleRow({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "flex gap-4 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4",
+        className
+      )}
+    >
+      <div className="public-skeleton h-24 w-32 shrink-0 rounded-xl" />
+      <div className="flex w-full flex-col justify-center gap-2">
+        <div className="public-skeleton h-3 w-24 rounded-full" />
+        <div className="public-skeleton h-5 w-3/4 rounded-md" />
+        <div className="public-skeleton h-3 w-1/2 rounded" />
+      </div>
+    </div>
+  );
+}
+
+/** FAQ skeleton — a few accordion-style rows. */
+export function PublicSkeletonFaq({ count = 4, className }: { count?: number; className?: string }) {
+  return (
+    <div aria-hidden="true" className={cn("space-y-3", className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between gap-4 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5"
+        >
+          <div className="space-y-2">
+            <div className="public-skeleton h-4 w-56 rounded-md" />
+            <div className="public-skeleton h-3 w-40 rounded" />
+          </div>
+          <div className="public-skeleton h-6 w-6 shrink-0 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Contact / start-project skeleton — split two-column (form panel + info). */
+export function PublicSkeletonFormSplit({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn("grid items-start gap-8 lg:grid-cols-[1fr_0.9fr]", className)}
+    >
+      {/* Form panel */}
+      <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+        <div className="public-skeleton mb-6 h-7 w-1/2 rounded-lg" />
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="mb-5 space-y-2">
+            <div className="public-skeleton h-3 w-20 rounded" />
+            <div className={`public-skeleton h-11 w-full rounded-xl`} />
+          </div>
+        ))}
+        <div className="public-skeleton h-12 w-40 rounded-xl" />
+      </div>
+      {/* Info panel */}
+      <div className="space-y-4">
+        <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+          <div className="public-skeleton mb-4 h-5 w-2/3 rounded-md" />
+          <div className="public-skeleton h-3 w-full rounded" />
+          <div className="public-skeleton mt-2 h-3 w-4/5 rounded" />
+        </div>
+        <div className="rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+          <div className="public-skeleton mb-4 h-5 w-1/2 rounded-md" />
+          <div className="space-y-2">
+            <div className="public-skeleton h-4 w-3/4 rounded" />
+            <div className="public-skeleton h-4 w-2/3 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Plain content block — a few text lines (privacy / terms / documents). */
+export function PublicSkeletonText({ head = true, lines = 6, className }: { head?: boolean; lines?: number; className?: string }) {
+  return (
+    <div aria-hidden="true" className={cn("w-full", className)}>
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="space-y-3 pb-4">
+          <div className="public-skeleton h-9 w-2/3 rounded-lg" />
+          {head && <div className="public-skeleton h-8 w-1/2 rounded-lg" />}
+        </div>
+        <div className="space-y-2.5">
+          {Array.from({ length: lines }).map((_, i) => (
+            <div
+              key={i}
+              className={`public-skeleton h-3 rounded ${
+                i === lines - 1 ? "w-2/3" : i % 3 === 2 ? "w-5/6" : "w-full"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
