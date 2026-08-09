@@ -1,7 +1,9 @@
+import path from "path";
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { PdfDocumentPageBackdrop } from "@/lib/pdf/document-page-backdrop";
 
-Font.register({ family: "Allura", src: "https://fonts.gstatic.com/s/allura/v21/9oRPNYsQpS4zAju_iwgT.ttf" });
+// Self-hosted Allura font to avoid breakage when Google Fonts CDN updates versions
+Font.register({ family: "Allura", src: path.join(process.cwd(), "public/fonts/Allura-Regular.ttf") });
 
 const s = StyleSheet.create({
   page: { padding: 38, fontFamily: "Helvetica", fontSize: 9, color: "#252525" },

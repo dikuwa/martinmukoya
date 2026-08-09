@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { Allura } from "next/font/google";
 import { DocumentPageBackdrop } from "@/components/documents/document-page-backdrop";
 import { formatDocumentDate } from "@/lib/business-document-templates";
+import { docTypeLabels, parseContentMarkdown, splitIntoPages } from "@/lib/business-document-preview-utils";
+import type { ContentElement } from "@/lib/business-document-preview-utils";
 
 const allura = Allura({ weight: "400", subsets: ["latin"], display: "swap" });
 
@@ -42,19 +44,6 @@ export type BusinessIdentity = {
   registration?: string;
 };
 
-const docTypeLabels: Record<string, string> = {
-  PROPOSAL: "PROPOSAL", SERVICE_AGREEMENT: "SERVICE AGREEMENT",
-  WEB_DESIGN_CONTRACT: "WEB DESIGN CONTRACT", MAINTENANCE_AGREEMENT: "MAINTENANCE AGREEMENT",
-  HOSTING_AGREEMENT: "HOSTING AGREEMENT", SCOPE_OF_WORK: "SCOPE OF WORK",
-  PROJECT_BRIEF: "PROJECT BRIEF", CHANGE_REQUEST: "CHANGE REQUEST",
-  PROJECT_HANDOVER: "PROJECT HANDOVER", CLIENT_ACCEPTANCE: "CLIENT ACCEPTANCE",
-  BUSINESS_LETTER: "BUSINESS LETTER", PAYMENT_REMINDER: "PAYMENT REMINDER",
-  OVERDUE_NOTICE: "OVERDUE NOTICE", MEETING_SUMMARY: "MEETING SUMMARY",
-  PROGRESS_REPORT: "PROGRESS REPORT", AUDIT_REPORT: "AUDIT REPORT",
-  MAINTENANCE_REPORT: "MAINTENANCE REPORT", NDA: "CONFIDENTIALITY AGREEMENT",
-  CUSTOM: "DOCUMENT",
-};
-
 // ── Inline bold parser ──────────────────────────────────────────
 
 /** Renders a string with **bold** markers into inline <strong> spans */
@@ -70,137 +59,6 @@ function InlineBold({ text }: { text: string }) {
       })}
     </>
   );
-}
-
-// ── Parsed content elements ─────────────────────────────────────
-
-type ContentElement =
-  | { type: "heading1"; content: string }
-  | { type: "heading2"; content: string }
-  | { type: "heading3"; content: string }
-  | { type: "hr" }
-  | { type: "checkbox-unchecked"; content: string }
-  | { type: "checkbox-checked"; content: string }
-  | { type: "list-item"; content: string }
-  | { type: "table-row"; content: string }
-  | { type: "paragraph"; content: string }
-  | { type: "spacer" };
-
-/**
- * Approximate pixel heights for each element type (used for page splitting).
- * Values account for: line-height (leading-relaxed ≈ 1.625 × 14px ≈ 23px)
- * + margin-bottom (default mb-2 = 8px). Headings have larger font and margin. */
-function elementHeight(el: ContentElement): number {
-  switch (el.type) {
-    case "heading1": return 52;   // text-xl (20px) × 1.2 + mb-3 (12px) + mt-2 (8px)
-    case "heading2": return 44;   // text-base (16px) × 1.3 + mb-2 (8px) + mt-5 (20px)
-    case "heading3": return 36;   // text-sm (14px) × 1.4 + mb-1 (4px) + mt-4 (16px)
-    case "hr": return 36;        // my-4 = 16px top + 1px border + 16px bottom ≈ 33px
-    case "checkbox-unchecked":
-    case "checkbox-checked": return 32;  // 23px line + 8px mb-1 + gap
-    case "list-item": return 32;         // same as paragraph
-    case "table-row": return 24;         // tighter font-mono line
-    case "paragraph": return 32;         // 23px leading-relaxed + 8px mb-2
-    case "spacer": return 10;            // h-2
-    default: return 24;
-  }
-}
-
-/**
- * Usable content height inside one A4 page (px).
- * A4 ratio at 900px width ≈ 1273px total height.
- * Subtract: padding (80px top+bottom), header row (~60px), first divider (16px),
- * TO/DATE row (~50px), title area (~80px), second divider (16px),
- * signature area (~60px bottom), page number (16px) ≈ 378px
- * Result: 1273 - 378 ≈ 895px for first page.
- * Continuation pages have the "Continued" header (~36px) → 895 - 36 = 859px.
- */
-/**
- * Usable content height inside one A4 page (px) for the FIRST page.
- * A4 ratio at 900px width ≈ 1273px total height.
- * Subtract overhead: padding 80px + logo/contact 60px + divider 16px
- * + TO/DATE 50px + title area 96px + divider 16px + signature 60px
- * + page number 16px + buffer 16px ≈ 410px.
- * First page content ≈ 1273 - 410 = 863px ≈ 860px.
- */
-const A4_CONTENT_HEIGHT = 860;
-
-/**
- * Continuation pages (page 2+) have much less overhead:
- * No logo/contact, TO/DATE, or title area. Just padding 80px +
- * continuation header 56px + footer 40px + page number 16px ≈ 192px.
- * Continuation page content ≈ 1273 - 192 = 1081px.
- * Use 960px for some margin. */
-const CONTINUATION_CONTENT_HEIGHT = 960;
-
-function parseContentMarkdown(content: string): ContentElement[] {
-  const lines = content.split("\n");
-  const elements: ContentElement[] = [];
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) { elements.push({ type: "spacer" }); continue; }
-
-    if (/^##\s/.test(trimmed)) {
-      elements.push({ type: "heading2", content: trimmed.replace(/^##\s+/, "").trim() });
-      continue;
-    }
-    if (/^###\s/.test(trimmed)) {
-      elements.push({ type: "heading3", content: trimmed.replace(/^###\s+/, "").trim() });
-      continue;
-    }
-    if (trimmed === "---") { elements.push({ type: "hr" }); continue; }
-    if (/^- \[ \] /.test(trimmed)) {
-      elements.push({ type: "checkbox-unchecked", content: trimmed.replace(/^- \[ \] +/, "") });
-      continue;
-    }
-    if (/^- \[x\] /.test(trimmed)) {
-      elements.push({ type: "checkbox-checked", content: trimmed.replace(/^- \[x\] +/, "") });
-      continue;
-    }
-    if (/^- /.test(trimmed)) {
-      elements.push({ type: "list-item", content: trimmed.replace(/^- +/, "") });
-      continue;
-    }
-    if (/^\| /.test(trimmed)) {
-      elements.push({ type: "table-row", content: trimmed });
-      continue;
-    }
-    // heading 1 with markdown-style
-    if (trimmed.startsWith("# ")) {
-      elements.push({ type: "heading1", content: trimmed.slice(2).trim() });
-      continue;
-    }
-
-    elements.push({ type: "paragraph", content: trimmed });
-  }
-
-  return elements;
-}
-
-/** Split elements into pages based on estimated height.
- * Continuation pages have less usable space due to the "Continued" header. */
-function splitIntoPages(elements: ContentElement[]): ContentElement[][] {
-  const pages: ContentElement[][] = [];
-  let currentPage: ContentElement[] = [];
-  let currentHeight = 0;
-
-  for (const el of elements) {
-    // Continuation pages (2+) have no title-area overhead so they get a larger budget
-    const pageBudget = pages.length === 0 ? A4_CONTENT_HEIGHT : CONTINUATION_CONTENT_HEIGHT;
-    const h = elementHeight(el);
-    if (currentHeight + h > pageBudget && currentPage.length > 0) {
-      pages.push(currentPage);
-      currentPage = [el];
-      currentHeight = h;
-    } else {
-      currentPage.push(el);
-      currentHeight += h;
-    }
-  }
-
-  if (currentPage.length > 0) pages.push(currentPage);
-  return pages;
 }
 
 // ── Element renderers ───────────────────────────────────────────
