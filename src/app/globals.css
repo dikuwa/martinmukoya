@@ -1445,6 +1445,24 @@ input[type="date"]::-moz-calendar-picker-indicator {
     background: var(--surface-soft);
   }
 }
+
+/* Lightweight content-aware loader entrance — pure CSS, staggered via
+   per-zone `animation-delay`. The global reduced-motion rule collapses it to
+   an instant render, so no JS is needed during the loading phase. */
+@keyframes public-loader-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.public-loader-enter {
+  animation: public-loader-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 /* Rich blog editor and the live article preview share the same document rhythm. */
 .rich-blog-editor :is(h1, h2, h3), .rich-blog-preview :is(h1, h2, h3) { color: var(--text-strong); font-weight: 800; line-height: 1.2; margin: 1.5em 0 .55em; }
 .rich-blog-editor h1, .rich-blog-preview h1 { font-size: 2rem; }

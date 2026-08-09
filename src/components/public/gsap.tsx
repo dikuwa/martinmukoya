@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/gsap";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
 // Avoid the React SSR `useLayoutEffect` warning: on the server we no-op,
 // on the client we measure/lay out before paint (no first-frame flash).
@@ -60,26 +60,36 @@ export function GsapReveal({
     if (!el || prefersReducedMotion()) return;
 
     const ctx = gsap.context(() => {
-      const trigger = ScrollTrigger.create({
-        trigger: el,
-        start: "top 85%",
-        once,
-        onEnter: () => {
-          gsap.fromTo(
-            el,
-            { autoAlpha: 0, y },
-            {
-              autoAlpha: 1,
-              y: 0,
-              delay,
-              duration,
-              ease: REDUCED_EASE,
-              clearProps: "transform,opacity,visibility",
-              onComplete: () => trigger.kill(),
+      if (once) {
+        // Pre-hide *before paint* (no flash), then animate in on scroll so the
+        // reveal reads as a smooth fade + rise rather than a visible→hidden pop.
+        gsap.set(el, { autoAlpha: 0, y });
+        gsap.to(el, {
+          autoAlpha: 1,
+          y: 0,
+          delay,
+          duration,
+          ease: REDUCED_EASE,
+          scrollTrigger: { trigger: el, start: "top 85%", once: true },
+        });
+      } else {
+        gsap.fromTo(
+          el,
+          { autoAlpha: 0, y },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration,
+            ease: REDUCED_EASE,
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              end: "bottom 60%",
+              toggleActions: "play reverse play reverse",
             },
-          );
-        },
-      });
+          },
+        );
+      }
     }, el);
 
     return () => ctx.revert();
@@ -129,27 +139,38 @@ export function GsapStagger({
     if (cells.length === 0) return;
 
     const ctx = gsap.context(() => {
-      const trigger = ScrollTrigger.create({
-        trigger: el,
-        start,
-        once,
-        onEnter: () => {
-          gsap.fromTo(
-            cells,
-            { autoAlpha: 0, y },
-            {
-              autoAlpha: 1,
-              y: 0,
-              delay,
-              duration,
-              stagger,
-              ease: REDUCED_EASE,
-              clearProps: "transform,opacity,visibility",
-              onComplete: () => trigger.kill(),
+      if (once) {
+        // Pre-hide the whole set before paint, then stagger them in on scroll.
+        gsap.set(cells, { autoAlpha: 0, y });
+        gsap.to(cells, {
+          autoAlpha: 1,
+          y: 0,
+          delay,
+          duration,
+          stagger,
+          ease: REDUCED_EASE,
+          scrollTrigger: { trigger: el, start, once: true },
+        });
+      } else {
+        gsap.fromTo(
+          cells,
+          { autoAlpha: 0, y },
+          {
+            autoAlpha: 1,
+            y: 0,
+            delay,
+            duration,
+            stagger,
+            ease: REDUCED_EASE,
+            scrollTrigger: {
+              trigger: el,
+              start,
+              end: "bottom 60%",
+              toggleActions: "play reverse play reverse",
             },
-          );
-        },
-      });
+          },
+        );
+      }
     }, el);
 
     return () => ctx.revert();
@@ -208,7 +229,7 @@ export function GsapEntrance({
           duration,
           stagger,
           ease: REDUCED_EASE,
-          clearProps: "transform,opacity,visibility",
+          overwrite: "auto",
         },
       );
     }, el);

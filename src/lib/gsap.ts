@@ -19,10 +19,20 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Defaults tuned to the brand tokens used across the app
 // (--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1)). We use a slightly gentler
-// power3 for long-form scroll reveals.
+// power2.out for long-form scroll reveals so they settle softly.
 gsap.defaults({
-  ease: "power3.out",
+  ease: "power2.out",
   duration: 0.6,
+  overwrite: "auto",
+});
+
+// Small quality-of-life + perf tweaks:
+//  - `ignoreMobileResize` avoids re-measuring every trigger on mobile URL-bar
+//    scroll, which is a common source of scroll "jank" on phones.
+//  - `rememberSetup` helps when navigating with the App Router; each component
+//    still calls ctx.revert() on unmount, so this is just a safeguard.
+ScrollTrigger.config({
+  ignoreMobileResize: true,
 });
 
 /** `true` when the OS asks for reduced motion. Always `false` on the server. */
