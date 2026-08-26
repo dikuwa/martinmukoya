@@ -15,12 +15,15 @@ export function ServiceCard({ service }: { service: Service }) {
   const Icon = serviceIcons[service.id as keyof typeof serviceIcons] ?? MonitorCog;
 
   return (
-    <article role="listitem" className="group flex h-full flex-col rounded-lg border border-transparent p-3 transition-[border-color,background-color,transform] duration-200 hover:-translate-y-px hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)]/40 focus-within:border-[color:var(--border-subtle)] focus-within:bg-[color:var(--surface-soft)]/40">
-      <div className="flex items-center gap-3">
+    <article
+      role="listitem"
+      className="group flex h-full min-w-0 flex-col rounded-lg border border-transparent p-3 transition-[border-color,background-color,transform] duration-200 hover:-translate-y-px hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)]/40 focus-within:border-[color:var(--border-subtle)] focus-within:bg-[color:var(--surface-soft)]/40"
+    >
+      <div className="flex min-w-0 items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)]">
           <Icon size={19} aria-hidden="true" />
         </span>
-        <h3 className="text-balance font-display text-[clamp(1.05rem,calc(0.95rem+0.5vw),1.35rem)] font-black text-[color:var(--text-strong)]">
+        <h3 className="min-w-0 text-balance font-display text-[clamp(1rem,0.94rem+0.3vw,1.2rem)] font-semibold leading-[1.25] tracking-[-0.015em] text-[color:var(--text-strong)]">
           {service.title}
         </h3>
       </div>
@@ -28,7 +31,7 @@ export function ServiceCard({ service }: { service: Service }) {
       <Link
         href={`/services#${service.id}`}
         aria-label={`Learn more about ${service.title}`}
-        className="mt-auto inline-flex w-fit items-center gap-1.5 pt-5 text-sm font-bold text-[color:var(--primary)] outline-offset-4 transition-opacity duration-200 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-[color:var(--primary)]"
+        className="mt-auto inline-flex w-fit items-center gap-1.5 pt-5 text-sm font-semibold text-[color:var(--primary)] outline-offset-4 transition-opacity duration-200 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-[color:var(--primary)]"
       >
         Learn more
         <ArrowRight
