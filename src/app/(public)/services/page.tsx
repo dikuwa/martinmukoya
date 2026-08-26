@@ -1,32 +1,44 @@
 import { Reveal } from "@/components/public/motion";
 import { SectionHeading } from "@/components/public/section-heading";
+import { TrackedLink } from "@/components/public/tracked-link";
 import { Container, Section } from "@/components/ui/container";
+import { serviceSchema, webPageSchema } from "@/lib/schema";
+import { withCanonical } from "@/lib/seo";
 import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { getCurrentSite } from "@/lib/sites";
 import { cn } from "@/lib/utils";
-import { serviceSchema, webPageSchema } from "@/lib/schema";
-import { withCanonical } from "@/lib/seo";
-import { ArrowRight, Bot, CalendarCheck, CheckCircle2, MonitorCog, ShoppingBag, XCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  CalendarCheck,
+  CheckCircle2,
+  MonitorCog,
+  ShoppingBag,
+  XCircle
+} from "lucide-react";
 import type { Metadata } from "next";
-import { TrackedLink } from "@/components/public/tracked-link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
   const site = await getOverriddenPublicSiteConfig(currentSite?.slug);
 
-  return withCanonical({
-    title: "Services",
-    description: site.pages.services.metadataDescription,
-    openGraph: {
-      title: `Services | ${site.brandName}`,
-      description: site.pages.services.metadataDescription
+  return withCanonical(
+    {
+      title: "Services",
+      description: site.pages.services.metadataDescription,
+      openGraph: {
+        title: `Services | ${site.brandName}`,
+        description: site.pages.services.metadataDescription
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `Services | ${site.brandName}`,
+        description: site.pages.services.metadataDescription
+      }
     },
-    twitter: {
-      card: "summary_large_image",
-      title: `Services | ${site.brandName}`,
-      description: site.pages.services.metadataDescription
-    }
-  }, "/services", site.slug);
+    "/services",
+    site.slug
+  );
 }
 
 export default async function ServicesPage() {
@@ -59,9 +71,10 @@ export default async function ServicesPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {serviceSchemas.map((s, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(s) }} />
+      {serviceSchemas.map((schema, index) => (
+        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       ))}
+
       <Section className={cn("pb-12", isFlexTech && "pb-8")}>
         <Container>
           <Reveal>
@@ -75,19 +88,22 @@ export default async function ServicesPage() {
         </Container>
       </Section>
 
-      <Section className={cn(
-        "pt-0 relative overflow-hidden",
-        isFlexTech
-          ? "bg-[color:var(--background)]"
-          : "bg-gradient-to-b from-[color:var(--background)] to-[color:var(--background-elevated)]/12 technical-bg"
-      )}>
-        {!isFlexTech && (
+      <Section
+        className={cn(
+          "relative overflow-hidden pt-0",
+          isFlexTech
+            ? "bg-[color:var(--background)]"
+            : "technical-bg bg-gradient-to-b from-[color:var(--background)] to-[color:var(--background-elevated)]/12"
+        )}
+      >
+        {!isFlexTech ? (
           <>
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 -z-20"
               style={{
-                backgroundImage: `conic-gradient(at top, var(--primary-light) 0deg, var(--primary) 120deg, rgba(255,255,255,0) 220deg)`,
+                backgroundImage:
+                  "conic-gradient(at top, var(--primary-light) 0deg, var(--primary) 120deg, rgba(255,255,255,0) 220deg)",
                 opacity: 0.06,
                 mixBlendMode: "soft-light"
               }}
@@ -97,43 +113,50 @@ export default async function ServicesPage() {
               className="pointer-events-none absolute inset-0 -z-10 bg-[url('/assets/backgrounds/SVG/map-03.svg')] bg-bottom bg-cover opacity-12 blur-sm mix-blend-multiply"
             />
           </>
-        )}
+        ) : null}
 
         <Container className="grid gap-6">
           {site.services.map((service, index) => (
             <Reveal key={service.id} delay={index * 0.05}>
-              <article id={service.id} className="mx-auto max-w-6xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 lg:p-8">
-                {/* Four-column grid: Identity | Who it helps | Common friction | Business results */}
-                <div className="grid items-stretch gap-5 md:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))] lg:gap-6">
-                  {/* Identity column */}
-                  <div className="flex h-full flex-col p-1 lg:pr-2">
-                    <div className="flex items-center gap-4">
+              <article
+                id={service.id}
+                className="mx-auto w-full max-w-6xl scroll-mt-32 overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-5 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-200 sm:p-6 lg:p-8"
+              >
+                <div className="grid gap-0 md:grid-cols-2 md:gap-y-8 lg:grid-cols-4 lg:gap-y-0">
+                  <div className="flex min-w-0 flex-col pb-6 md:pr-6 lg:pb-0 lg:pr-7">
+                    <div className="flex min-w-0 items-start gap-3.5">
                       <ServiceIcon id={service.id} />
-                      <h2 className="text-balance font-display text-2xl font-black leading-tight text-[color:var(--text-strong)] lg:text-3xl">{service.title}</h2>
+                      <h2 className="min-w-0 text-balance font-display text-[clamp(1.25rem,1.05rem+0.55vw,1.65rem)] font-semibold leading-[1.18] tracking-[-0.02em] text-[color:var(--text-strong)]">
+                        {service.title}
+                      </h2>
                     </div>
-                    <p className="mt-4 max-w-sm text-sm leading-7 text-[color:var(--text-muted)]">{service.summary}</p>
-                    <TrackedLink
-                      siteSlug={site.slug}
-                      eventType="service_interest_clicked"
-                      eventPage="/services"
-                      eventSource="service_cta"
-                      eventMetadata={{ service: service.id }}
-                      href={`/start-project?service=${service.id}`}
-                      className="group mt-5 inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-bold text-[color:var(--primary)] outline-offset-4 transition-colors hover:text-[color:var(--primary-dark)] focus-visible:outline-2 focus-visible:outline-[color:var(--primary)] lg:mt-auto lg:pt-6"
-                    >
-                      {page.ctaLabel}
-                      <ArrowRight size={15} aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
-                    </TrackedLink>
+                    <p className="mt-4 max-w-md text-sm leading-7 text-[color:var(--text-muted)]">
+                      {service.summary}
+                    </p>
                   </div>
 
-                  {/* Who it helps */}
                   <InfoBlock title="Who it helps" description={service.who} variant="help" />
-
-                  {/* Common friction */}
                   <InfoBlock title="Common friction" items={service.problems} variant="friction" />
-
-                  {/* Business results */}
                   <InfoBlock title="Business results" items={service.outcomes} variant="result" />
+                </div>
+
+                <div className="mt-7 flex justify-center">
+                  <TrackedLink
+                    siteSlug={site.slug}
+                    eventType="service_interest_clicked"
+                    eventPage="/services"
+                    eventSource="service_cta"
+                    eventMetadata={{ service: service.id }}
+                    href={`/start-project?service=${service.id}`}
+                    className="group inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-sm font-semibold text-[color:var(--primary)] outline-offset-4 transition-colors hover:text-[color:var(--primary-dark)] focus-visible:outline-2 focus-visible:outline-[color:var(--primary)]"
+                  >
+                    Learn more
+                    <ArrowRight
+                      size={15}
+                      aria-hidden="true"
+                      className="transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1"
+                    />
+                  </TrackedLink>
                 </div>
               </article>
             </Reveal>
@@ -151,18 +174,12 @@ function ServiceIcon({ id }: { id: string }) {
     ecommerce: ShoppingBag,
     "ai-automations": Bot
   };
-  const iconColors = {
-    "web-applications": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
-    "booking-systems": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
-    ecommerce: "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]",
-    "ai-automations": "text-[color:var(--primary)] bg-[color:var(--primary-light)]/12 border-[color:var(--primary-light)]"
-  };
+
   const Icon = icons[id as keyof typeof icons] ?? MonitorCog;
-  const colorClass = iconColors[id as keyof typeof iconColors] ?? iconColors["web-applications"];
 
   return (
-    <div className={"grid h-14 w-14 shrink-0 place-items-center rounded-full border bg-white/[0.03] " + colorClass}>
-      <Icon size={26} />
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-[color:var(--primary-light)] bg-[color:var(--primary-light)]/12 text-[color:var(--primary)] sm:h-13 sm:w-13">
+      <Icon size={23} aria-hidden="true" />
     </div>
   );
 }
@@ -181,23 +198,32 @@ function InfoBlock({
   const isResult = variant === "result";
 
   return (
-    <div className={cn(
-      "h-full rounded-[18px] border border-[color:var(--border-subtle)] p-5 lg:p-6",
-      variant === "help"
-        ? "bg-[color:var(--surface-soft)]"
-        : "bg-white/[0.03]"
-    )}>
-      <h3 className="text-balance text-sm font-bold text-[color:var(--text-strong)]">{title}</h3>
+    <div className="min-w-0 border-t border-[color:var(--border-subtle)] py-6 md:px-6 lg:border-l lg:border-t-0 lg:py-0 lg:px-7">
+      <h3 className="text-balance text-sm font-semibold text-[color:var(--text-strong)]">{title}</h3>
+
       {description ? (
         <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
       ) : null}
+
       {items ? (
         <div className="mt-4 space-y-4">
           {items.map((item) => (
             <div key={item} className="flex items-start gap-3">
-              {isResult
-                ? <CheckCircle2 size={19} strokeWidth={1.8} className="mt-0.5 shrink-0 text-[color:var(--primary)]" aria-hidden="true" />
-                : <XCircle size={19} strokeWidth={1.8} className="mt-0.5 shrink-0 text-[color:var(--primary)]" aria-hidden="true" />}
+              {isResult ? (
+                <CheckCircle2
+                  size={18}
+                  strokeWidth={1.8}
+                  className="mt-0.5 shrink-0 text-[color:var(--primary)]"
+                  aria-hidden="true"
+                />
+              ) : (
+                <XCircle
+                  size={18}
+                  strokeWidth={1.8}
+                  className="mt-0.5 shrink-0 text-[color:var(--primary)]"
+                  aria-hidden="true"
+                />
+              )}
               <p className="text-sm leading-6 text-[color:var(--text-muted)]">{item}</p>
             </div>
           ))}
