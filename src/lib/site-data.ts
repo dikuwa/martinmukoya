@@ -317,5 +317,140 @@ export const blogPosts = [
       "Useful examples include answering common questions, summarising enquiries, and preparing handover notes.",
       "The strongest AI features are clear about what they can and cannot do."
     ]
+  },
+  {
+    title: "How reminders improve appointment businesses",
+    slug: "appointment-reminders",
+    excerpt:
+      "Reminder workflows help both customers and teams arrive prepared.",
+    category: "Bookings",
+    tags: ["Bookings", "Reminders", "Operations"],
+    coverImage: "/assets/backgrounds/webP/brand-03.webp",
+    publishedAt: "2026-04-11",
+    content: [
+      "A booking is only the beginning of the process.",
+      "What happens before the appointment often shapes the quality of the meeting itself.",
+      "A simple reminder workflow can reduce no-shows, improve preparation, and make handover smoother."
+    ]
+  },
+  {
+    title: "The difference between automation and noise",
+    slug: "automation-vs-noise",
+    excerpt:
+      "Useful automation removes repeated work. Noisy automation simply adds another place to check.",
+    category: "AI automation",
+    tags: ["Automation", "Operations", "Workflow"],
+    coverImage: "/assets/backgrounds/webP/brand-04.webp",
+    publishedAt: "2026-04-12",
+    content: [
+      "Automation is popular because it promises speed and consistency.",
+      "But not every automation saves time. Some simply move the work from one place to another.",
+      "Good automation should reduce follow-up, not create another inbox."
+    ]
+  },
+  {
+    title: "Turning FAQs into better customer journeys",
+    slug: "faqs-customer-journeys",
+    excerpt:
+      "How strong answers reduce repeated questions and improve buyer confidence.",
+    category: "Content",
+    tags: ["Content", "Customer experience", "Conversion"],
+    coverImage: "/assets/backgrounds/webP/brand-05.webp",
+    publishedAt: "2026-04-09",
+    content: [
+      "FAQs are often treated as a minor page at the bottom of a website.",
+      "But when built around real buyer questions, they become a tool for trust, clarity, and conversion.",
+      "A good FAQ section answers objections before they block a decision."
+    ]
+  },
+  {
+    title: "A simple lead status workflow for small teams",
+    slug: "lead-status-workflow",
+    excerpt:
+      "A practical lead pipeline that keeps follow-up visible without becoming a full CRM.",
+    category: "Operations",
+    tags: ["Leads", "Operations", "Workflow"],
+    coverImage: "/assets/backgrounds/webP/brand-06.webp",
+    publishedAt: "2026-04-05",
+    content: [
+      "Small businesses often track leads in chat threads, spreadsheets, or memory.",
+      "That creates gaps. Good leads get forgotten, follow-ups stall, and the team loses revenue it already earned.",
+      "A simple status workflow gives every enquiry a clear next step."
+    ]
+  },
+  {
+    title: "How to plan an ecommerce flow before design",
+    slug: "plan-ecommerce-flow-before-design",
+    excerpt:
+      "The operational questions to answer before product cards and checkout screens.",
+    category: "E-commerce",
+    tags: ["E-commerce", "Planning", "Conversion"],
+    coverImage: "/assets/backgrounds/webP/brand-07.webp",
+    publishedAt: "2026-04-07",
+    content: [
+      "E-commerce projects often begin with layout and visuals.",
+      "But without a clear operational flow, the design usually breaks once real products, orders, and exceptions appear.",
+      "Planning the purchase process first saves time and avoids expensive rework."
+    ]
+  },
+  {
+    title: "What recruiters can learn from case studies",
+    slug: "recruiters-case-studies",
+    excerpt:
+      "A case study can show communication, product thinking, and technical judgement at once.",
+    category: "Career",
+    tags: ["Career", "Case studies", "Hiring"],
+    coverImage: "/assets/backgrounds/webP/brand-08.webp",
+    publishedAt: "2026-04-10",
+    content: [
+      "Resumes describe experience. Case studies show how a person thinks.",
+      "For recruiters, a short case study can reveal communication quality, problem framing, and outcome awareness.",
+      "It is one of the clearest ways to evaluate someone beyond buzzwords."
+    ]
+  },
+  {
+    title: "What to include on a service business homepage",
+    slug: "service-business-homepage",
+    excerpt:
+      "How to structure a homepage so visitors understand the offer and take the next step.",
+    category: "Conversion",
+    tags: ["Websites", "Conversion", "SMEs"],
+    coverImage: "/assets/backgrounds/webP/brand-09.webp",
+    publishedAt: "2026-04-04",
+    content: [
+      "A homepage should answer three questions quickly: what you do, who it is for, and what happens next.",
+      "Most service businesses lose visitors because the opening section is decorative instead of clear.",
+      "Simple structure usually outperforms complex design."
+    ]
+  },
+  {
+    title: "When to build a custom dashboard",
+    slug: "when-to-build-custom-dashboard",
+    excerpt:
+      "The signs that spreadsheets and chat threads are no longer enough for your operations.",
+    category: "Web applications",
+    tags: ["Dashboards", "Operations", "Custom software"],
+    coverImage: "/assets/backgrounds/webP/brand-10.webp",
+    publishedAt: "2026-04-06",
+    content: [
+      "Most teams begin with spreadsheets, email threads, and chat tools.",
+      "That works for a while. Eventually the process grows complex enough that manual coordination slows everything down.",
+      "A custom dashboard is worth building when decisions depend on data that is scattered across too many places."
+    ]
+  },
+  {
+    title: "Why admin screens matter in public websites",
+    slug: "why-admin-screens-matter",
+    excerpt:
+      "A good public site often needs a simple private workflow behind it.",
+    category: "Business systems",
+    tags: ["Admin", "Business systems", "Web applications"],
+    coverImage: "/assets/backgrounds/webP/brand-11.webp",
+    publishedAt: "2026-04-08",
+    content: [
+      "A public website is only part of the product.",
+      "Behind the scenes, someone has to update content, manage enquiries, and maintain data quality.",
+      "Without simple admin tools, even a strong website becomes harder to run over time."
+    ]
   }
 ];
