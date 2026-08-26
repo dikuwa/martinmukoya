@@ -2,6 +2,7 @@ import { ok, created, serverError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { createSharedDocumentLink, regenerateShareLink, revokeShareLink } from "@/lib/business-document-service";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
     const pageSize = Math.min(100, parseInt(url.searchParams.get("pageSize") || "50"));
 
-    const where: Record<string, any> = {};
+    const where: Prisma.SharedDocumentWhereInput = {};
     if (type === "financial" || type === "business") where.documentType = type;
     if (status === "expired") where.expiresAt = { lte: new Date() };
     else if (status === "active") where.shareEnabled = true;

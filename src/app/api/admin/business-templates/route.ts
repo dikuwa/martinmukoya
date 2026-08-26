@@ -2,6 +2,7 @@ import { ok, created, serverError, parseJson } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { BusinessDocumentType } from "@prisma/client";
 
 const templateSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     if (error) return error;
     const input = await parseJson(request, templateSchema);
     const template = await db.businessDocumentTemplate.create({
-      data: { ...input, documentCategory: input.documentCategory as any, createdById: session.user.id },
+      data: { ...input,   documentCategory: input.documentCategory as BusinessDocumentType, createdById: session.user.id },
     });
     return created(template);
   } catch (error) {
