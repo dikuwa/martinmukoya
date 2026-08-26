@@ -2,7 +2,7 @@ import { ok, created, serverError, parseJson } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { BusinessDocumentType } from "@prisma/client";
+import { BusinessDocumentType } from "@/generated/prisma/client";
 
 const templateSchema = z.object({
   name: z.string().trim().min(1).max(200),

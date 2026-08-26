@@ -2,7 +2,7 @@ import { ok, created, serverError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { createSharedDocumentLink, regenerateShareLink, revokeShareLink } from "@/lib/business-document-service";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 export async function GET(request: Request) {
   try {
