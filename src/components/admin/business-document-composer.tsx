@@ -114,6 +114,12 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [title, setTitle] = useState(initial?.title || "");
   const [subject, setSubject] = useState(initial?.subject || "");
   const [selectedTemplate, setSelectedTemplate] = useState(initial?.templateId || "");
+
+  // Filter templates to only those matching the current document type
+  const matchingTemplates = useMemo(
+    () => templates.filter((t) => t.documentCategory === documentType),
+    [templates, documentType]
+  );
   const [selectedLead, setSelectedLead] = useState(initial?.leadId || "");
   const [selectedProject, setSelectedProject] = useState(initial?.projectId || "");
   const [selectedFinancialDocument, setSelectedFinancialDocument] = useState(initial?.financialDocumentId || "");
@@ -167,6 +173,8 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
       setSignatureRequired(typeof payload.signatureRequired === "boolean" ? payload.signatureRequired : false);
       if (!senderName && typeof payload.senderName === "string") setSenderName(payload.senderName);
       if (!senderRole && typeof payload.senderRole === "string") setSenderRole(payload.senderRole);
+      // Template is the source of truth for document type
+      if (typeof payload.documentCategory === "string") setDocumentType(payload.documentCategory);
       toast.success("Template applied to the document.");
     } catch (error) {
       console.error("Failed to apply document template:", error);
@@ -252,7 +260,18 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           Document type
           <DashboardSelect
             value={documentType}
-            onChange={e => setDocumentType(e.target.value)}
+            onChange={e => {
+              const newType = e.target.value;
+              setDocumentType(newType);
+              // Clear template if it doesn't match the new document type
+              if (selectedTemplate) {
+                const currentTpl = templates.find((t) => t.id === selectedTemplate);
+                if (currentTpl && currentTpl.documentCategory !== newType) {
+                  setSelectedTemplate("");
+                  toast("Template cleared — it doesn't match the new document type");
+                }
+              }
+            }}
             options={docTypes}
             className={inputClass}
           />
@@ -263,7 +282,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
             <DashboardSelect
               value={selectedTemplate}
               onChange={e => setSelectedTemplate(e.target.value)}
-              options={[{ label: "None (start blank)", value: "" }, ...templates.map((tpl) => ({ label: tpl.name, value: tpl.id }))]}
+              options={[{ label: "None (start blank)", value: "" }, ...matchingTemplates.map((tpl) => ({ label: tpl.name, value: tpl.id }))]}
               className={`${inputClass} flex-1`}
             />
             {template && (

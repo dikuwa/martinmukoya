@@ -18,18 +18,12 @@ type InitialTemplate = {
   defaultSubject?: string | null;
   defaultBodyMarkdown?: string;
   aiInstructions?: string | null;
-  requiredSections?: string[];
-  optionalSections?: string[];
   defaultTone?: string;
   defaultStyle?: string;
   defaultLength?: string;
   signatureRequired?: boolean;
   senderName?: string | null;
   senderRole?: string | null;
-  defaultEmailSubject?: string | null;
-  defaultEmailBody?: string | null;
-  defaultWhatsAppMsg?: string | null;
-  headerFooterEnabled?: boolean;
   active?: boolean;
   sortOrder?: number;
 };
@@ -92,7 +86,6 @@ export function TemplateForm({ initial }: Props) {
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
   const [senderRole, setSenderRole] = useState(initial?.senderRole || "");
-  const [defaultEmailSubject, setDefaultEmailSubject] = useState(initial?.defaultEmailSubject || "");
   const [active, setActive] = useState(initial?.active ?? true);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -110,7 +103,7 @@ export function TemplateForm({ initial }: Props) {
         defaultTone, defaultStyle, defaultLength,
         signatureRequired, senderName: senderName.trim() || undefined,
         senderRole: senderRole.trim() || undefined,
-        defaultEmailSubject: defaultEmailSubject.trim() || undefined,
+
         active,
       };
 
@@ -127,7 +120,7 @@ export function TemplateForm({ initial }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [name, category, defaultTitle, defaultSubject, bodyMarkdown, aiInstructions, defaultTone, defaultStyle, defaultLength, signatureRequired, senderName, senderRole, defaultEmailSubject, active, isEdit, initial, router]);
+  }, [name, category, defaultTitle, defaultSubject, bodyMarkdown, aiInstructions, defaultTone, defaultStyle, defaultLength, signatureRequired, senderName, senderRole, active, isEdit, initial, router]);
 
   return (
     <Card padding="lg" className="grid gap-6" onSubmit={handleSubmit}>
@@ -208,11 +201,6 @@ export function TemplateForm({ initial }: Props) {
           <input value={senderRole} onChange={(e) => setSenderRole(e.target.value)} className={inputClass} />
         </label>
       </div>
-
-      <label className="grid gap-2 text-sm font-bold">
-        Default email subject
-        <input value={defaultEmailSubject} onChange={(e) => setDefaultEmailSubject(e.target.value)} className={inputClass} />
-      </label>
 
       <div className="flex flex-wrap gap-5">
         <DashboardCheckbox

@@ -743,18 +743,12 @@ model BusinessDocumentTemplate {
   defaultSubject      String?
   defaultBodyMarkdown String               @default("")
   aiInstructions      String?
-  requiredSections    String[]             @default([])
-  optionalSections    String[]             @default([])
   defaultTone         String               @default("Professional")
   defaultStyle        String               @default("Structured")
   defaultLength       String               @default("Medium")
   signatureRequired   Boolean              @default(false)
   senderName          String?
   senderRole          String?
-  defaultEmailSubject String?
-  defaultEmailBody    String?
-  defaultWhatsAppMsg  String?
-  headerFooterEnabled Boolean              @default(false)
   active              Boolean              @default(true)
   sortOrder           Int                  @default(0)
   createdById         String?
