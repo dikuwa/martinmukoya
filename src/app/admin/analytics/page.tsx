@@ -5,9 +5,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { BarChart3, Globe, Monitor, MousePointerClick, TrendingUp, Users, ExternalLink, Calendar } from "lucide-react";
+import { BarChart3, Globe, Monitor, MousePointerClick, Users, ExternalLink, Calendar } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
-import { Card } from "@/components/ui/card";
+import { BarChartCard, DonutCard, TrendAreaChart } from "@/components/admin/analytics-charts";
 
 type PageProps = { searchParams: Promise<{ search?: string; status?: string; source?: string; site?: string; range?: string; page?: string }> };
 const PAGE_SIZE = 10;
@@ -18,8 +18,6 @@ const rangeOptions = [
   { label: "All time", value: "all" }
 ];
 
-type BarItem = { label: string; value: number };
-
 function getRangeStart(range?: string) {
   if (!range || range === "all") return undefined;
   const days = Number(range.replace("d", ""));
@@ -29,71 +27,15 @@ function getRangeStart(range?: string) {
   return date;
 }
 
-function AnalyticsBarCard({ title, icon, items }: { title: string; icon: ReactNode; items: BarItem[] }) {
-  const max = Math.max(1, ...items.map((item) => item.value));
-
+/** Staggered summary card wrapper — uses the same public-loader-enter pattern. */
+function SummaryCard({ index, children }: { index: number; children: ReactNode }) {
   return (
-    <Card padding="md" className="shadow-[var(--shadow-xs)]">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
-          {icon}
-        </div>
-        <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">{title}</h2>
-      </div>
-      <div className="grid gap-4">
-        {items.length === 0 ? (
-          <p className="text-sm text-[color:var(--text-muted)]">No data yet.</p>
-        ) : (
-          items.map((item) => (
-            <div key={item.label} className="grid gap-2">
-              <div className="flex items-center justify-between gap-3 text-xs font-bold text-[color:var(--text-muted)]">
-                <span className="truncate">{item.label}</span>
-                <span>{item.value}</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
-                <div
-                  className="h-full rounded-full bg-[color:var(--primary)] transition-all"
-                  style={{ width: `${Math.max(6, (item.value / max) * 100)}%` }}
-                />
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function TrendChart({ items }: { items: BarItem[] }) {
-  const max = Math.max(1, ...items.map((item) => item.value));
-
-  return (
-    <Card padding="md" className="shadow-[var(--shadow-xs)] xl:col-span-2">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
-          <TrendingUp size={14} className="text-[color:var(--primary)]" />
-        </div>
-        <h2 className="font-display text-base font-black text-[color:var(--text-strong)]">Conversion trend</h2>
-      </div>
-      <div className="flex h-32 items-end gap-2">
-        {items.map((item) => (
-          <div key={item.label} className="group relative flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div
-              className="w-full rounded-t-[6px] bg-gradient-to-t from-[color:var(--primary)] to-[color:var(--primary-light)] transition-all hover:opacity-80"
-              style={{ height: `${Math.max(8, (item.value / max) * 100)}%` }}
-            />
-            <span className="w-full truncate text-center text-[10px] font-bold text-[color:var(--text-faint)]">
-              {item.label}
-            </span>
-            {item.value > 0 && (
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] font-black text-[color:var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100">
-                {item.value}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </Card>
+    <div
+      className="public-loader-enter"
+      style={{ animationDelay: `${index * 0.05}s` }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -117,9 +59,7 @@ async function AnalyticsSummary({ range, site }: { range?: string; site?: string
     db.analyticsEvent.groupBy({
       by: ["source"],
       where: { ...where, source: { not: null }, eventType: { in: ["cta_click", "whatsapp_click", "email_click"] } },
-      _count: { _all: true },
-      orderBy: { _count: { source: "desc" } },
-      take: 5
+      _count: { _all: true }, orderBy: { _count: { source: "desc" } }, take: 5
     }),
     db.lead.groupBy({
       by: ["source"],
@@ -127,9 +67,7 @@ async function AnalyticsSummary({ range, site }: { range?: string; site?: string
         ...(rangeStart ? { createdAt: { gte: rangeStart } } : {}),
         ...(site && site !== "all" ? { site: { slug: site } } : {})
       },
-      _count: { _all: true },
-      orderBy: { _count: { source: "desc" } },
-      take: 5
+      _count: { _all: true }, orderBy: { _count: { source: "desc" } }, take: 5
     })
   ]);
   const conversionEvents = await db.analyticsEvent.findMany({
@@ -149,15 +87,39 @@ async function AnalyticsSummary({ range, site }: { range?: string; site?: string
     return { label, value };
   });
 
+  // Build a key from the filtered data so recharts replays animations on filter change
+  const animKey = `${range ?? "all"}-${site ?? "all"}-${eventTypes.map((e) => e._count._all).join(",")}`;
+
+  const eventData = eventTypes.map((item) => ({ label: item.eventType, value: item._count._all }));
+  const pagesData = topPages.map((item) => ({ label: item.page ?? "Unknown", value: item._count._all }));
+  const sourcesData = sources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }));
+  const devicesData = devices.map((item) => ({ label: item.device ?? "Unknown", value: item._count._all }));
+  const ctaData = ctaSources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }));
+  const leadsData = leadSources.map((item) => ({ label: item.source, value: item._count._all }));
+
   return (
     <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-      <AnalyticsBarCard title="Events" icon={<BarChart3 size={14} className="text-[color:var(--primary)]" />} items={eventTypes.map((item) => ({ label: item.eventType, value: item._count._all }))} />
-      <AnalyticsBarCard title="Top pages" icon={<ExternalLink size={14} className="text-[color:var(--primary)]" />} items={topPages.map((item) => ({ label: item.page ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBarCard title="Sources" icon={<Globe size={14} className="text-[color:var(--primary)]" />} items={sources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBarCard title="Devices" icon={<Monitor size={14} className="text-[color:var(--primary)]" />} items={devices.map((item) => ({ label: item.device ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBarCard title="CTA performance" icon={<MousePointerClick size={14} className="text-[color:var(--primary)]" />} items={ctaSources.map((item) => ({ label: item.source ?? "Unknown", value: item._count._all }))} />
-      <AnalyticsBarCard title="Lead sources" icon={<Users size={14} className="text-[color:var(--primary)]" />} items={leadSources.map((item) => ({ label: item.source, value: item._count._all }))} />
-      <TrendChart items={trend} />
+      <SummaryCard index={0}>
+        <BarChartCard title="Events" icon={<BarChart3 size={14} className="text-[color:var(--primary)]" />} items={eventData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={1}>
+        <BarChartCard title="Top pages" icon={<ExternalLink size={14} className="text-[color:var(--primary)]" />} items={pagesData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={2}>
+        <DonutCard title="Sources" icon={<Globe size={14} className="text-[color:var(--primary)]" />} items={sourcesData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={3}>
+        <DonutCard title="Devices" icon={<Monitor size={14} className="text-[color:var(--primary)]" />} items={devicesData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={4}>
+        <BarChartCard title="CTA performance" icon={<MousePointerClick size={14} className="text-[color:var(--primary)]" />} items={ctaData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={5}>
+        <BarChartCard title="Lead sources" icon={<Users size={14} className="text-[color:var(--primary)]" />} items={leadsData} animationKey={animKey} />
+      </SummaryCard>
+      <SummaryCard index={6}>
+        <TrendAreaChart items={trend} animationKey={animKey} />
+      </SummaryCard>
     </div>
   );
 }
