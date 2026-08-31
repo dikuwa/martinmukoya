@@ -1,6 +1,5 @@
 "use client";
 
-import posthog from "posthog-js";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, Suspense, type ReactNode } from "react";
 
@@ -10,25 +9,13 @@ const posthogKey =
   process.env.NEXT_PUBLIC_POSTHOG_KEY ??
   process.env.NEXT_PUBLIC_POSTHOG_TOKEN;
 
-if (typeof window !== "undefined" && posthogKey) {
-  // Check for existing consent before initialising
-  const hasConsented = (() => {
-    try {
-      return localStorage.getItem(COOKIE_CONSENT_KEY) === "accepted";
-    } catch {
-      return false;
-    }
-  })();
+let posthogModule: typeof import("posthog-js").default | null = null;
 
-  posthog.init(posthogKey, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    capture_pageview: false,
-    persistence: "localStorage+cookie"
-  });
-
-  if (!hasConsented) {
-    posthog.opt_out_capturing();
-  }
+async function getPostHog(): Promise<typeof import("posthog-js").default> {
+  if (posthogModule) return posthogModule;
+  const mod = await import("posthog-js");
+  posthogModule = mod.default;
+  return posthogModule;
 }
 
 function getStoredConsent(): boolean {
@@ -44,21 +31,33 @@ function PostHogPageView() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Respect consent choice on each page view
-    const consented = getStoredConsent();
-    if (consented) {
-      posthog.opt_in_capturing();
-    } else {
-      posthog.opt_out_capturing();
-    }
+    if (!posthogKey) return;
 
-    if (pathname && posthog.__loaded && consented) {
-      let url = window.origin + pathname;
-      if (searchParams?.toString()) {
-        url += `?${searchParams.toString()}`;
+    const consented = getStoredConsent();
+
+    getPostHog().then((ph) => {
+      if (!ph.__loaded) {
+        ph.init(posthogKey, {
+          api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+          capture_pageview: false,
+          persistence: "localStorage+cookie",
+        });
       }
-      posthog.capture("$pageview", { $current_url: url });
-    }
+
+      if (!consented) {
+        ph.opt_out_capturing();
+      } else {
+        ph.opt_in_capturing();
+      }
+
+      if (pathname && ph.__loaded && consented) {
+        let url = window.origin + pathname;
+        if (searchParams?.toString()) {
+          url += `?${searchParams.toString()}`;
+        }
+        ph.capture("$pageview", { $current_url: url });
+      }
+    });
   }, [pathname, searchParams]);
 
   return null;
@@ -67,9 +66,11 @@ function PostHogPageView() {
 export function PostHogProvider({ children }: { children: ReactNode }) {
   return (
     <>
-      <Suspense fallback={null}>
-        <PostHogPageView />
-      </Suspense>
+      {posthogKey ? (
+        <Suspense fallback={null}>
+          <PostHogPageView />
+        </Suspense>
+      ) : null}
       {children}
     </>
   );

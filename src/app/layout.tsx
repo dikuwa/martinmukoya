@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
-import { Toaster } from "react-hot-toast";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
@@ -11,14 +11,14 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
-  preload: true
+  preload: false
 });
 
 const interTight = Inter_Tight({
   subsets: ["latin"],
   variable: "--font-inter-tight",
   display: "swap",
-  preload: true
+  preload: false
 });
 
 export const metadata: Metadata = {
@@ -99,42 +99,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <PostHogProvider>
               {children}
             </PostHogProvider>
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#1a1a2e',
-                  color: '#f1f1f1',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                },
-                success: {
-                  style: {
-                    background: '#065f46',
-                    border: '1px solid rgba(52, 211, 153, 0.35)',
-                    color: '#d1fae5',
-                  },
-                  iconTheme: {
-                    primary: '#34d399',
-                    secondary: '#065f46',
-                  },
-                },
-                error: {
-                  style: {
-                    background: '#7f1d1d',
-                    border: '1px solid rgba(248, 113, 113, 0.35)',
-                    color: '#fee2e2',
-                  },
-                  iconTheme: {
-                    primary: '#f87171',
-                    secondary: '#7f1d1d',
-                  },
-                },
-              }}
-            />
+            <ToastProvider />
           </QueryProvider>
         </ThemeProvider>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
