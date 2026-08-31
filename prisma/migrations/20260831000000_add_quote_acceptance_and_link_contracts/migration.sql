@@ -5,7 +5,9 @@ ALTER TYPE "DocumentStatus" ADD VALUE IF NOT EXISTS 'DECLINED';
 -- AlterTable: FinancialDocument
 ALTER TABLE "FinancialDocument" ADD COLUMN "acceptedAt" TIMESTAMP(3),
                                 ADD COLUMN "acceptedName" TEXT,
-                                ADD COLUMN "declinedAt" TIMESTAMP(3);
+                                ADD COLUMN "declinedAt" TIMESTAMP(3),
+                                ADD COLUMN "invoiceTotal" DECIMAL(12, 2),
+                                ADD COLUMN "balanceAfter" DECIMAL(12, 2);
 
 -- AlterTable: BusinessDocument
 ALTER TABLE "BusinessDocument" ADD COLUMN "financialDocumentId" TEXT;

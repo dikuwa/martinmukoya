@@ -125,7 +125,8 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
       number: documentNumber("RECEIPT"), type: "RECEIPT", status: "PAID", siteId: invoice.siteId, bookingId: invoice.bookingId,
       customerName: invoice.customerName, customerEmail: invoice.customerEmail, customerPhone: invoice.customerPhone,
       customerCompany: invoice.customerCompany, customerAddress: invoice.customerAddress, issuerSnapshot: issuer,
-      subtotal: amount.toFixed(2), total: amount.toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
+      subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(invoice.total).toFixed(2),
+      balanceAfter: (balance - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
       notes: input.notes, lineItems: { create: { description: `Payment received for ${invoice.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },
     } });
     const payment = await tx.payment.create({ data: {

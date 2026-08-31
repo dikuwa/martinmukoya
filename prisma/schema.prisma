@@ -422,6 +422,8 @@ model FinancialDocument {
   subtotal              Decimal        @default(0) @db.Decimal(12, 2)
   taxAmount             Decimal        @default(0) @db.Decimal(12, 2)
   total                 Decimal        @default(0) @db.Decimal(12, 2)
+  invoiceTotal          Decimal?     @db.Decimal(12, 2)
+  balanceAfter          Decimal?     @db.Decimal(12, 2)
   notes                 String?
   paymentTerms          String?
   issuedAt              DateTime?
