@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
 import { Plus, ExternalLink, FileText } from "lucide-react";
 import type { Prisma, BusinessDocumentType, BusinessDocumentStatus } from "@/generated/prisma/client";
+import { Card } from "@/components/ui/card";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
 
 type Props = { searchParams: Promise<{ type?: string; status?: string; search?: string }> };
 
@@ -62,29 +64,15 @@ export default async function BusinessDocumentsPage({ searchParams }: Props) {
         }
       />
 
-      <form className="flex flex-wrap gap-2 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
+      <Card padding="sm" className="flex flex-wrap gap-2">
         <input name="search" defaultValue={search} placeholder="Search by title, number, recipient…" className={`${filterClass} min-w-64 flex-1`} />
-        <select name="type" defaultValue={type || "all"} className={filterClass}>
-          <option value="all">All types</option>
-          {Object.entries(docTypeLabels).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </select>
-        <select name="status" defaultValue={status || "all"} className={filterClass}>
-          <option value="all">All statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="ISSUED">Issued</option>
-          <option value="SENT">Sent</option>
-          <option value="VIEWED">Viewed</option>
-          <option value="ACCEPTED">Accepted</option>
-          <option value="DECLINED">Declined</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
+        <DashboardSelect name="type" defaultValue={type || "all"} options={[{ value: "all", label: "All types" }, ...Object.entries(docTypeLabels).map(([value, label]) => ({ value, label }))]} className={filterClass} />
+        <DashboardSelect name="status" defaultValue={status || "all"} options={[{ value: "all", label: "All statuses" }, { value: "DRAFT", label: "Draft" }, { value: "ISSUED", label: "Issued" }, { value: "SENT", label: "Sent" }, { value: "VIEWED", label: "Viewed" }, { value: "ACCEPTED", label: "Accepted" }, { value: "DECLINED", label: "Declined" }, { value: "ARCHIVED", label: "Archived" }]} className={filterClass} />
         <button className="rounded-xl bg-[color:var(--primary)] px-4 text-sm font-bold text-white">Filter</button>
         <Link href="/admin/business-documents" className="grid place-items-center rounded-xl px-4 text-sm font-bold">Clear</Link>
-      </form>
+      </Card>
 
-      <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
+      <Card className="overflow-hidden">
         <div className="grid gap-0.5">
           {documents.map((doc) => (
             <Link
@@ -119,7 +107,7 @@ export default async function BusinessDocumentsPage({ searchParams }: Props) {
             <Button asChild><Link href="/admin/business-documents/new">Create document</Link></Button>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

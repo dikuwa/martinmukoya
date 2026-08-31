@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { Allura } from "next/font/google";
 import { DocumentPageBackdrop } from "@/components/documents/document-page-backdrop";
 import { formatDocumentDate } from "@/lib/business-document-templates";
@@ -140,7 +141,7 @@ function DocumentPage({ pageNumber, totalPages, elements, doc, business, showDra
       {isFirstPage && (
         <header className="flex items-start justify-between gap-6">
           <div className="min-w-0">
-            <img src={business.logo} alt={business.name} className="h-14 max-w-52 object-contain object-left" />
+            <Image src={business.logo} alt={business.name} width={208} height={56} unoptimized className="h-14 max-w-52 object-contain object-left" />
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#777]">CONTACT</p>
@@ -205,7 +206,7 @@ function DocumentPage({ pageNumber, totalPages, elements, doc, business, showDra
           {business.showSignature && doc.senderName && (
             <div className="min-w-44 text-right">
               {business.signatureMode === "image" && business.signatureImage ? (
-                <img src={business.signatureImage} alt={`${business.signerName} signature`} className="ml-auto -mb-1 h-10 w-36 -rotate-3 object-contain object-right" />
+                <Image src={business.signatureImage} alt={`${business.signerName} signature`} width={144} height={40} unoptimized className="ml-auto -mb-1 h-10 w-36 -rotate-3 object-contain object-right" />
               ) : (
                 <div className={`${allura.className} -mb-1 -rotate-3 text-[23px] leading-[22px]`}>{doc.senderName || business.signerName}</div>
               )}

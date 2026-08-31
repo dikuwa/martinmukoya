@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
 import { SharedDocumentActions } from "@/components/admin/shared-document-actions";
 import type { Prisma } from "@/generated/prisma/client";
+import { Card } from "@/components/ui/card";
 
 type Props = { searchParams: Promise<{ type?: string; status?: string }> };
 
@@ -35,7 +36,7 @@ export default async function SharedDocumentsPage({ searchParams }: Props) {
     <div className="grid gap-8">
       <PageHeader title="Shared documents" description="View all shared document links, track views and downloads, and manage sharing." />
 
-      <form className="flex flex-wrap gap-2 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
+      <Card padding="sm" className="flex flex-wrap gap-2">
         <DashboardSelect
           name="type"
           defaultValue={type}
@@ -63,9 +64,9 @@ export default async function SharedDocumentsPage({ searchParams }: Props) {
         <Button asChild type="button" variant="ghost" className="h-10">
           <Link href="/admin/shared-documents">Clear</Link>
         </Button>
-      </form>
+      </Card>
 
-      <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
+      <Card className="overflow-hidden">
         <div className="grid gap-0.5">
           {shares.map((share) => {
             const isFinancial = share.documentType === "financial";
@@ -111,7 +112,7 @@ export default async function SharedDocumentsPage({ searchParams }: Props) {
         {!shares.length && (
           <p className="p-6 text-sm text-[color:var(--text-muted)]">No shared documents yet. Issue a document to generate a share link.</p>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

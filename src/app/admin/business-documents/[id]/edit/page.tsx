@@ -16,10 +16,11 @@ export default async function EditBusinessDocumentPage({ params }: Props) {
   });
   if (!doc || doc.status !== "DRAFT") notFound();
 
-  const [templates, leads, projects, sites, issuer] = await Promise.all([
+  const [templates, leads, projects, financialDocuments, sites, issuer] = await Promise.all([
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
+    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true } }),
     db.site.findMany({ orderBy: { name: "asc" } }),
     getIssuerSnapshot(),
   ]);
@@ -31,6 +32,7 @@ export default async function EditBusinessDocumentPage({ params }: Props) {
         templates={templates}
         leads={leads}
         projects={projects}
+        financialDocuments={financialDocuments}
         sites={sites}
         initial={JSON.parse(JSON.stringify(doc))}
         business={{ name: issuer.name, email: issuer.email, phone: issuer.phone, address: issuer.address }}

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 import type { ReactNode } from "react";
 
 type StatCardProps = {
@@ -11,9 +12,10 @@ type StatCardProps = {
 
 export function StatCard({ label, value, detail, visual, className }: StatCardProps) {
   return (
-    <div
+    <Card
+      padding="sm"
       className={cn(
-        "group rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[color:var(--surface-soft)] hover:shadow-[var(--shadow-md)]",
+        "group rounded-[var(--radius)] shadow-[var(--shadow-xs)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[color:var(--surface-soft)] hover:shadow-[var(--shadow-md)]",
         className
       )}
     >
@@ -31,6 +33,6 @@ export function StatCard({ label, value, detail, visual, className }: StatCardPr
         ) : null}
       </div>
       {detail ? <p className="mt-2.5 text-xs leading-5 text-[color:var(--text-muted)]">{detail}</p> : null}
-    </div>
+    </Card>
   );
 }

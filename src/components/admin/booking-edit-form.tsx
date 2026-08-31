@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const field = "h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm outline-none focus:border-[color:var(--primary)]";
 
@@ -29,7 +30,7 @@ export function BookingEditForm({ booking, sites }: { booking: { id: string; sit
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 md:grid-cols-2">
+    <Card as="form" padding="lg" className="grid gap-5 md:grid-cols-2" onSubmit={submit}>
       <label className="grid gap-2 text-sm font-bold">Site
         <DashboardSelect
           name="siteId"
@@ -57,6 +58,6 @@ export function BookingEditForm({ booking, sites }: { booking: { id: string; sit
       <Button disabled={saving} className="md:col-span-2">
         {saving ? "Saving..." : "Save booking"}
       </Button>
-    </form>
+    </Card>
   );
 }

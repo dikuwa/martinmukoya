@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/dialog";
 import { WhatsAppShareDialog } from "@/components/admin/whatsapp-share-dialog";
 import { EmailShareDialog } from "@/components/admin/email-share-dialog";
 import { findUnresolvedPlaceholders } from "@/lib/business-document-templates";
@@ -158,29 +159,27 @@ export function BusinessDocumentActions({ doc, shortLink }: { doc: BusinessDoc; 
       </div>
 
       {/* Unresolved placeholders warning */}
-      {unresolvedWarning && unresolvedWarning.length > 0 && (
-        <div className="fixed inset-0 z-[120] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Unresolved template fields">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl">
-            <h2 className="font-display text-xl font-black">Unresolved template fields</h2>
-            <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-              The following placeholder fields still need to be resolved before sending or sharing this document:
-            </p>
-            <ul className="mt-3 min-h-0 flex-1 list-disc overflow-y-auto pl-5 pr-2 text-sm text-[color:var(--text-muted)]">
-              {unresolvedWarning.map((key) => (
-                <li key={key}>{key}</li>
-              ))}
-            </ul>
-            <div className="mt-5 flex shrink-0 flex-wrap gap-3 border-t border-[color:var(--border-subtle)] pt-4">
-              <Button variant="secondary" onClick={() => { setUnresolvedWarning(null); setPendingAction(null); }}>
-                Return to document
-              </Button>
-              <Button onClick={handleProceedAnyway}>
-                Proceed anyway
-              </Button>
-            </div>
+      <AlertDialog open={!!unresolvedWarning && unresolvedWarning.length > 0} onOpenChange={(open) => { if (!open) { setUnresolvedWarning(null); setPendingAction(null); } }}>
+        <AlertDialogContent className="max-h-[calc(100vh-2rem)] flex-col">
+          <AlertDialogTitle>Unresolved template fields</AlertDialogTitle>
+          <AlertDialogDescription>
+            The following placeholder fields still need to be resolved before sending or sharing this document:
+          </AlertDialogDescription>
+          <ul className="mt-3 min-h-0 flex-1 list-disc overflow-y-auto pl-5 pr-2 text-sm text-[color:var(--text-muted)]">
+            {unresolvedWarning?.map((key) => (
+              <li key={key}>{key}</li>
+            ))}
+          </ul>
+          <div className="mt-5 flex shrink-0 flex-wrap gap-3 border-t border-[color:var(--border-subtle)] pt-4">
+            <Button variant="secondary" onClick={() => { setUnresolvedWarning(null); setPendingAction(null); }}>
+              Return to document
+            </Button>
+            <Button onClick={handleProceedAnyway}>
+              Proceed anyway
+            </Button>
           </div>
-        </div>
-      )}
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EmailShareDialog
         open={emailOpen}

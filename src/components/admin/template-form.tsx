@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BlogEditor } from "@/components/admin/blog-editor";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
+import { Card } from "@/components/ui/card";
 
 type InitialTemplate = {
   id?: string;
@@ -73,7 +74,7 @@ const lengthOptions = [
   { value: "Long", label: "Long" },
 ];
 
-const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
+import { inputClass } from "@/components/ui/input";
 
 export function TemplateForm({ initial }: Props) {
   const router = useRouter();
@@ -129,7 +130,7 @@ export function TemplateForm({ initial }: Props) {
   }, [name, category, defaultTitle, defaultSubject, bodyMarkdown, aiInstructions, defaultTone, defaultStyle, defaultLength, signatureRequired, senderName, senderRole, defaultEmailSubject, active, isEdit, initial, router]);
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+    <Card padding="lg" className="grid gap-6" onSubmit={handleSubmit}>
       <div className="grid gap-5 md:grid-cols-[1fr_200px]">
         <label className="grid gap-2 text-sm font-bold">
           Template name <span className="text-[color:var(--destructive)]">*</span>
@@ -232,6 +233,6 @@ export function TemplateForm({ initial }: Props) {
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin/business-templates")}>Cancel</Button>
       </div>
-    </form>
+    </Card>
   );
 }

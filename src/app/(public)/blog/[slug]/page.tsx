@@ -14,6 +14,7 @@ import { publicSiteConfigs } from "@/lib/public-site-config";
 import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
 import { absoluteUrl, canonicalSiteForSharedContent, PRIMARY_SITE_SLUG, siteUrl, withCanonical } from "@/lib/seo";
 import { getCurrentSite } from "@/lib/sites";
+import { Card } from "@/components/ui/card";
 
 type BlogPageProps = {
   params: Promise<{ slug: string }>;
@@ -110,9 +111,9 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
           </Reveal>
         </Container>
         <Container className="mt-10">
-          <Reveal className="relative aspect-[16/8] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
+          <Card className="relative aspect-[16/8] overflow-hidden">
             <Image src={post.coverImage} alt={post.title + " — cover image"} fill priority className="object-cover" sizes="100vw" />
-          </Reveal>
+          </Card>
         </Container>
       </Section>
       <Section className="pt-0">

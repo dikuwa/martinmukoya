@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BusinessDocumentActions } from "@/components/admin/business-document-actions";
 import { BusinessDocumentPreview } from "@/components/documents/business-document-preview";
 import { getIssuerSnapshot } from "@/lib/finance-service";
+import { Card } from "@/components/ui/card";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -26,6 +27,7 @@ export default async function BusinessDocumentPage({ params }: Props) {
       publicShare: true,
       auditLog: { orderBy: { createdAt: "desc" }, take: 50 },
       template: true,
+      financialDocument: { select: { id: true, number: true, type: true, total: true } },
     },
   });
   if (!doc) notFound();
@@ -103,7 +105,7 @@ export default async function BusinessDocumentPage({ params }: Props) {
 
         {/* Sidebar */}
         <aside className="grid gap-4">
-          <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+          <Card padding="md">
             <h3 className="font-bold text-sm mb-3">Details</h3>
             <dl className="grid gap-2 text-sm">
               {doc.documentNumber && <><dt className="text-[color:var(--text-faint)] text-xs">Number</dt><dd>{doc.documentNumber}</dd></>}
@@ -114,11 +116,21 @@ export default async function BusinessDocumentPage({ params }: Props) {
               {doc.expiryDate && <><dt className="text-[color:var(--text-faint)] text-xs">Expiry</dt><dd>{new Date(doc.expiryDate).toLocaleDateString("en-GB")}</dd></>}
               {doc.template && <><dt className="text-[color:var(--text-faint)] text-xs">Template</dt><dd>{doc.template.name}</dd></>}
               {doc.senderName && <><dt className="text-[color:var(--text-faint)] text-xs">Sender</dt><dd>{doc.senderName}{doc.senderRole ? ` (${doc.senderRole})` : ""}</dd></>}
+              {doc.financialDocument && (
+                <>
+                  <dt className="text-[color:var(--text-faint)] text-xs">Linked document</dt>
+                  <dd>
+                    <Link href={`/admin/documents/${doc.financialDocument.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[color:var(--primary)]/10 px-2 py-0.5 text-xs font-bold text-[color:var(--primary)] hover:bg-[color:var(--primary)]/15">
+                      {`${doc.financialDocument.number || "Draft"} — ${doc.financialDocument.type} — N$${Number(doc.financialDocument.total).toFixed(2)}`}
+                    </Link>
+                  </dd>
+                </>
+              )}
             </dl>
-          </div>
+          </Card>
 
           {doc.publicShare && (
-            <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+            <Card padding="md">
               <h3 className="font-bold text-sm mb-3">Sharing</h3>
               <dl className="grid gap-2 text-sm">
                 <dt className="text-[color:var(--text-faint)] text-xs">Views</dt><dd>{doc.publicShare.viewCount}</dd>
@@ -126,17 +138,17 @@ export default async function BusinessDocumentPage({ params }: Props) {
                 {doc.publicShare.firstViewedAt && <><dt className="text-[color:var(--text-faint)] text-xs">First viewed</dt><dd>{new Date(doc.publicShare.firstViewedAt).toLocaleDateString("en-GB")}</dd></>}
                 {doc.publicShare.lastViewedAt && <><dt className="text-[color:var(--text-faint)] text-xs">Last viewed</dt><dd>{new Date(doc.publicShare.lastViewedAt).toLocaleDateString("en-GB")}</dd></>}
               </dl>
-            </div>
+            </Card>
           )}
 
           {doc.internalNotes && (
-            <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+            <Card padding="md">
               <h3 className="font-bold text-sm mb-2">Internal notes</h3>
               <p className="text-sm text-[color:var(--text-muted)] whitespace-pre-wrap">{doc.internalNotes}</p>
-            </div>
+            </Card>
           )}
 
-          <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+          <Card padding="md">
             <h3 className="font-bold text-sm mb-3">Audit log</h3>
             <div className="grid gap-2 text-xs">
               {doc.auditLog.slice(0, 10).map((log) => (
@@ -146,7 +158,7 @@ export default async function BusinessDocumentPage({ params }: Props) {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </aside>
       </div>
     </div>

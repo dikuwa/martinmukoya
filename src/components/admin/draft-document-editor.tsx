@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const input = "h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
 
@@ -60,7 +61,7 @@ export function DraftDocumentEditor({ initial }: { initial: Initial }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+    <Card as="form" padding="lg" className="grid gap-5" onSubmit={submit}>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">Type
           <DashboardSelect
@@ -141,6 +142,6 @@ export function DraftDocumentEditor({ initial }: { initial: Initial }) {
       <Button disabled={saving} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
         {saving ? "Saving..." : "Save draft"}
       </Button>
-    </form>
+    </Card>
   );
 }

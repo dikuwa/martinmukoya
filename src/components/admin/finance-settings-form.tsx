@@ -7,6 +7,7 @@ import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const input = "h-10 min-w-0 w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
 const fields: Array<[keyof IssuerSnapshot, string]> = [
@@ -56,7 +57,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+    <Card as="form" padding="lg" className="grid gap-6" onSubmit={submit}>
       <section className="grid gap-5 md:grid-cols-2">
         <h2 className="font-display text-xl font-black md:col-span-2">Company identity</h2>
         {fields.slice(0, 7).map(([name, label]) => (
@@ -152,6 +153,6 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
       <Button disabled={saving} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
         {saving ? "Saving..." : "Save financial identity"}
       </Button>
-    </form>
+    </Card>
   );
 }

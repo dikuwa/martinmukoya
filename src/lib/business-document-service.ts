@@ -14,6 +14,7 @@ export type BusinessDocInput = {
   contactId?: string;
   leadId?: string;
   projectId?: string;
+  financialDocumentId?: string;
   serviceId?: string;
   templateId?: string;
   templateVersion?: number;
@@ -67,6 +68,7 @@ export async function createBusinessDocument(input: BusinessDocInput) {
       contactId: input.contactId,
       leadId: input.leadId,
       projectId: input.projectId,
+      financialDocumentId: input.financialDocumentId,
       serviceId: input.serviceId,
       templateId: input.templateId,
       templateVersion: input.templateVersion,

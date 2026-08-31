@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { stripMarkdown } from "@/lib/utils";
 import { Calendar, Clock, Globe, Inbox, Mail, MessageSquare, MessageCircle, Phone, User, ArrowLeft, ExternalLink } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -98,7 +99,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
       {/* ── Main grid ── */}
       <div className="grid gap-5 lg:grid-cols-[1fr_0.78fr]">
         {/* ── Message card ── */}
-        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[var(--shadow-xs)]">
+        <Card className="shadow-[var(--shadow-xs)]">
           {/* Card header */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border-subtle)] px-5 py-4">
             <div className="flex items-center gap-3">
@@ -121,7 +122,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
               <p className="whitespace-pre-wrap leading-7 text-[color:var(--text-strong)]">{stripMarkdown(message.message)}</p>
             </div>
           </div>
-        </section>
+        </Card>
 
         {/* ── Sidebar ── */}
         <aside className="grid gap-5 self-start">
@@ -137,7 +138,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
           </div>
 
           {/* Panel 2: Message Details */}
-          <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <Card padding="md" className="shadow-[var(--shadow-xs)]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <Clock size={14} className="text-[color:var(--primary)]" />
@@ -190,10 +191,10 @@ export default async function MessageDetailPage({ params }: PageProps) {
                 </div>
               </div>
             </dl>
-          </section>
+          </Card>
 
           {/* Panel 3: Quick Follow-up */}
-          <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <Card padding="md" className="shadow-[var(--shadow-xs)]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <ExternalLink size={14} className="text-[color:var(--primary)]" />
@@ -224,7 +225,7 @@ export default async function MessageDetailPage({ params }: PageProps) {
                 </Button>
               ) : null}
             </div>
-          </section>
+          </Card>
         </aside>
       </div>
     </div>

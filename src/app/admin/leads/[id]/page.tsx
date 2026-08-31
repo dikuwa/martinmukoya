@@ -8,6 +8,7 @@ import { stripMarkdown } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { formatNad } from "@/lib/financial";
 import { BadgeCheck, BadgeX, Calendar, Clock, Globe, Mail, MessageSquare, Phone, User, Building2, Target, Wallet, ArrowLeft, ExternalLink, Hash, Users } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -143,7 +144,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
       {/* ── Main grid ── */}
       <div className="grid gap-5 lg:grid-cols-[1fr_0.78fr]">
         {/* ── Request details card ── */}
-        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] shadow-[var(--shadow-xs)]">
+        <Card className="shadow-[var(--shadow-xs)]">
           {/* Card header */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border-subtle)] px-5 py-4">
             <div className="flex items-center gap-3">
@@ -177,7 +178,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
               </div>
             </dl>
           </div>
-        </section>
+        </Card>
 
         {/* ── Sidebar ── */}
         <aside className="grid gap-5 self-start">
@@ -193,7 +194,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
           </div>
 
           {/* Panel 2: Lead Details */}
-          <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <Card padding="md" className="shadow-[var(--shadow-xs)]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <Clock size={14} className="text-[color:var(--primary)]" />
@@ -260,10 +261,10 @@ export default async function LeadDetailPage({ params }: PageProps) {
                 </div>
               </div>
             </dl>
-          </section>
+          </Card>
 
           {/* Panel 3: Linked Chat Sessions */}
-          <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <Card padding="md" className="shadow-[var(--shadow-xs)]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <MessageSquare size={14} className="text-[color:var(--primary)]" />
@@ -306,10 +307,10 @@ export default async function LeadDetailPage({ params }: PageProps) {
                 </p>
               </div>
             )}
-          </section>
+          </Card>
 
           {/* Panel 4: Quick Follow-up */}
-          <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+          <Card padding="md" className="shadow-[var(--shadow-xs)]">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                 <ExternalLink size={14} className="text-[color:var(--primary)]" />
@@ -340,14 +341,14 @@ export default async function LeadDetailPage({ params }: PageProps) {
                 </Button>
               ) : null}
             </div>
-          </section>
+          </Card>
         </aside>
       </div>
       {lead.financialBooking ? (
-        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+        <Card padding="md" className="shadow-[var(--shadow-xs)]">
           <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-display text-lg font-black">Documents and payments</h2><p className="text-xs text-[color:var(--text-muted)]">{lead.financialBooking.number}</p></div><Button asChild size="sm"><Link href={`/admin/bookings/${lead.financialBooking.id}`}>Open booking</Link></Button></div>
           <div className="mt-4 grid gap-2">{lead.financialBooking.documents.map((document)=><Link key={document.id} href={`/admin/documents/${document.id}`} className="flex justify-between rounded-xl bg-[color:var(--surface-soft)] p-3 text-sm"><span className="font-bold">{document.number||"Draft"} · {document.type}</span><span>{document.status} · {formatNad(String(document.total))}</span></Link>)}{!lead.financialBooking.documents.length?<p className="text-sm text-[color:var(--text-muted)]">No documents yet.</p>:null}</div>
-        </section>
+        </Card>
       ) : null}
     </div>
   );

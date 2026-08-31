@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { DocumentActions } from "@/components/admin/document-actions";
 import { FinancialDocumentPreview } from "@/components/admin/financial-document-preview";
+import { Card } from "@/components/ui/card";
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const document = await db.financialDocument.findUnique({
@@ -54,7 +55,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
 
         {/* Sidebar */}
         <aside className="grid gap-4">
-          <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+          <Card padding="md">
             <h3 className="font-bold text-sm mb-3">Details</h3>
             <dl className="grid gap-2 text-sm">
               <dt className="text-[color:var(--text-faint)] text-xs">Number</dt><dd>{document.number || "Draft"}</dd>
@@ -65,11 +66,13 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
               {document.customerEmail && <><dt className="text-[color:var(--text-faint)] text-xs">Email</dt><dd>{document.customerEmail}</dd></>}
               {document.booking && <><dt className="text-[color:var(--text-faint)] text-xs">Booking</dt><dd>{document.booking.number}</dd></>}
               {document.issuedAt && <><dt className="text-[color:var(--text-faint)] text-xs">Issued</dt><dd>{new Date(document.issuedAt).toLocaleDateString("en-GB")}</dd></>}
+              {document.acceptedAt && <><dt className="text-[color:var(--text-faint)] text-xs">Accepted</dt><dd>{document.acceptedName ? `${document.acceptedName} on ` : ""}{new Date(document.acceptedAt).toLocaleDateString("en-GB")}</dd></>}
+              {document.declinedAt && <><dt className="text-[color:var(--text-faint)] text-xs">Declined</dt><dd>{new Date(document.declinedAt).toLocaleDateString("en-GB")}</dd></>}
             </dl>
-          </div>
+          </Card>
 
           {document.sharedDocument && (
-            <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+            <Card padding="md">
               <h3 className="font-bold text-sm mb-3">Sharing</h3>
               <dl className="grid gap-2 text-sm">
                 <dt className="text-[color:var(--text-faint)] text-xs">Views</dt><dd>{document.sharedDocument.viewCount}</dd>
@@ -84,11 +87,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
                   <><dt className="text-[color:var(--text-faint)] text-xs">Status</dt><dd className="text-red-600">Revoked</dd></>
                 )}
               </dl>
-            </div>
+            </Card>
           )}
 
           {(document.notes || document.paymentTerms) && (
-            <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5">
+            <Card padding="md">
               {document.notes && (
                 <>
                   <h3 className="font-bold text-sm mb-2">Notes</h3>
@@ -101,7 +104,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
                   <p className="text-sm text-[color:var(--text-muted)] whitespace-pre-wrap">{document.paymentTerms}</p>
                 </>
               )}
-            </div>
+            </Card>
           )}
         </aside>
       </div>

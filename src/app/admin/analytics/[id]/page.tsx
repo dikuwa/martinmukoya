@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
 import { ArrowLeft, BarChart3, Code, ExternalLink, Globe, Monitor } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -55,7 +56,7 @@ export default async function AnalyticsEventDetailPage({ params }: PageProps) {
       {/* ── Content Grid ── */}
       <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
         {/* Event Context */}
-        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+        <Card padding="md" className="shadow-[var(--shadow-xs)]">
           <div className="mb-4 flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
               <ExternalLink size={14} className="text-[color:var(--primary)]" />
@@ -111,10 +112,10 @@ export default async function AnalyticsEventDetailPage({ params }: PageProps) {
               <dd className="break-all font-semibold text-[color:var(--text-strong)]">{event.referrer ?? "Not tracked"}</dd>
             </div>
           </dl>
-        </section>
+        </Card>
 
         {/* Metadata */}
-        <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+        <Card padding="md" className="shadow-[var(--shadow-xs)]">
           <div className="mb-4 flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
               <Code size={14} className="text-[color:var(--primary)]" />
@@ -124,7 +125,7 @@ export default async function AnalyticsEventDetailPage({ params }: PageProps) {
           <pre className="max-h-[520px] overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] p-4 text-xs leading-6 text-[color:var(--text-muted)] [scrollbar-width:thin] [scrollbar-color:rgba(196,168,240,0.22)_transparent]">
             {JSON.stringify(event.metadata ?? {}, null, 2)}
           </pre>
-        </section>
+        </Card>
       </div>
     </div>
   );

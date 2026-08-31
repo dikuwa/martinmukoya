@@ -1,264 +1,243 @@
 "use client";
 
 /**
- * motion.tsx — public-site animation primitives.
+ * motion.tsx — public-site animation primitives using GSAP.
  *
  * Rules:
  *  - respects prefers-reduced-motion via useReducedMotion()
  *  - animates only transform + opacity (GPU-composited, no layout thrash)
  *  - easing: [0.16, 1, 0.3, 1]  (expo-out — quick start, gentle settle)
  *
- * Exports
- *   Reveal        — whileInView fade + translate (existing, backward-compatible)
- *   BlurFade      — opacity + blur-collapse entrance (premium headlines)
- *   StaggerGroup  — parent that staggers direct StaggerItem children
- *   StaggerItem   — child for StaggerGroup
- *   ParallaxLayer — scroll-linked vertical shift for decorative elements
- *   FadeIn        — plain opacity fade, no movement
+ * These are lightweight wrappers. For scroll-triggered animations, see gsap.tsx.
  */
 
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
-import { useRef, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { type CSSProperties, type ReactNode, useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// ─── Shared ────────────────────────────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
 
-const EASE = [0.16, 1, 0.3, 1] as const;
-const VIEWPORT = { once: true, margin: "-72px" } as const;
+const EASE = "power3.out";
+const DURATION = 0.7;
 
-type RevealDirection = "up" | "down" | "left" | "right" | "none";
-
-function dirOffset(dir: RevealDirection, d: number) {
-  switch (dir) {
-    case "down":  return { y: -d };
-    case "left":  return { x:  d };
-    case "right": return { x: -d };
-    case "none":  return {};
-    default:      return { y:  d };
-  }
+function useReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-// ─── Reveal ────────────────────────────────────────────────────────────────────
+/* ── Reveal ── */
 
-export function Reveal({
-  children,
-  className,
-  delay = 0,
-  direction = "up",
-  distance = 18,
-  duration = 0.62,
-  scale = 1,
-}: {
+interface RevealProps {
   children: ReactNode;
-  className?: string;
   delay?: number;
-  direction?: RevealDirection;
+  direction?: "up" | "down" | "left" | "right";
   distance?: number;
   duration?: number;
   scale?: number;
-}) {
-  const shouldReduce = useReducedMotion();
-  const offset = dirOffset(direction, distance);
-  const initial =
-    scale === 1
-      ? { opacity: 0, ...offset }
-      : { opacity: 0, scale, ...offset };
-
-  return (
-    <motion.div
-      className={cn(className)}
-      initial={shouldReduce ? false : initial}
-      whileInView={shouldReduce ? undefined : { opacity: 1, x: 0, y: 0, scale: 1 }}
-      viewport={VIEWPORT}
-      transition={{ duration, delay, ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
+  className?: string;
 }
 
-// ─── BlurFade ──────────────────────────────────────────────────────────────────
-// Premium entrance: opacity 0→1 + blur 8px→0 + subtle y lift.
-// Best for hero headlines, section titles, focal copy.
-
-export function BlurFade({
-  children,
-  className,
-  delay = 0,
-  duration = 0.52,
-  yOffset = 10,
-  blur = "8px",
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-  duration?: number;
-  yOffset?: number;
-  blur?: string;
-}) {
-  const shouldReduce = useReducedMotion();
-  return (
-    <motion.div
-      className={cn(className)}
-      initial={
-        shouldReduce
-          ? false
-          : { opacity: 0, filter: `blur(${blur})`, y: yOffset }
-      }
-      whileInView={
-        shouldReduce ? undefined : { opacity: 1, filter: "blur(0px)", y: 0 }
-      }
-      viewport={VIEWPORT}
-      transition={{ duration, delay, ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-// ─── StaggerGroup + StaggerItem ────────────────────────────────────────────────
-// Wrap a mapped grid/list in StaggerGroup; each cell in StaggerItem.
-// One IntersectionObserver fires the whole sequence — no per-item observers.
-//
-//   <StaggerGroup className="grid gap-5 md:grid-cols-3">
-//     {items.map((item) => (
-//       <StaggerItem key={item.id}><Card {...item} /></StaggerItem>
-//     ))}
-//   </StaggerGroup>
-
-const itemVariantsFull = {
-  hidden: { opacity: 0, y: 22, filter: "blur(4px)" },
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.5, ease: EASE },
-  },
-};
-
-const itemVariantsReduced = { hidden: {}, visible: {} };
-
-export function StaggerGroup({
-  children,
-  className,
-  stagger = 0.08,
-  delayStart = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  stagger?: number;
-  delayStart?: number;
-}) {
-  const shouldReduce = useReducedMotion();
-  return (
-    <motion.div
-      className={cn(className)}
-      variants={{
-        hidden: {},
-        visible: {
-          transition: {
-            staggerChildren: shouldReduce ? 0 : stagger,
-            delayChildren: delayStart,
-          },
-        },
-      }}
-      initial="hidden"
-      whileInView="visible"
-      viewport={VIEWPORT}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-export function StaggerItem({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const shouldReduce = useReducedMotion();
-  return (
-    <motion.div
-      className={cn(className)}
-      variants={shouldReduce ? itemVariantsReduced : itemVariantsFull}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-// ─── ParallaxLayer ─────────────────────────────────────────────────────────────
-// Scroll-linked vertical shift. Use only for decorative backgrounds / glows.
-// Keep speed 0.05–0.18 for subtlety.
-
-export function ParallaxLayer({
-  children,
-  className,
-  speed = 0.12,
-}: {
-  children: ReactNode;
-  className?: string;
-  speed?: number;
-}) {
+export function Reveal({ children, delay = 0, direction = "up", distance = 30, duration = DURATION, scale, className }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const shouldReduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const range = speed * 60;
-  const y = useTransform(
-    scrollYProgress,
-    [0, 1],
-    [`-${range}px`, `${range}px`]
-  );
+  const reduced = useReducedMotion();
 
-  if (shouldReduce) {
-    return (
-      <div className={cn(className)} ref={ref}>
-        {children}
-      </div>
-    );
-  }
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    const from: Record<string, number> = { opacity: 0 };
+    if (direction === "up") from.y = distance;
+    else if (direction === "down") from.y = -distance;
+    else if (direction === "left") from.x = distance;
+    else if (direction === "right") from.x = -distance;
+    if (scale != null) from.scale = scale;
+
+    gsap.set(el, from);
+
+    const to: Record<string, number> = { opacity: 1, x: 0, y: 0 };
+    if (scale != null) to.scale = 1;
+
+    const tween = gsap.to(el, {
+      ...to,
+      duration,
+      ease: EASE,
+      delay,
+      scrollTrigger: { trigger: el, start: "top 88%", once: true },
+    });
+
+    return () => { tween.kill(); };
+  }, [delay, direction, distance, duration, scale, reduced]);
+
+  if (reduced) return <div className={className}>{children}</div>;
 
   return (
-    <motion.div className={cn(className)} ref={ref} style={{ y }}>
+    <div ref={ref} className={className} style={{ opacity: 0 } as CSSProperties}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-// ─── FadeIn ────────────────────────────────────────────────────────────────────
-// Pure opacity fade — no movement. For dividers, secondary labels, bg elements.
+/* ── BlurFade ── */
 
-export function FadeIn({
-  children,
-  className,
-  delay = 0,
-  duration = 0.5,
-}: {
+interface BlurFadeProps {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}
+
+export function BlurFade({ children, delay = 0, className }: BlurFadeProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    gsap.set(el, { opacity: 0, filter: "blur(8px)" });
+
+    const tween = gsap.to(el, {
+      opacity: 1,
+      filter: "blur(0px)",
+      duration: DURATION,
+      ease: EASE,
+      delay,
+      scrollTrigger: { trigger: el, start: "top 88%", once: true },
+    });
+
+    return () => { tween.kill(); };
+  }, [delay, reduced]);
+
+  if (reduced) return <div className={className}>{children}</div>;
+
+  return (
+    <div ref={ref} className={className} style={{ opacity: 0, filter: "blur(8px)" } as CSSProperties}>
+      {children}
+    </div>
+  );
+}
+
+/* ── StaggerGroup ── */
+
+interface StaggerGroupProps {
+  children: ReactNode;
+  stagger?: number;
+  className?: string;
+}
+
+export function StaggerGroup({ children, stagger = 0.08, className }: StaggerGroupProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    const items = el.children;
+    if (!items.length) return;
+
+    gsap.set(items, { opacity: 0, y: 20 });
+
+    const tween = gsap.to(items, {
+      opacity: 1,
+      y: 0,
+      duration: DURATION,
+      ease: EASE,
+      stagger,
+      scrollTrigger: { trigger: el, start: "top 88%", once: true },
+    });
+
+    return () => { tween.kill(); };
+  }, [stagger, reduced]);
+
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
+
+/* ── StaggerItem ── */
+
+interface StaggerItemProps {
   children: ReactNode;
   className?: string;
+}
+
+export function StaggerItem({ children, className }: StaggerItemProps) {
+  return <div className={className}>{children}</div>;
+}
+
+/* ── ParallaxLayer ── */
+
+interface ParallaxLayerProps {
+  children: ReactNode;
+  speed?: number;
+  className?: string;
+}
+
+export function ParallaxLayer({ children, speed = 0.15, className }: ParallaxLayerProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    const tween = gsap.to(el, {
+      y: () => speed * 100,
+      ease: "none",
+      scrollTrigger: {
+        trigger: el,
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true,
+      },
+    });
+
+    return () => { tween.kill(); };
+  }, [speed, reduced]);
+
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
+
+/* ── FadeIn ── */
+
+interface FadeInProps {
+  children: ReactNode;
   delay?: number;
   duration?: number;
-}) {
-  const shouldReduce = useReducedMotion();
+  className?: string;
+}
+
+export function FadeIn({ children, delay = 0, duration = DURATION, className }: FadeInProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced) return;
+
+    gsap.set(el, { opacity: 0 });
+
+    const tween = gsap.to(el, {
+      opacity: 1,
+      duration,
+      ease: EASE,
+      delay,
+    });
+
+    return () => { tween.kill(); };
+  }, [delay, duration, reduced]);
+
+  if (reduced) return <div className={className}>{children}</div>;
+
   return (
-    <motion.div
-      className={cn(className)}
-      initial={shouldReduce ? false : { opacity: 0 }}
-      whileInView={shouldReduce ? undefined : { opacity: 1 }}
-      viewport={VIEWPORT}
-      transition={{ duration, delay, ease: "easeOut" }}
-    >
+    <div ref={ref} className={className} style={{ opacity: 0 } as CSSProperties}>
       {children}
-    </motion.div>
+    </div>
   );
 }

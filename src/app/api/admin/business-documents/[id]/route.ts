@@ -14,6 +14,7 @@ const updateSchema = z.object({
   contactId: z.string().optional(),
   leadId: z.string().optional(),
   projectId: z.string().optional(),
+  financialDocumentId: z.string().optional(),
   serviceId: z.string().optional(),
   templateId: z.string().optional(),
   companyName: z.string().trim().max(200).optional(),

@@ -1,13 +1,15 @@
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 // ─── Admin skeletons ────────────────────────────────────────────────────────
 // Used by admin dashboard pages. Shimmer is driven by .admin-skeleton in globals.css.
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div
+    <Card
+      padding="md"
       className={cn(
-        "admin-skeleton rounded-[var(--radius)] border border-[color:var(--border-subtle)] p-5",
+        "admin-skeleton rounded-[var(--radius)]",
         className
       )}
     >
@@ -15,7 +17,7 @@ export function SkeletonCard({ className }: { className?: string }) {
       <div className="mt-5 h-4 w-2/3 rounded bg-[color:var(--border-subtle)]" />
       <div className="mt-3 h-3 w-full rounded bg-[color:var(--border-subtle)]" />
       <div className="mt-2 h-3 w-4/5 rounded bg-[color:var(--border-subtle)]" />
-    </div>
+    </Card>
   );
 }
 
@@ -40,16 +42,17 @@ export function SkeletonText({
 
 export function SkeletonStatCard({ className }: { className?: string }) {
   return (
-    <div
+    <Card
+      padding="sm"
       className={cn(
-        "admin-skeleton rounded-[var(--radius)] border border-[color:var(--border-subtle)] p-4",
+        "admin-skeleton rounded-[var(--radius)]",
         className
       )}
     >
       <div className="h-3 w-1/3 rounded bg-[color:var(--border-subtle)]" />
       <div className="mt-3 h-7 w-1/2 rounded bg-[color:var(--border-subtle)]" />
       <div className="mt-3 h-3 w-3/4 rounded bg-[color:var(--border-subtle)]" />
-    </div>
+    </Card>
   );
 }
 

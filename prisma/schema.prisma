@@ -52,6 +52,8 @@ enum DocumentType {
 enum DocumentStatus {
   DRAFT
   ISSUED
+  ACCEPTED
+  DECLINED
   PARTIALLY_PAID
   PAID
   SUPERSEDED
@@ -423,6 +425,9 @@ model FinancialDocument {
   notes                 String?
   paymentTerms          String?
   issuedAt              DateTime?
+  acceptedAt            DateTime?
+  acceptedName          String?
+  declinedAt            DateTime?
   voidedAt              DateTime?
   shareToken            String?        @unique
   shareRevokedAt        DateTime?
@@ -440,6 +445,7 @@ model FinancialDocument {
   payments              Payment[]      @relation("InvoicePayments")
   receiptForPayment     Payment?       @relation("PaymentReceipt")
   sharedDocument        SharedDocument?
+  businessDocuments     BusinessDocument[]
 
   @@index([siteId, createdAt])
   @@index([bookingId, type, status])
@@ -668,6 +674,7 @@ model BusinessDocument {
   contactId         String?
   leadId            String?
   projectId         String?
+  financialDocumentId String?
   serviceId         String?
   templateId        String?
   templateVersion   Int?
@@ -711,6 +718,7 @@ model BusinessDocument {
   updatedAt         DateTime                  @updatedAt
 
   site              Site?                     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  financialDocument FinancialDocument?        @relation(fields: [financialDocumentId], references: [id], onDelete: SetNull)
   template          BusinessDocumentTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   revisionOf        BusinessDocument?          @relation("BusinessDocumentRevisions", fields: [revisionOfId], references: [id], onDelete: SetNull)
   revisions         BusinessDocument[]         @relation("BusinessDocumentRevisions")

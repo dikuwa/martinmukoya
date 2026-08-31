@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string };
 type Invoice = { id: string; label: string; balance: number };
@@ -81,7 +82,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
   }
 
   return (
-    <form id="new-document" onSubmit={submit} className="grid min-w-0 gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 sm:p-5 lg:p-6">
+    <Card as="form" padding="sm" className="grid min-w-0 gap-6 sm:p-5 lg:p-6" id="new-document" onSubmit={submit}>
       <div>
         <h2 className="font-display text-xl font-black">Create document</h2>
         <p className="text-sm text-[color:var(--text-muted)]">Select a lead or booking, then set the actual scope and price.</p>
@@ -171,7 +172,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
       <Button disabled={saving} className="h-11 w-full">
         {saving ? "Creating..." : "Create document"}
       </Button>
-    </form>
+    </Card>
   );
 }
 
@@ -196,7 +197,7 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid min-w-0 gap-4 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 sm:p-5 lg:sticky lg:top-5">
+    <Card as="form" padding="sm" className="grid min-w-0 gap-4 sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
       <div>
         <h2 className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
@@ -240,7 +241,7 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
       ) : (
         <p className="rounded-xl bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--text-muted)]">No outstanding issued invoices.</p>
       )}
-    </form>
+    </Card>
   );
 }
 

@@ -7,11 +7,13 @@ import { Loader2, Save } from "lucide-react";
 import { BlogEditor } from "@/components/admin/blog-editor";
 import { AiWritingAssistant } from "@/components/admin/ai-writing-assistant";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/dialog";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { ManualLeadForm, type LeadOption } from "@/components/admin/manual-lead-form";
 import { buildDocumentTemplateContext, findUnresolvedPlaceholders, getTemplateMarkdown, resolveTemplatePlaceholders } from "@/lib/business-document-templates";
+import { Card } from "@/components/ui/card";
 
 type Template = {
   id: string; name: string; documentCategory: string; defaultTitle?: string | null;
@@ -46,7 +48,9 @@ const docTypes = [
   { value: "CUSTOM", label: "Custom document" },
 ];
 
-const inputClass = "h-11 rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] hover:bg-[color:var(--surface-soft)] hover:border-[color:var(--primary)]/30 focus:border-[color:var(--primary)] focus:bg-[color:var(--surface-soft)] focus:shadow-[0_0_0_3px_rgba(107,38,217,0.1)]";
+import { inputClass } from "@/components/ui/input";
+
+type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string };
 
 type InitialDoc = {
   id?: string;
@@ -57,6 +61,7 @@ type InitialDoc = {
   contactId?: string | null;
   leadId?: string | null;
   projectId?: string | null;
+  financialDocumentId?: string | null;
   templateId?: string | null;
   companyName?: string | null;
   recipientName?: string | null;
@@ -80,6 +85,7 @@ type Props = {
   templates: Template[];
   leads: Lead[];
   projects: Project[];
+  financialDocuments: FinancialDoc[];
   sites: Site[];
   initial?: InitialDoc | null;
   business: { name: string; email: string; phone: string; address: string };
@@ -87,7 +93,7 @@ type Props = {
   generatedIssueDate: string;
 };
 
-export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, sites, initial, business, currentUser, generatedIssueDate }: Props) {
+export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, financialDocuments, sites, initial, business, currentUser, generatedIssueDate }: Props) {
   const router = useRouter();
   const isEdit = !!initial?.id;
   const [saving, setSaving] = useState(false);
@@ -110,6 +116,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [selectedTemplate, setSelectedTemplate] = useState(initial?.templateId || "");
   const [selectedLead, setSelectedLead] = useState(initial?.leadId || "");
   const [selectedProject, setSelectedProject] = useState(initial?.projectId || "");
+  const [selectedFinancialDocument, setSelectedFinancialDocument] = useState(initial?.financialDocumentId || "");
   const [companyName, setCompanyName] = useState(initial?.companyName || "");
   const [recipientName, setRecipientName] = useState(initial?.recipientName || "");
   const [recipientEmail, setRecipientEmail] = useState(initial?.recipientEmail || "");
@@ -185,7 +192,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   }, []);
   const recipientHasValues = Boolean(recipientName || recipientEmail || recipientPhone || recipientWhatsApp || companyName);
 
-  const handleSave = useCallback(async (allowUnresolved = false) => {
+  const handleSave = useCallback(async ({ allowUnresolved = false, navigate = true }: { allowUnresolved?: boolean; navigate?: boolean } = {}) => {
     if (!title.trim()) { toast.error("Title is required"); return; }
     const unresolved = findUnresolvedPlaceholders(`${title}\n${subject}\n${contentMarkdown}`);
     if (unresolved.length && !allowUnresolved) { setUnresolvedForSave(unresolved); return; }
@@ -199,6 +206,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         templateId: selectedTemplate || null,
         leadId: selectedLead || null,
         projectId: selectedProject || null,
+        financialDocumentId: selectedFinancialDocument || null,
         companyName: companyName.trim() || undefined,
         recipientName: recipientName.trim() || undefined,
         recipientEmail: recipientEmail.trim() || undefined,
@@ -223,17 +231,21 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
       if (!response.ok) throw new Error(payload.error || "Save failed");
 
       toast.success(isEdit ? "Document updated" : "Document created");
-      router.push(`/admin/business-documents/${payload.id || initial!.id}`);
-      router.refresh();
+      if (navigate) {
+        router.push(`/admin/business-documents/${payload.id || initial!.id}`);
+        router.refresh();
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Save failed");
     } finally {
       setSaving(false);
     }
-  }, [title, subject, documentType, selectedTemplate, selectedLead, selectedProject, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
+  }, [title, subject, documentType, selectedTemplate, selectedLead, selectedProject, selectedFinancialDocument, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
 
   return (
-    <div className="grid gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+    <Card padding="lg" className="grid gap-6">
       {/* Document type and template */}
       <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
         <label className="grid gap-2 text-sm font-bold">
@@ -298,10 +310,60 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         </label>
       </div>
 
-      {showLeadForm && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Create new lead"><div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-5 shadow-xl"><h2 className="mb-5 font-display text-2xl font-black">Create new lead</h2><ManualLeadForm sites={sites.map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/></div></div>}
-      {pendingLead && <div className="fixed inset-0 z-[110] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Replace recipient details"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Replace recipient details?</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">You already entered recipient information. Replace it with details from {pendingLead.name}?</p><div className="mt-5 flex gap-3"><Button type="button" onClick={() => { fillFromLead(pendingLead); setPendingLead(null); }}>Replace details</Button><Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button></div></div></div>}
-      {pendingTemplate && <div className="fixed inset-0 z-[110] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Replace document content"><div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Replace document content?</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">Applying {pendingTemplate.name} will replace your current document content. This cannot be undone after saving.</p><div className="mt-5 flex gap-3"><Button type="button" onClick={() => void applyTemplate(pendingTemplate)}>Replace content</Button><Button type="button" variant="secondary" onClick={() => setPendingTemplate(null)}>Cancel</Button></div></div></div>}
-      {unresolvedForSave.length > 0 && <div className="fixed inset-0 z-[120] grid place-items-center bg-black/45 p-4" role="alertdialog" aria-modal="true" aria-label="Unresolved template fields"><div className="flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--background)] p-6 shadow-xl"><h2 className="font-display text-xl font-black">Unresolved template fields</h2><p className="mt-2 text-sm text-[color:var(--text-muted)]">Complete these fields before finalising the document:</p><ul className="mt-3 min-h-0 flex-1 list-disc overflow-y-auto pl-5 pr-2 text-sm text-[color:var(--text-muted)]">{unresolvedForSave.map((key) => <li key={key}>{key}</li>)}</ul><div className="mt-5 flex shrink-0 flex-wrap gap-3 border-t border-[color:var(--border-subtle)] pt-4"><Button type="button" variant="secondary" onClick={() => setUnresolvedForSave([])}>Return to document</Button><Button type="button" onClick={() => void handleSave(true)}>Save as draft anyway</Button></div></div></div>}
+      {/* Link to quote/invoice */}
+      {financialDocuments.length > 0 && (
+        <label className="grid gap-2 text-sm font-bold">
+          Link to quote/invoice <span className="text-[color:var(--text-faint)] font-normal">(optional cross-reference)</span>
+          <DashboardSelect
+            value={selectedFinancialDocument}
+            onChange={e => setSelectedFinancialDocument(e.target.value)}
+            options={[{ label: "None", value: "" }, ...financialDocuments.map((fd) => ({ label: `${fd.number || "Draft"} — ${fd.type} — ${fd.customerName} — N$${Number(String(fd.total)).toFixed(2)}`, value: fd.id }))]}
+            className={inputClass}
+          />
+        </label>
+      )}
+
+      <Dialog open={showLeadForm} onOpenChange={setShowLeadForm}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create new lead</DialogTitle>
+          </DialogHeader>
+          <ManualLeadForm sites={sites.map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) setPendingLead(null); }}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Replace recipient details?</AlertDialogTitle>
+          <AlertDialogDescription>You already entered recipient information. Replace it with details from {pendingLead?.name}?</AlertDialogDescription>
+          <div className="mt-5 flex gap-3">
+            <Button type="button" onClick={() => { if (pendingLead) { fillFromLead(pendingLead); setPendingLead(null); } }}>Replace details</Button>
+            <Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!pendingTemplate} onOpenChange={(open) => { if (!open) setPendingTemplate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Replace document content?</AlertDialogTitle>
+          <AlertDialogDescription>Applying {pendingTemplate?.name} will replace your current document content. This cannot be undone after saving.</AlertDialogDescription>
+          <div className="mt-5 flex gap-3">
+            <Button type="button" onClick={() => { if (pendingTemplate) void applyTemplate(pendingTemplate); }}>Replace content</Button>
+            <Button type="button" variant="secondary" onClick={() => setPendingTemplate(null)}>Cancel</Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={unresolvedForSave.length > 0} onOpenChange={(open) => { if (!open) setUnresolvedForSave([]); }}>
+        <AlertDialogContent className="max-h-[calc(100vh-2rem)] flex-col">
+          <AlertDialogTitle>Unresolved template fields</AlertDialogTitle>
+          <AlertDialogDescription>Complete these fields before finalising the document:</AlertDialogDescription>
+          <ul className="mt-3 min-h-0 flex-1 list-disc overflow-y-auto pl-5 pr-2 text-sm text-[color:var(--text-muted)]">
+            {unresolvedForSave.map((key) => <li key={key}>{key}</li>)}
+          </ul>
+          <div className="mt-5 flex shrink-0 flex-wrap gap-3 border-t border-[color:var(--border-subtle)] pt-4">
+            <Button type="button" variant="secondary" onClick={() => setUnresolvedForSave([])}>Return to document</Button>
+            <Button type="button" onClick={() => void handleSave({ allowUnresolved: true })}>Save as draft anyway</Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Recipient details */}
       <div className="grid gap-5 md:grid-cols-3">
@@ -393,9 +455,9 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         <Button onClick={() => void handleSave()} disabled={saving}>
           {saving ? <><Loader2 size={15} className="animate-spin" /> Saving...</> : <><Save size={15} /> {isEdit ? "Save draft" : "Create draft"}</>}
         </Button>
-        {isEdit && <Button variant="secondary" disabled={saving} onClick={() => void handleSave()}>Save & continue editing</Button>}
+        {isEdit && <Button variant="secondary" disabled={saving} onClick={() => void handleSave({ navigate: false })}>Save & continue editing</Button>}
         <Button variant="secondary" onClick={() => router.push("/admin/business-documents")}>Cancel</Button>
       </div>
-    </div>
+    </Card>
   );
 }

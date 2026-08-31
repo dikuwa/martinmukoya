@@ -54,6 +54,10 @@ export default async function SharedDocumentPage({ params }: Props) {
           shortCode={code}
           documentNumber={document.number}
           documentType={document.type}
+          documentStatus={document.status}
+          acceptedAt={document.acceptedAt?.toISOString() || null}
+          acceptedName={document.acceptedName}
+          declinedAt={document.declinedAt?.toISOString() || null}
         />
       </main>
     );

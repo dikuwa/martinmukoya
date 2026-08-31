@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { declineBusinessDocument } from "@/lib/business-document-service";
+import { declineFinancialDocument } from "@/lib/finance-service";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ code: string }> };
@@ -22,15 +23,49 @@ export async function POST(request: Request, context: Context) {
     const code = (await context.params).code;
     const share = await db.sharedDocument.findUnique({
       where: { shortCode: code },
-      include: { businessDocument: true },
+      include: { businessDocument: true, financialDocument: true },
     });
 
     if (!share || !share.shareEnabled || (share.expiresAt && share.expiresAt < new Date())) {
       return NextResponse.json({ error: "Document not found or link has expired." }, { status: 404 });
     }
 
+    const body = await request.json().catch(() => ({}));
+    const parsed = declineSchema.parse(body);
+
+    // Financial document (QUOTE) decline
+    if (share.financialDocument) {
+      const doc = share.financialDocument;
+      if (doc.type !== "QUOTE") {
+        return NextResponse.json({ error: "Decline is only available for quotes." }, { status: 400 });
+      }
+      if (doc.status === "ACCEPTED" || doc.acceptedAt) {
+        return NextResponse.json({ error: "Quote has already been accepted." }, { status: 409 });
+      }
+      if (doc.status === "DECLINED" || doc.declinedAt) {
+        return NextResponse.json({ error: "Quote has already been declined." }, { status: 409 });
+      }
+      if (!["ISSUED"].includes(doc.status)) {
+        return NextResponse.json({ error: "This quote is no longer available for response." }, { status: 409 });
+      }
+
+      await declineFinancialDocument(doc.id);
+
+      // Update shared document tracking
+      await db.sharedDocument.update({
+        where: { id: share.id },
+        data: {
+          declinedAt: new Date(),
+          declinedReason: parsed.reason,
+        },
+      });
+
+      return NextResponse.json({ declined: true, message: "Quote declined. We'll review your feedback." });
+    }
+
+    // Business document decline
     if (!share.businessDocument) {
-      return NextResponse.json({ error: "Decline is only available for business documents." }, { status: 400 });
+      return NextResponse.json({ error: "Document not found." }, { status: 404 });
     }
 
     if (share.businessDocument.status === "ACCEPTED" || share.acceptedAt) {
@@ -40,9 +75,6 @@ export async function POST(request: Request, context: Context) {
     if (share.businessDocument.status === "DECLINED" || share.declinedAt) {
       return NextResponse.json({ error: "Document has already been declined." }, { status: 409 });
     }
-
-    const body = await request.json().catch(() => ({}));
-    const parsed = declineSchema.parse(body);
 
     await declineBusinessDocument(share.businessDocument.id, parsed.reason, parsed.comment);
 

@@ -7,6 +7,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { BarChart3, Globe, Monitor, MousePointerClick, TrendingUp, Users, ExternalLink, Calendar } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
+import { Card } from "@/components/ui/card";
 
 type PageProps = { searchParams: Promise<{ search?: string; status?: string; source?: string; site?: string; range?: string; page?: string }> };
 const PAGE_SIZE = 10;
@@ -32,7 +33,7 @@ function AnalyticsBarCard({ title, icon, items }: { title: string; icon: ReactNo
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+    <Card padding="md" className="shadow-[var(--shadow-xs)]">
       <div className="mb-4 flex items-center gap-2.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
           {icon}
@@ -59,7 +60,7 @@ function AnalyticsBarCard({ title, icon, items }: { title: string; icon: ReactNo
           ))
         )}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -67,7 +68,7 @@ function TrendChart({ items }: { items: BarItem[] }) {
   const max = Math.max(1, ...items.map((item) => item.value));
 
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)] xl:col-span-2">
+    <Card padding="md" className="shadow-[var(--shadow-xs)] xl:col-span-2">
       <div className="mb-4 flex items-center gap-2.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
           <TrendingUp size={14} className="text-[color:var(--primary)]" />
@@ -92,7 +93,7 @@ function TrendChart({ items }: { items: BarItem[] }) {
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 

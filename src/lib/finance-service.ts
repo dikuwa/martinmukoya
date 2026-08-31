@@ -85,6 +85,32 @@ export async function issueDocument(id: string) {
   });
 }
 
+export async function acceptFinancialDocument(id: string, input: { name: string }) {
+  return db.$transaction(async (tx) => {
+    const doc = await tx.financialDocument.findUnique({ where: { id } });
+    if (!doc) throw new Error("Document not found.");
+    if (doc.type !== "QUOTE") throw new Error("Only quotes can be accepted.");
+    if (!["ISSUED"].includes(doc.status)) throw new Error("This quote is no longer available for acceptance.");
+    return tx.financialDocument.update({
+      where: { id },
+      data: { status: "ACCEPTED", acceptedAt: new Date(), acceptedName: input.name },
+    });
+  });
+}
+
+export async function declineFinancialDocument(id: string) {
+  return db.$transaction(async (tx) => {
+    const doc = await tx.financialDocument.findUnique({ where: { id } });
+    if (!doc) throw new Error("Document not found.");
+    if (doc.type !== "QUOTE") throw new Error("Only quotes can be declined.");
+    if (!["ISSUED"].includes(doc.status)) throw new Error("This quote is no longer available for response.");
+    return tx.financialDocument.update({
+      where: { id },
+      data: { status: "DECLINED", declinedAt: new Date() },
+    });
+  });
+}
+
 export async function recordPayment(input: { invoiceId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
   const amount = Number(input.amount);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
@@ -108,6 +134,11 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
       paidAt: input.paidAt ? new Date(input.paidAt) : new Date(), reference: input.reference, notes: input.notes, recordedById: input.userId,
     }, include: { receiptDocument: true, invoice: true, booking: true } });
     const fullyPaid = Math.abs(balance - amount) < 0.001;
+    const balanceNote = fullyPaid
+      ? "Paid in full."
+      : `Balance remaining: N$${(balance - amount).toFixed(2)}. Invoice status: Partially paid.`;
+    const receiptNotes = [input.notes, balanceNote].filter(Boolean).join("\n\n");
+    await tx.financialDocument.update({ where: { id: receipt.id }, data: { notes: receiptNotes || null } });
     await tx.financialDocument.update({ where: { id: invoice.id }, data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" } });
     return payment;
   });

@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { webPageSchema } from "@/lib/schema";
 import { withCanonical } from "@/lib/seo";
+import { Card } from "@/components/ui/card";
 
 export async function generateMetadata(): Promise<Metadata> {
   const currentSite = await getCurrentSite();
@@ -319,7 +320,7 @@ class System {
 function SystemCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <Reveal>
-      <article className="group relative h-full rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:border-[color:var(--primary)]/40 hover:shadow-[0_8px_30px_rgba(107,38,217,0.12)]">
+      <Card padding="lg" className="group relative h-full shadow-[0_3px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:border-[color:var(--primary)]/40 hover:shadow-[0_8px_30px_rgba(107,38,217,0.12)]">
         <div className="absolute inset-0 rounded-[18px] bg-gradient-to-br from-[color:var(--primary)]/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div className="relative">
           <div className="grid h-11 w-11 place-items-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--primary)] shadow-[0_0_20px_rgba(107,38,217,0.08)]">
@@ -328,7 +329,7 @@ function SystemCard({ icon, title, description }: { icon: React.ReactNode; title
           <h3 className="text-balance mt-4 font-display text-lg font-black text-[color:var(--text-strong)]">{title}</h3>
           <p className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">{description}</p>
         </div>
-      </article>
+      </Card>
     </Reveal>
   );
 }
@@ -336,7 +337,7 @@ function SystemCard({ icon, title, description }: { icon: React.ReactNode; title
 function PhilosophyCard({ text }: { text: string }) {
   return (
     <Reveal>
-      <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]/80 p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--surface)]">
+      <Card padding="lg" className="/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition duration-200 hover:border-[color:var(--primary)]/30 hover:bg-[color:var(--surface)]">
         <div className="flex items-center gap-3">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[color:var(--primary)]/10 text-[color:var(--primary)]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -345,7 +346,7 @@ function PhilosophyCard({ text }: { text: string }) {
           </span>
           <p className="text-sm font-bold leading-6 text-[color:var(--text-strong)]">{text}</p>
         </div>
-      </div>
+      </Card>
     </Reveal>
   );
 }

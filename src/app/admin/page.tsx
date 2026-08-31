@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { StatusPill } from "@/components/admin/status-pill";
 import { ArrowUpRight, BarChart3, Inbox, LayoutDashboard, MessageCircle, MousePointerClick, Newspaper, Rocket, UsersRound } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 type RecentItem = {
   title: string;
@@ -16,7 +17,7 @@ type RecentItem = {
 
 function RecentPanel({ title, icon, items, empty }: { title: string; icon: ReactNode; items: RecentItem[]; empty: string }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+    <Card padding="md" className="shadow-[var(--shadow-xs)]">
       <div className="mb-4 flex items-center gap-2.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
           {icon}
@@ -50,7 +51,7 @@ function RecentPanel({ title, icon, items, empty }: { title: string; icon: React
           ))
         )}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -130,7 +131,7 @@ export default async function AdminPage() {
       </div>
 
       {/* ── Snapshot section ── */}
-      <section className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 shadow-[var(--shadow-xs)]">
+      <Card padding="md" className="shadow-[var(--shadow-xs)]">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
@@ -157,7 +158,7 @@ export default async function AdminPage() {
           <StatCard label="CTA clicks" value={String(ctaClicks)} detail="Project intent" visual={<MousePointerClick size={18} />} />
           <StatCard label="Conversion" value={conversionRate} detail="Leads / CTA" visual={<BarChart3 size={18} />} />
         </div>
-      </section>
+      </Card>
 
       {/* ── Recent panels ── */}
       <div className="grid gap-5 xl:grid-cols-3">

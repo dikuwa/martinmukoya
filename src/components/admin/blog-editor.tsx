@@ -264,7 +264,7 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
       <div ref={initialContentRef} className="hidden" aria-hidden="true">
         <ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{value}</ReactMarkdown>
       </div>
-      <div className={`${preview ? "hidden lg:block" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
+      <div className={`${preview ? "hidden" : "block"} relative overflow-hidden rounded-xl border ${dragging ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20" : "border-[color:var(--border-subtle)]"}`}>
         {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-[color:var(--surface)]/90 text-sm font-bold">Drop image to upload</div>}
         <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="Blog content editor" onInput={emitChange}
           onPaste={(e: ClipboardEvent<HTMLDivElement>) => { const file=Array.from(e.clipboardData.files).find((f)=>f.type.startsWith("image/")); e.preventDefault(); if(file) void upload(file); else command("insertText", e.clipboardData.getData("text/plain")); }}
@@ -284,11 +284,11 @@ export function BlogEditor({ value, onChange, error }: BlogEditorProps) {
         onPointerUp={(event) => { event.currentTarget.releasePointerCapture(event.pointerId); setResizing(false); }}
         onPointerCancel={() => setResizing(false)}
         onKeyDown={resizeWithKeyboard}
-        className="group relative hidden w-4 cursor-col-resize touch-none items-center justify-center outline-none lg:flex"
+        className={`group relative hidden w-4 cursor-col-resize touch-none items-center justify-center outline-none lg:flex ${preview ? "!hidden" : ""}`}
       >
         <span className={`h-20 w-1 rounded-full transition ${resizing ? "bg-[color:var(--primary)]" : "bg-[color:var(--border-subtle)] group-hover:bg-[color:var(--primary)] group-focus-visible:bg-[color:var(--primary)]"}`} />
       </div>
-      <div className={`${preview ? "block" : "hidden lg:block"} min-w-0 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`} role="region" aria-label="Live article preview">
+      <div className={`${preview ? "col-span-full" : "hidden lg:block"} min-w-0 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`} role="region" aria-label="Live article preview">
         <article className="rich-blog-preview p-6 text-base font-normal leading-8"><ReactMarkdown remarkPlugins={[remarkGfm, remarkUnderline]} components={contentComponents}>{value || "Preview will appear here as you type…"}</ReactMarkdown></article>
       </div>
     </div>

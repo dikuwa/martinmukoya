@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type Message = { id: string; role: "VISITOR" | "AI" | "HUMAN" | "SYSTEM"; content: string; senderName?: string | null; createdAt: string };
 type Chat = { id: string; mode: "AI" | "WAITING_FOR_HUMAN" | "HUMAN"; messages: Message[]; site?: { slug: string } | null };
@@ -27,7 +28,7 @@ export function LiveChatPanel({ initial }: { initial: Chat }) {
     setBusy(false);
   }
   const status = chat.mode === "AI" ? "AI assistant" : chat.mode === "HUMAN" ? "Human live" : "Waiting for human";
-  return <section className="overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
+  return <Card className="overflow-hidden">
     <header className="flex items-center justify-between border-b border-[color:var(--border-subtle)] p-4">
       <div><h2 className="font-display font-black">Live conversation</h2><p className="text-xs text-[color:var(--text-muted)]">{status} · refreshes automatically</p></div>
       <div className="flex gap-2">
@@ -46,5 +47,5 @@ export function LiveChatPanel({ initial }: { initial: Chat }) {
       <input className="min-w-0 flex-1 rounded-xl border border-[color:var(--border-subtle)] bg-transparent px-4" value={draft} onChange={e => setDraft(e.target.value)} placeholder={chat.mode === "HUMAN" ? "Reply to visitor…" : "Join the chat to reply"} disabled={chat.mode !== "HUMAN" || busy} />
       <Button disabled={chat.mode !== "HUMAN" || busy || !draft.trim()}>Send</Button>
     </form>
-  </section>;
+  </Card>;
 }

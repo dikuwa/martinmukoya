@@ -6,6 +6,7 @@ import { Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
+import { Card } from "@/components/ui/card";
 
 const inputClass = "h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-4 text-sm outline-none focus:border-[color:var(--primary)]";
 
@@ -101,10 +102,10 @@ export function DocumentSettingsForm() {
     }
   }
 
-  if (loading) return <div className="rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6"><p className="text-sm text-[color:var(--text-muted)]">Loading settings...</p></div>;
+  if (loading) return <Card padding="lg"><p className="text-sm text-[color:var(--text-muted)]">Loading settings...</p></Card>;
 
   return (
-    <div className="grid gap-6 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6">
+    <Card padding="lg" className="grid gap-6">
       <section className="grid gap-5 md:grid-cols-2">
         <h2 className="font-display text-xl font-black md:col-span-2">Default sender</h2>
         <label className="grid gap-2 text-sm font-bold">
@@ -202,6 +203,6 @@ export function DocumentSettingsForm() {
       <Button onClick={save} disabled={saving}>
         {saving ? <><Loader2 size={15} className="animate-spin" /> Saving...</> : <><Save size={15} /> Save document settings</>}
       </Button>
-    </div>
+    </Card>
   );
 }
