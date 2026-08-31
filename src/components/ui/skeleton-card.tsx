@@ -25,6 +25,203 @@ export function SkeletonRow() {
   return <div className="admin-skeleton h-12 w-full rounded-lg" />;
 }
 
+/** Table row skeleton with configurable column widths. */
+export function SkeletonTableRow({
+  columns = ["1fr", "1fr", "1fr", "0.5fr"],
+  className,
+}: {
+  columns?: string[];
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "admin-skeleton flex h-12 w-full items-center gap-4 rounded-lg px-4",
+        className
+      )}
+    >
+      {columns.map((w, i) => (
+        <div
+          key={i}
+          className="h-3.5 rounded bg-[color:var(--border-subtle)]"
+          style={{ width: w, flexShrink: 0 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Table header skeleton. */
+export function SkeletonTableHeader({
+  columns = ["1fr", "1fr", "1fr", "0.5fr"],
+  className,
+}: {
+  columns?: string[];
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex h-10 w-full items-center gap-4 rounded-lg bg-[color:var(--surface-soft)] px-4",
+        className
+      )}
+    >
+      {columns.map((w, i) => (
+        <div
+          key={i}
+          className="admin-skeleton h-3 rounded bg-[color:var(--border-subtle)]"
+          style={{ width: w, flexShrink: 0 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Full table skeleton: header + N rows. */
+export function SkeletonTable({
+  rows = 5,
+  columns = ["1fr", "1fr", "1fr", "0.5fr"],
+  className,
+}: {
+  rows?: number;
+  columns?: string[];
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <SkeletonTableHeader columns={columns} />
+      {Array.from({ length: rows }).map((_, i) => (
+        <SkeletonTableRow key={i} columns={columns} />
+      ))}
+    </div>
+  );
+}
+
+/** Admin page header skeleton: title + subtitle. */
+export function SkeletonPageHeader({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-3", className)}>
+      <div className="admin-skeleton h-7 w-48 rounded-lg" />
+      <div className="admin-skeleton h-4 w-72 rounded" />
+    </div>
+  );
+}
+
+/** Form field skeleton: label + input. */
+export function SkeletonFormField({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <div className="admin-skeleton h-3.5 w-24 rounded" />
+      <div className="admin-skeleton h-11 w-full rounded-xl" />
+    </div>
+  );
+}
+
+/** Document composer skeleton: form fields left, preview panel right. */
+export function SkeletonComposer({ className }: { className?: string }) {
+  return (
+    <div className={cn("grid gap-5 lg:grid-cols-[1fr_1fr]", className)}>
+      {/* Left: form fields */}
+      <div className="space-y-5">
+        <SkeletonFormField />
+        <SkeletonFormField />
+        <SkeletonFormField />
+        <div className="grid grid-cols-2 gap-4">
+          <SkeletonFormField />
+          <SkeletonFormField />
+        </div>
+        <SkeletonFormField />
+      </div>
+      {/* Right: preview panel */}
+      <div className="admin-skeleton min-h-[400px] rounded-[var(--radius)] border border-[color:var(--border-subtle)] p-6">
+        <div className="space-y-4">
+          <div className="h-5 w-1/3 rounded bg-[color:var(--border-subtle)]" />
+          <div className="h-3 w-full rounded bg-[color:var(--border-subtle)]" />
+          <div className="h-3 w-4/5 rounded bg-[color:var(--border-subtle)]" />
+          <div className="mt-6 h-32 w-full rounded bg-[color:var(--border-subtle)]" />
+          <div className="flex justify-between">
+            <div className="h-3 w-20 rounded bg-[color:var(--border-subtle)]" />
+            <div className="h-3 w-24 rounded bg-[color:var(--border-subtle)]" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Chat skeleton: sidebar list + conversation pane. */
+export function SkeletonChatPane({ className }: { className?: string }) {
+  return (
+    <div className={cn("grid gap-5 lg:grid-cols-[280px_1fr]", className)}>
+      {/* Sidebar */}
+      <div className="space-y-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "admin-skeleton flex h-14 items-center gap-3 rounded-xl px-3",
+              i === 0 && "ring-1 ring-[color:var(--primary)]/30"
+            )}
+          >
+            <div className="h-9 w-9 shrink-0 rounded-full bg-[color:var(--border-subtle)]" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 w-2/3 rounded bg-[color:var(--border-subtle)]" />
+              <div className="h-2.5 w-full rounded bg-[color:var(--border-subtle)]" />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Conversation pane */}
+      <div className="flex flex-col rounded-[var(--radius)] border border-[color:var(--border-subtle)] p-5">
+        <div className="mb-4 flex items-center gap-3 border-b border-[color:var(--border-subtle)] pb-4">
+          <div className="h-8 w-8 rounded-full bg-[color:var(--border-subtle)]" />
+          <div className="space-y-1.5">
+            <div className="admin-skeleton h-3.5 w-24 rounded" />
+            <div className="admin-skeleton h-2.5 w-16 rounded" />
+          </div>
+        </div>
+        <div className="flex-1 space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
+              <div className={cn(
+                "admin-skeleton max-w-[70%] rounded-2xl px-4 py-3",
+                i % 2 === 0 ? "rounded-bl-sm" : "rounded-br-sm"
+              )}>
+                <div className="space-y-1.5">
+                  <div className="h-3 w-32 rounded bg-[color:var(--border-subtle)]" />
+                  <div className="h-3 w-24 rounded bg-[color:var(--border-subtle)]" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex gap-2">
+          <div className="admin-skeleton h-11 flex-1 rounded-xl" />
+          <div className="admin-skeleton h-11 w-11 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Chart skeleton: placeholder rectangles sized like real chart panels. */
+export function SkeletonChart({ className }: { className?: string }) {
+  return (
+    <div className={cn("admin-skeleton rounded-[var(--radius)] p-6", className)}>
+      <div className="mb-4 h-4 w-32 rounded bg-[color:var(--border-subtle)]" />
+      <div className="flex items-end gap-2" style={{ height: 180 }}>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t bg-[color:var(--border-subtle)]"
+            style={{ height: `${30 + Math.sin(i * 0.8) * 40 + (i % 3) * 7}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SkeletonText({
   className,
   width = "full",

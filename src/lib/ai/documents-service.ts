@@ -53,7 +53,8 @@ If required information is missing, omit it or use a clearly marked neutral plac
 Return editable Markdown unless the requested action explicitly asks for a single metadata value.
 Never publish, issue, send, sign, or accept anything.
 Contracts, agreements, and legal-style wording require human review and must remain drafts.
-Do not include analysis, preambles, or fenced Markdown around the result.`;
+Do not include analysis, preambles, or fenced Markdown around the result.
+For BUSINESS_LETTER, write a plain letter with no clauses, payment terms, or legal structure.`;
 
   const response = await getDocumentsOpenAI().responses.create({
     model: getDocumentsModel(),
