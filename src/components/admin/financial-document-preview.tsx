@@ -18,14 +18,14 @@ export function FinancialDocumentPreview({document}:{document:PreviewDocument}){
     {document.status==="DRAFT"?<div className="pointer-events-none absolute inset-0 grid place-items-center text-7xl font-black tracking-widest text-black/[0.045] -rotate-12">DRAFT</div>:null}
 
     {/* Header */}
-    <header className="flex items-start justify-between gap-6 border-b border-[#ded9cf] pb-5">
-      <div>
-        <img src={issuer.logo} alt={issuer.name} className="h-14 max-w-52 object-contain object-left"/>
+    <header className="flex flex-col gap-4 border-b border-[#ded9cf] pb-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <img src={issuer.logo} alt={issuer.name} className="h-10 max-w-40 object-contain object-left sm:h-14 sm:max-w-52"/>
         <p className="mt-2 text-xs text-[#777]">{issuer.address}</p>
       </div>
-      <div className="text-right">
+      <div className="shrink-0 text-left sm:text-right">
         <p className="text-xs uppercase tracking-[.2em] text-[#777]">{document.type}</p>
-        <h1 className="mt-1 text-2xl font-extrabold">{document.number||"Draft"}</h1>
+        <h1 className="mt-1 break-all text-xl font-extrabold sm:text-2xl">{document.number||"Draft"}</h1>
         <p className="mt-1 text-xs text-[#777]">{document.issuedAt?`Issued ${document.issuedAt.toLocaleDateString("en-GB")}`:`Created ${document.createdAt.toLocaleDateString("en-GB")}`}</p>
       </div>
     </header>

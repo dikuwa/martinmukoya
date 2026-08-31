@@ -132,11 +132,11 @@ export function TemplateForm({ initial }: Props) {
   return (
     <Card padding="lg" className="grid gap-6" onSubmit={handleSubmit}>
       <div className="grid gap-5 md:grid-cols-[1fr_200px]">
-        <label className="grid gap-2 text-sm font-bold">
-          Template name <span className="text-[color:var(--destructive)]">*</span>
+        <label className="grid min-w-0 gap-2 text-sm font-bold">
+          <span className="flex items-center">Template name <span className="ml-1 text-[color:var(--destructive)]">*</span></span>
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="e.g., Standard proposal" />
         </label>
-        <label className="grid gap-2 text-sm font-bold">
+        <label className="grid min-w-0 gap-2 text-sm font-bold">
           Category
           <DashboardSelect
             value={category}

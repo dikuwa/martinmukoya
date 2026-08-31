@@ -13,7 +13,7 @@ type Source = { key: string; kind: "booking" | "lead"; id: string; label: string
 type Invoice = { id: string; label: string; balance: number };
 type Line = { description: string; category: string; quantity: string; unitPrice: string };
 const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none transition-colors focus:border-[color:var(--primary)]";
-const field = "grid min-w-0 gap-2 text-sm font-bold";
+const field = "grid min-w-0 gap-2 overflow-hidden text-sm font-bold";
 
 const documentTypeOptions = [
   { value: "QUOTE", label: "Quotation" },
@@ -197,14 +197,14 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
   }
 
   return (
-    <Card as="form" padding="sm" className="grid min-w-0 gap-4 sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
+    <Card as="form" padding="sm" className="grid min-w-0 gap-4 overflow-hidden sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
       <div>
         <h2 className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
       </div>
       {invoices.length ? (
         <>
-          <label className="grid gap-2 text-sm font-bold">Invoice
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Invoice
             <DashboardSelect
               value={invoiceId}
               onChange={e => setInvoiceId(e.target.value)}
@@ -212,26 +212,26 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
               className={input}
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold">Amount (N$)
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Amount (N$)
             <input name="amount" required type="number" min="0.01" max={invoice?.balance} step="0.01" className={input} />
           </label>
-          <label className="grid gap-2 text-sm font-bold">Method
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Method
             <DashboardSelect
               name="method"
               options={paymentMethodOptions}
               className={input}
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold">Reference
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Reference
             <input name="reference" className={input} />
           </label>
-          <label className="grid gap-2 text-sm font-bold">Payment date
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Payment date
             <DashboardDatePicker
               name="paidAt"
               className={input}
             />
           </label>
-          <label className="grid gap-2 text-sm font-bold">Notes
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Notes
             <textarea name="notes" className={`${input} min-h-20 py-3`} />
           </label>
           <Button disabled={saving} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
