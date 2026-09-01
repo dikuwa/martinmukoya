@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, CalendarCheck, FileQuestion, FileText, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, UserRound, Users } from "lucide-react";
+import { BarChart3, CalendarCheck, FileQuestion, FileText, FolderKanban, Inbox, LayoutDashboard, MessageSquareText, Newspaper, Settings, Star, UserRound, Users, Database } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -37,7 +37,8 @@ const adminNav: AdminNavItem[] = [
   { href: "/admin/faqs", label: "FAQs", icon: FileQuestion, group: "System" },
   { href: "/admin/chat", label: "Chat", icon: MessageSquareText, countKey: "chats", group: "System" },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3, group: "System" },
-  { href: "/admin/settings", label: "Settings", icon: Settings, group: "System" }
+  { href: "/admin/settings", label: "Settings", icon: Settings, group: "System" },
+  { href: "/admin/data-management", label: "Data management", icon: Database, group: "System" }
 ];
 
 function isActivePath(pathname: string, href: string) {
