@@ -97,7 +97,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
             className
           )}
         >
-          <span className="truncate text-[color:var(--text-muted)]">
+          <span className="whitespace-normal line-clamp-2 text-[color:var(--text-muted)] leading-normal">
             {selectedOption?.label ?? placeholder ?? "Select..."}
           </span>
           <ChevronDown

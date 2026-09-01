@@ -178,12 +178,19 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
 
 export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
   const router = useRouter();
-  const [invoiceId, setInvoiceId] = useState(invoices[0]?.id || "");
+  // Filter out invoices with zero or negative balance
+  const availableInvoices = useMemo(
+    () => invoices.filter((inv) => inv.balance > 0),
+    [invoices]
+  );
+  const [invoiceId, setInvoiceId] = useState(availableInvoices[0]?.id || "");
   const [saving, setSaving] = useState(false);
-  const invoice = invoices.find(item => item.id === invoiceId);
+  const invoice = availableInvoices.find((item) => item.id === invoiceId);
+  const isZeroBalance = invoice ? invoice.balance <= 0 : false;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isZeroBalance) return;
     const form = event.currentTarget;
     setSaving(true);
     const data = Object.fromEntries(new FormData(form));
@@ -202,41 +209,51 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
         <h2 className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
       </div>
-      {invoices.length ? (
+      {availableInvoices.length ? (
         <>
           <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Invoice
             <DashboardSelect
               value={invoiceId}
               onChange={e => setInvoiceId(e.target.value)}
-              options={invoices.map(item => ({ label: item.label, value: item.id }))}
+              options={availableInvoices.map(item => ({ label: item.label, value: item.id }))}
               className={input}
             />
           </label>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Amount (N$)
-            <input name="amount" required type="number" min="0.01" max={invoice?.balance} step="0.01" className={input} />
-          </label>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Method
-            <DashboardSelect
-              name="method"
-              options={paymentMethodOptions}
-              className={input}
-            />
-          </label>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Reference
-            <input name="reference" className={input} />
-          </label>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Payment date
-            <DashboardDatePicker
-              name="paidAt"
-              className={input}
-            />
-          </label>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Notes
-            <textarea name="notes" className={`${input} min-h-20 py-3`} />
-          </label>
-          <Button disabled={saving} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
-            {saving ? "Recording..." : "Record payment"}
-          </Button>
+          {isZeroBalance ? (
+            <p className="text-sm text-[color:var(--text-muted)] bg-[color:var(--surface-soft)] rounded-xl p-3">
+              This invoice has no outstanding balance — nothing to record.
+            </p>
+          ) : (
+            <>
+              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Amount (N$)
+                <input name="amount" required type="number" min="0.01" max={invoice?.balance} step="0.01" className={input} disabled={isZeroBalance} />
+              </label>
+              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Method
+                <DashboardSelect
+                  name="method"
+                  options={paymentMethodOptions}
+                  className={input}
+                  disabled={isZeroBalance}
+                />
+              </label>
+              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Reference
+                <input name="reference" className={input} disabled={isZeroBalance} />
+              </label>
+              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Payment date
+                <DashboardDatePicker
+                  name="paidAt"
+                  className={input}
+                  disabled={isZeroBalance}
+                />
+              </label>
+              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Notes
+                <textarea name="notes" className={`${input} min-h-20 py-3`} disabled={isZeroBalance} />
+              </label>
+              <Button disabled={saving || isZeroBalance} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
+                {saving ? "Recording..." : "Record payment"}
+              </Button>
+            </>
+          )}
         </>
       ) : (
         <p className="rounded-xl bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--text-muted)]">No outstanding issued invoices.</p>

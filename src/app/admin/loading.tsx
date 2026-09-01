@@ -1,8 +1,10 @@
+"use client";
+
 import { SkeletonStatCard, SkeletonPageHeader, SkeletonTableRow } from "@/components/ui/skeleton-card";
 
 export default function AdminLoading() {
   return (
-    <div className="grid gap-6">
+    <div className="min-h-screen bg-[color:var(--background)] grid gap-6">
       <SkeletonPageHeader />
       {/* Stat card row */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -12,7 +14,7 @@ export default function AdminLoading() {
         <SkeletonStatCard />
       </div>
       {/* Table fallback */}
-      <div className="rounded-[var(--radius)] border border-[color:var(--border-subtle)]">
+      <div className="rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
         {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonTableRow
             key={i}

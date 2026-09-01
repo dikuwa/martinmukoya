@@ -173,7 +173,7 @@ export function Calendar({
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span className="font-semibold text-[color:var(--text-strong)]">
+                <span className="font-semibold text-[color:var(--text-strong)] whitespace-nowrap">
                   {format(month, "MMMM yyyy")}
                 </span>
                 <button
@@ -207,7 +207,7 @@ export function Calendar({
               </button>
             )}
             {numberOfMonths > 1 && (
-              <span className="font-semibold text-[color:var(--text-strong)]">
+              <span className="font-semibold text-[color:var(--text-strong)] whitespace-nowrap">
                 {format(month, "MMMM yyyy")}
               </span>
             )}
@@ -246,9 +246,9 @@ export function Calendar({
                             "dashboard-calendar-day w-full h-9 rounded-[6px] text-sm font-medium transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
                             !isCurrentMonth && "text-[color:var(--text-faint)]",
+                            isToday(day) && "bg-[color:var(--primary)]/10 font-bold text-[color:var(--primary)]",
                             isSelectedDay && "bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-light)]",
                             isInRange && "bg-[color:var(--primary)]/10 text-[color:var(--primary)]",
-                            isToday(day) && "ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-[color:var(--background)]",
                             disabled && "opacity-50 cursor-not-allowed",
                             isFocused && "ring-2 ring-[color:var(--primary)] ring-offset-2 ring-offset-[color:var(--background)]"
                           )}
