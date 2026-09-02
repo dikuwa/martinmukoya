@@ -1,6 +1,6 @@
 import { Allura } from "next/font/google";
 import { formatNad } from "@/lib/financial";
-import type { IssuerSnapshot } from "@/lib/finance-service";
+import type { IssuerSnapshot } from "@/lib/issuer-constants";
 import { DocumentPageBackdrop } from "@/components/documents/document-page-backdrop";
 const allura=Allura({weight:"400",subsets:["latin"],display:"swap"});
 type Line={id:string;description:string;category:string|null;quantity:unknown;unitPrice:unknown;amount:unknown};

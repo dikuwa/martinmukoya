@@ -5,8 +5,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { FinanceSettingsForm } from "@/components/admin/finance-settings-form";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import type { DashboardSelectOption } from "@/components/ui/dashboard-select";
-import type { IssuerSnapshot } from "@/lib/finance-service";
-import { defaultIssuer, personalIssuer } from "@/lib/finance-service";
+import type { IssuerSnapshot } from "@/lib/issuer-constants";
+import { defaultIssuer, personalIssuer } from "@/lib/issuer-constants";
 
 const siteOptions: DashboardSelectOption[] = [
   { value: "flextech-media", label: "FlexTech Media (Business)" },

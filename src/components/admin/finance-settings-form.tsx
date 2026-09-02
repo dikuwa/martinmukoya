@@ -2,7 +2,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
-import type { IssuerSnapshot } from "@/lib/finance-service";
+import type { IssuerSnapshot } from "@/lib/issuer-constants";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";

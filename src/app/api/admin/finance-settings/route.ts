@@ -1,7 +1,7 @@
 import { ok, parseJson, serverError, validationError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
-import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/finance-service";
+import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
 import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 

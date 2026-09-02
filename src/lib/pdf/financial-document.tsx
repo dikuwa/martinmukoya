@@ -1,6 +1,6 @@
 import path from "path";
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import type { IssuerSnapshot } from "@/lib/finance-service";
+import type { IssuerSnapshot } from "@/lib/issuer-constants";
 import { formatNad } from "@/lib/financial";
 import { PdfDocumentPageBackdrop } from "@/lib/pdf/document-page-backdrop";
 
