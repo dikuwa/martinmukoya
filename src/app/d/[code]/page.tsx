@@ -70,7 +70,7 @@ export default async function SharedDocumentPage({ params }: Props) {
     });
     if (!document) notFound();
 
-    const issuer = await getIssuerSnapshot();
+    const issuer = await getIssuerSnapshot(document.siteId ?? null);
 
     const previewDoc = {
       id: document.id,

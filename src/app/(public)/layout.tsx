@@ -17,7 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: config.slug === "flextech-media"
         ? "/assets/favicons/flextech-media.svg"
-        : "/assets/favicons/martinmukoya.svg"
+        : "/assets/hero-images/png/me-hero.png",
+      apple: config.slug === "flextech-media"
+        ? "/assets/favicons/flextech-media.svg"
+        : "/assets/hero-images/png/me-hero.png",
     },
     openGraph: {
       title: {

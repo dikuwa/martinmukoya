@@ -9,6 +9,7 @@ import { BlogEditor } from "@/components/admin/blog-editor";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardCheckbox } from "@/components/ui/dashboard-checkbox";
 import { Card } from "@/components/ui/card";
+import { RequiredLabel } from "@/components/ui/required-label";
 
 type InitialTemplate = {
   id?: string;
@@ -126,7 +127,7 @@ export function TemplateForm({ initial }: Props) {
     <Card padding="lg" className="grid gap-6" onSubmit={handleSubmit}>
       <div className="grid gap-5 md:grid-cols-[1fr_200px]">
         <label className="grid min-w-0 gap-2 text-sm font-bold">
-          <span className="flex items-center">Template name <span className="ml-1 text-[color:var(--destructive)]">*</span></span>
+          <RequiredLabel>Template name</RequiredLabel>
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="e.g., Standard proposal" />
         </label>
         <label className="grid min-w-0 gap-2 text-sm font-bold">

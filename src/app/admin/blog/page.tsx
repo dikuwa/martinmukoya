@@ -4,7 +4,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
 import { Globe, Newspaper, Plus, Clock } from "lucide-react";
 import Link from "next/link";
@@ -119,7 +119,7 @@ export default function AdminBlogPage(props: PageProps) {
         }
       />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1.5fr", "1fr", "1fr", "1fr", "0.7fr"]} />}>
           <BlogTable {...props} />
         </Suspense>
       </ErrorBoundary>

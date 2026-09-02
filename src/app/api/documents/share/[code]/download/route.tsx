@@ -47,7 +47,7 @@ export async function GET(request: Request, context: Context) {
       const doc = await db.businessDocument.findUnique({ where: { id: share.businessDocumentId } });
       if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-      const issuer = await getIssuerSnapshot();
+      const issuer = await getIssuerSnapshot(doc.siteId ?? null);
       const buffer = await renderToBuffer(
         <BusinessDocumentPdf
           title={doc.title}

@@ -4,7 +4,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { ContactMessageStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { stripMarkdown } from "@/lib/utils";
@@ -103,7 +103,7 @@ export default function AdminMessagesPage(props: PageProps) {
         description="Contact form submissions and direct inquiries."
       />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1.5fr", "1fr", "1fr", "2fr", "1fr", "0.8fr"]} />}>
           <MessagesTable {...props} />
         </Suspense>
       </ErrorBoundary>

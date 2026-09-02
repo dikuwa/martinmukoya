@@ -4,11 +4,16 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import type { InputHTMLAttributes, ChangeEvent } from "react";
 
-type DashboardRadioItemProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+type DashboardRadioItemProps = {
   label: string;
   description?: string;
   value: string;
   onSelect?: (value: string) => void;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+  name: string;
+  required?: boolean;
 };
 
 type DashboardRadioGroupProps = {
@@ -36,8 +41,8 @@ export function DashboardRadioGroup({
   label,
   description,
 }: DashboardRadioGroupProps) {
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange?.(event.target.value);
+  const handleChange = (value: string) => {
+    onChange?.(value);
   };
 
   const childrenArray = React.Children.toArray(children);
@@ -72,7 +77,7 @@ export function DashboardRadioGroup({
         {childrenArray.map((child, index) => {
           if (!React.isValidElement(child)) return child;
           const childProps = child.props as DashboardRadioItemProps;
-          return React.cloneElement(child as React.ReactElement<any>, {
+          return React.cloneElement(child as React.ReactElement<DashboardRadioItemProps>, {
             key: child.key ?? index,
             name,
             value,
@@ -118,7 +123,6 @@ export function DashboardRadioItem({
           className="sr-only peer"
           required={props.required}
           aria-describedby={description ? `${name}-${value}-desc` : undefined}
-          {...props}
         />
         <div
           className={cn(

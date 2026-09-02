@@ -2,14 +2,14 @@ import { AdminFilters, AdminTable, SelectFilter } from "@/components/admin/admin
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
-import { Globe, Plus, Clock, Database } from "lucide-react";
+import { Globe, Plus, Clock, Database, Database as DatabaseIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ActivityCleanup } from "@/components/admin/activity-cleanup";
 
 type PageProps = { searchParams: Promise<{ search?: string; site?: string }> };
+const PAGE_SIZE = 10;
 
 function settingInitial(key: string) {
   return (key ?? "S").charAt(0).toUpperCase();
@@ -100,11 +100,19 @@ export default function AdminSettingsPage(props: PageProps) {
         }
       />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["2fr", "1fr", "1fr", "0.7fr"]} />}>
           <SettingsTable {...props} />
         </Suspense>
       </ErrorBoundary>
-      <ActivityCleanup />
+      <div className="rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-display text-lg font-bold text-[color:var(--text-strong)]">Need to back up or clear data?</h3>
+            <p className="mt-1 text-sm text-[color:var(--text-muted)]">Use the Data management page for full backups, selective category deletion, and restores.</p>
+          </div>
+          <Button asChild variant="secondary"><Link href="/admin/data-management">Go to Data management <DatabaseIcon size={14} /></Link></Button>
+        </div>
+      </div>
     </div>
   );
 }

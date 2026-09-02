@@ -22,7 +22,7 @@ export default async function EditBusinessDocumentPage({ params }: Props) {
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true } }),
     db.site.findMany({ orderBy: { name: "asc" } }),
-    getIssuerSnapshot(),
+    getIssuerSnapshot(doc.siteId ?? null),
   ]);
 
   return (

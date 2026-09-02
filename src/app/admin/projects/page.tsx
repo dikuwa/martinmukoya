@@ -4,7 +4,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
 import { Globe, FolderKanban, Plus, Sparkles, Eye } from "lucide-react";
 import Link from "next/link";
@@ -143,7 +143,7 @@ export default function AdminProjectsPage(props: PageProps) {
         }
       />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1.5fr", "1fr", "1fr", "1fr", "0.5fr", "0.7fr", "1fr", "0.8fr"]} />}>
           <ProjectsTable {...props} />
         </Suspense>
       </ErrorBoundary>

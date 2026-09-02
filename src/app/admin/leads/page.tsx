@@ -4,7 +4,7 @@ import { StatusPill } from "@/components/admin/status-pill";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { LeadStatus, ServiceType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { Globe, Target, Wallet, MessageSquare, Building2, Mail } from "lucide-react";
@@ -140,7 +140,7 @@ export default function AdminLeadsPage(props: PageProps) {
     <div className="grid gap-8">
       <PageHeader title="Leads" description="Review project requests, contact status, notes, and follow-up outcomes." actions={<Button asChild><Link href="/admin/leads/new">Create lead</Link></Button>} />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.8fr"]} />}>
           <LeadsTable {...props} />
         </Suspense>
       </ErrorBoundary>

@@ -16,7 +16,7 @@ export async function GET(request: Request, context: Context) {
     const doc = await db.businessDocument.findUnique({ where: { id: (await context.params).id } });
     if (!doc) return Response.json({ error: "Document not found" }, { status: 404 });
 
-    const issuer = await getIssuerSnapshot();
+    const issuer = await getIssuerSnapshot(doc.siteId ?? null);
     const baseUrl = new URL(request.url).origin;
 
     const buffer = await renderToBuffer(

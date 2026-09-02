@@ -32,6 +32,8 @@ const PROTECTED_MODELS = [
   { label: "Accounts & Sessions", description: "Authentication records" },
 ];
 
+const FULL_RESET_CONFIRMATION = "DELETE ALL DATA";
+
 export default function DataManagementPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
@@ -39,6 +41,8 @@ export default function DataManagementPage() {
   const [action, setAction] = useState<"idle" | "backup" | "delete" | "full-reset" | "restore">("idle");
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [lastResult, setLastResult] = useState<{ success: boolean; message: string; counts?: Record<string, number> } | null>(null);
+  const [fullResetConfirmation, setFullResetConfirmation] = useState("");
+  const [showFullResetConfirm, setShowFullResetConfirm] = useState(false);
 
   useEffect(() => {
     fetchCounts();
@@ -305,15 +309,50 @@ export default function DataManagementPage() {
               Deletes ALL data from all {DELETABLE_MODELS.length} categories above. Protected entities are preserved.
               <strong> Always download a backup first.</strong>
             </p>
-            <Button
-              onClick={handleFullReset}
-              variant="danger"
-              disabled={isLoading}
-              className="mt-3 gap-2"
-            >
-              <Trash2 size={16} />
-              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Full reset — delete everything"}
-            </Button>
+            {!showFullResetConfirm ? (
+              <Button
+                onClick={() => setShowFullResetConfirm(true)}
+                variant="danger"
+                disabled={isLoading}
+                className="mt-3 gap-2"
+              >
+                <Trash2 size={16} />
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Full reset — delete everything"}
+              </Button>
+            ) : (
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <label className="mt-3 block text-sm font-semibold text-[color:var(--text-normal)]">
+                  Type <code className="rounded bg-red-500/10 px-1.5 py-0.5 text-red-600">{FULL_RESET_CONFIRMATION}</code> to continue.
+                </label>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={fullResetConfirmation}
+                    onChange={(event) => setFullResetConfirmation(event.target.value)}
+                    className="min-h-10 flex-1 rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm text-[color:var(--text-strong)] outline-none focus:border-red-500"
+                    autoComplete="off"
+                    placeholder={FULL_RESET_CONFIRMATION}
+                  />
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={handleFullReset}
+                    disabled={fullResetConfirmation !== FULL_RESET_CONFIRMATION || isLoading}
+                    className="gap-2"
+                  >
+                    <Trash2 size={16} />
+                    {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Permanently delete everything"}
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setShowFullResetConfirm(false); setFullResetConfirmation(""); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </Card>

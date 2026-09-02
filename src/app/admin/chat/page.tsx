@@ -3,7 +3,7 @@ import { AdminPagination } from "@/components/admin/pagination";
 import { StatusPill } from "@/components/admin/status-pill";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
 import { stripMarkdown } from "@/lib/utils";
 import { Globe, MessageCircle, User } from "lucide-react";
@@ -123,7 +123,7 @@ export default function AdminChatPage(props: PageProps) {
     <div className="grid gap-8">
       <PageHeader title="Chat" description="Review AI assistant sessions, summaries, and human handovers." />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1.5fr", "1fr", "2fr", "1fr", "1fr", "0.7fr"]} />}>
           <ChatTable {...props} />
         </Suspense>
       </ErrorBoundary>

@@ -2,7 +2,7 @@ import { AdminFilters, AdminTable, SelectFilter } from "@/components/admin/admin
 import { AdminPagination } from "@/components/admin/pagination";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PageHeader } from "@/components/ui/page-header";
-import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { BarChart3, Globe, Monitor, MousePointerClick, Users, ExternalLink, Calendar } from "lucide-react";
@@ -214,8 +214,10 @@ export default function AdminAnalyticsPage(props: PageProps) {
     <div className="grid gap-8">
       <PageHeader title="Analytics" description="Track internal conversion events and popular content." />
       <ErrorBoundary>
-        <Suspense fallback={<SkeletonCard />}>
+        <Suspense fallback={<SkeletonTable rows={6} columns={["1fr", "1fr", "1fr", "1fr"]} />}>
           <AnalyticsSummaryWrapper {...props} />
+        </Suspense>
+        <Suspense fallback={<SkeletonTable rows={PAGE_SIZE} columns={["1fr", "1fr", "1.5fr", "1fr", "1fr", "0.7fr"]} />}>
           <AnalyticsTable {...props} />
         </Suspense>
       </ErrorBoundary>

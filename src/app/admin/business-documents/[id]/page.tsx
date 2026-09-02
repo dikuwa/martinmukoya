@@ -32,7 +32,7 @@ export default async function BusinessDocumentPage({ params }: Props) {
   });
   if (!doc) notFound();
 
-  const issuer = await getIssuerSnapshot();
+  const issuer = await getIssuerSnapshot(doc.siteId ?? null);
   const shortLink = doc.publicShare ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${doc.publicShare.shortCode}` : null;
 
   const previewDoc = {

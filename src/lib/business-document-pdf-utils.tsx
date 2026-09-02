@@ -8,7 +8,7 @@ export async function renderBusinessDocumentPdf(documentId: string, baseUrl: str
   const doc = await db.businessDocument.findUnique({ where: { id: documentId } });
   if (!doc) throw new Error("Document not found");
 
-  const issuer = await getIssuerSnapshot();
+  const issuer = await getIssuerSnapshot(doc.siteId ?? null);
 
   return renderToBuffer(
     <BusinessDocumentPdf

@@ -1,5 +1,3 @@
-"use client";
-
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
@@ -14,6 +12,7 @@ import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { ManualLeadForm, type LeadOption } from "@/components/admin/manual-lead-form";
 import { buildDocumentTemplateContext, findUnresolvedPlaceholders, getTemplateMarkdown, resolveTemplatePlaceholders } from "@/lib/business-document-templates";
 import { Card } from "@/components/ui/card";
+import { RequiredLabel } from "@/components/ui/required-label";
 
 type Template = {
   id: string; name: string; documentCategory: string; defaultTitle?: string | null;
@@ -79,7 +78,15 @@ type InitialDoc = {
   signatureRequired?: boolean;
   senderName?: string | null;
   senderRole?: string | null;
+  siteId?: string | null;
 };
+
+type IdentityOption = { value: string; label: string; isPersonal: boolean };
+
+const identityOptions: IdentityOption[] = [
+  { value: "flextech-media", label: "FlexTech Media (Business)", isPersonal: false },
+  { value: "martin-mukoya", label: "Martin Mukoya (Personal)", isPersonal: true },
+];
 
 type Props = {
   templates: Template[];
@@ -114,6 +121,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [title, setTitle] = useState(initial?.title || "");
   const [subject, setSubject] = useState(initial?.subject || "");
   const [selectedTemplate, setSelectedTemplate] = useState(initial?.templateId || "");
+  const [selectedIdentity, setSelectedIdentity] = useState(initial?.siteId || identityOptions[0].value);
 
   // Filter templates to only those matching the current document type
   const matchingTemplates = useMemo(
@@ -276,6 +284,22 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
             className={inputClass}
           />
         </label>
+      </div>
+
+      {/* Document Identity & Template */}
+      <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
+        {/* Document Identity */}
+        <label className="grid gap-2 text-sm font-bold">
+          <RequiredLabel>Document identity</RequiredLabel>
+          <DashboardSelect
+            value={selectedIdentity}
+            onChange={e => setSelectedIdentity(e.target.value)}
+            options={identityOptions}
+            className={inputClass}
+          />
+        </label>
+
+        {/* Template */}
         <label className="grid gap-2 text-sm font-bold">
           Template
           <div className="flex gap-2">
@@ -296,7 +320,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
 
       {/* Title */}
       <label className="grid gap-2 text-sm font-bold">
-        Title <span className="text-[color:var(--destructive)]">*</span>
+        <RequiredLabel>Title</RequiredLabel>
         <input value={title} onChange={e => setTitle(e.target.value)} className={inputClass} placeholder="e.g., FlexTech Media Website Redesign Proposal" />
       </label>
 

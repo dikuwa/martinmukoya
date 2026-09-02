@@ -1,12 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { InputHTMLAttributes, LabelHTMLAttributes } from "react";
+import type { InputHTMLAttributes, LabelHTMLAttributes, ChangeEvent } from "react";
 
-interface DashboardRadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+interface DashboardRadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "onChange"> {
   label?: string;
   className?: string;
   description?: string;
+  onChange?: (value: string) => void;
 }
 
 export function DashboardRadio({
@@ -18,6 +19,11 @@ export function DashboardRadio({
   disabled,
   ...props
 }: DashboardRadioProps) {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    onChange?.(value);
+  };
+
   return (
     <label
       className={cn(
@@ -29,7 +35,7 @@ export function DashboardRadio({
         <input
           type="radio"
           checked={checked}
-          onChange={onChange}
+          onChange={handleInputChange}
           disabled={disabled}
           className={cn(
             "peer h-4 w-4 appearance-none rounded-full border-2 transition-colors",
