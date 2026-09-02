@@ -5,7 +5,7 @@ import "server-only";
 import { Image, StyleSheet } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
-  backdrop: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.09 }
+  backdrop: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0.09 }
 });
 
 export function PdfDocumentPageBackdrop({ baseUrl }: { baseUrl: string }) {

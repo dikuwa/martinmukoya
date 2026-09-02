@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { trackServerEvent } from "@/lib/analytics";
+import { findUnresolvedPlaceholders } from "@/lib/business-document-templates";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,11 @@ export async function POST(request: Request, context: Context) {
     const doc = await db.businessDocument.findUnique({ where: { id } });
     if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
     if (doc.status === "DRAFT") return NextResponse.json({ error: "Issue the document before emailing." }, { status: 409 });
+
+    const unresolved = findUnresolvedPlaceholders(doc.contentMarkdown);
+    if (unresolved.length > 0) {
+      return NextResponse.json({ error: `This document still has unresolved placeholders: ${unresolved.join(", ")} — set values or edit the content before sending` }, { status: 409 });
+    }
 
     if (!process.env.RESEND_API_KEY) return NextResponse.json({ skipped: true, message: "Email service is not configured." });
 

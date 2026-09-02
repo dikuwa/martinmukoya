@@ -11,7 +11,7 @@ export function DocumentPageBackdrop() {
       sizes="100vw"
       aria-hidden="true"
       draggable={false}
-      className="pointer-events-none !z-0 select-none object-cover opacity-[0.09]"
+      className="pointer-events-none !z-0 select-none object-contain opacity-[0.09] flex items-center justify-center"
     />
   );
 }

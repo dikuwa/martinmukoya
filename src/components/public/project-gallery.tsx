@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { ProjectGalleryImage } from "@/lib/public-content";
@@ -13,12 +13,8 @@ interface ProjectGalleryProps {
 }
 
 export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: ProjectGalleryProps) {
-  const [activeImage, setActiveImage] = useState({ url: coverImage, alt: coverAlt });
+  const [activeImage, setActiveImage] = useState(() => ({ url: coverImage, alt: coverAlt }));
   const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setActiveImage({ url: coverImage, alt: coverAlt });
-  }, [coverImage, coverAlt]);
 
   const handleThumbClick = (image: ProjectGalleryImage) => {
     setActiveImage({ url: image.url, alt: image.alt || projectTitle });

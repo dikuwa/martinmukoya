@@ -1,6 +1,6 @@
 "use client";
 
-import { SkeletonStatCard, SkeletonPageHeader, SkeletonTableRow } from "@/components/ui/skeleton-card";
+import { SkeletonStatCard, SkeletonPageHeader, SkeletonTable } from "@/components/ui/skeleton-card";
 
 export default function AdminLoading() {
   return (
@@ -14,15 +14,7 @@ export default function AdminLoading() {
         <SkeletonStatCard />
       </div>
       {/* Table fallback */}
-      <div className="rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <SkeletonTableRow
-            key={i}
-            columns={["1fr", "1fr", "0.6fr", "0.5fr"]}
-            className={i < 4 ? "border-b border-[color:var(--border-subtle)]" : ""}
-          />
-        ))}
-      </div>
+      <SkeletonTable rows={5} columns={["1fr", "1fr", "0.6fr", "0.5fr"]} />
     </div>
   );
 }
