@@ -83,6 +83,7 @@ const SECTIONS = [
   { id: "media", title: "Project media", description: "Add a compact cover preview and optional gallery images for the public case study." },
   { id: "links", title: "Project links", description: "Public destinations are only rendered when valid URLs exist." },
   { id: "cta", title: "CTA overrides", description: "Optional. Empty fields fall back to the active site's CTA settings." },
+  { id: "publishing", title: "Publishing", description: "Control where and how this project appears." },
 ] as const;
 
 type SectionId = typeof SECTIONS[number]["id"];
@@ -360,11 +361,11 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
 
           {/* Persistent footer bar with publish controls */}
           <footer className="lg:sticky lg:bottom-4 lg:self-end border-t border-[color:var(--border-subtle)] bg-[color:var(--background)] p-4 rounded-[calc(var(--radius)*0.85)] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end gap-6">
-              <div className="grid gap-4 md:grid-cols-2 md:items-end">
-                <fieldset className="grid gap-2">
-                  <legend className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</legend>
-                  <div className="flex flex-wrap gap-5">
+            <FormSection id="publishing" title="Publishing" description="Control where and how this project appears.">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-3">
+                  <div className="text-sm font-bold text-[color:var(--text-strong)]">Show on sites</div>
+                  <div className="flex flex-wrap gap-4">
                     {siteOptions.map((site) => (
                       <DashboardCheckbox
                         key={site.value}
@@ -374,25 +375,28 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
                       />
                     ))}
                   </div>
-                </fieldset>
-                <div className="grid gap-5">
-                  <DashboardCheckbox label="Published" {...form.register("published")} />
-                  <DashboardCheckbox label="Featured" {...form.register("featured")} />
-                  <Field label="Sort order">
-                    <input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={inputClass} />
-                  </Field>
+                </div>
+                <div className="grid gap-3">
+                  <div className="text-sm font-bold text-[color:var(--text-strong)]">Visibility</div>
+                  <div className="flex flex-wrap gap-4">
+                    <DashboardCheckbox label="Published" {...form.register("published")} />
+                    <DashboardCheckbox label="Featured" {...form.register("featured")} />
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex flex-wrap gap-3 justify-end md:justify-start">
-                <Button type="button" variant="secondary" onClick={() => router.push("/admin/projects")}>
-                  <X size={16} /> Cancel
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting} className="flex items-center gap-2">
-                  <Save size={16} />
-                  {form.formState.isSubmitting ? "Saving..." : "Save Project"}
-                </Button>
-              </div>
+              <Field label="Sort order">
+                <input type="number" {...form.register("sortOrder", { valueAsNumber: true })} className={`${inputClass} mt-6 max-w-[200px]`} />
+              </Field>
+            </FormSection>
+            
+            <div className="flex flex-wrap gap-3 justify-end md:justify-start">
+              <Button type="button" variant="secondary" onClick={() => router.push("/admin/projects")}>
+                <X size={16} /> Cancel
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="flex items-center gap-2">
+                <Save size={16} />
+                {form.formState.isSubmitting ? "Saving..." : "Save Project"}
+              </Button>
             </div>
           </footer>
         </form>
