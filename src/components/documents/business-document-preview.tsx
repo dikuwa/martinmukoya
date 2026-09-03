@@ -228,6 +228,8 @@ function DocumentPage({ pageNumber, totalPages, elements, doc, business, showDra
       <div className="mt-2 text-center">
         <p className="text-[9px] text-[#bbb]">{pageNumber} / {totalPages}</p>
       </div>
+      {/* Bottom backdrop */}
+      <DocumentPageBackdrop position="bottom" />
     </article>
   );
 }

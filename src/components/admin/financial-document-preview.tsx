@@ -201,5 +201,7 @@ export function FinancialDocumentPreview({document}:{document:PreviewDocument}){
         </div>
       ) : null}
     </footer>
+    {/* Bottom backdrop */}
+    <DocumentPageBackdrop position="bottom" />
   </article>
 }

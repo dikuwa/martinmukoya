@@ -192,6 +192,8 @@ export function BusinessDocumentPdf({
         {/* Page number */}
         <Text style={s.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
       </Page>
-    </Document>
+    {/* Bottom backdrop */}
+    <PdfDocumentPageBackdrop baseUrl={baseUrl} position="bottom" />
+  </Document>
   );
 }

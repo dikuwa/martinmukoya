@@ -153,6 +153,8 @@ export function PublicBusinessDocument({ document: doc, shortCode, hideDocumentC
               </div>
             )}
           </div>
+          {/* Bottom backdrop */}
+          <DocumentPageBackdrop position="bottom" />
         </article>
       )}
 
