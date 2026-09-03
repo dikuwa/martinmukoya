@@ -47,6 +47,11 @@ export const projectSchema = z.object({
   capabilities: z.array(projectListItemSchema).default([]),
   coverImage: z.string().trim().optional(),
   coverImageAlt: z.string().trim().optional(),
+  coverThumbnails: z.array(z.object({
+    url: z.string().trim().min(1),
+    alt: z.string().trim().optional(),
+    sortOrder: z.number().int().nonnegative().default(0)
+  })).default([]),
   gallery: stringArray,
   galleryImages: z.array(galleryImageSchema).default([]),
   techStack: stringArray,

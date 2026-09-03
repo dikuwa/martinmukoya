@@ -12,6 +12,7 @@ export type PublicProject = PublicSiteConfig["projects"][number] & {
   benefits?: ProjectListItem[];
   capabilities?: ProjectListItem[];
   coverImageAlt?: string;
+  coverThumbnails?: ProjectGalleryImage[];
   galleryImages?: ProjectGalleryImage[];
   caseStudyContent?: string;
   ctaEyebrow?: string;
@@ -89,6 +90,7 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       capabilities: objectArray<ProjectListItem>(project.capabilities),
       coverImage: project.coverImage || "/assets/hero-images/webp/hero-image.webp",
       coverImageAlt: project.coverImageAlt || undefined,
+      coverThumbnails: objectArray<ProjectGalleryImage>(project.coverThumbnails),
       gallery: project.gallery.length > 0 ? project.gallery : [project.coverImage || "/assets/hero-images/webp/hero-image.webp"],
       galleryImages: objectArray<ProjectGalleryImage>(project.galleryImages),
       techStack: project.techStack,

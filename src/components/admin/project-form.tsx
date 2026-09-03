@@ -20,17 +20,26 @@ const siteOptions = [
   { label: "Martin Mukoya", value: "martin-mukoya" },
   { label: "FlexTech Media", value: "flextech-media" }
 ] as const;
-const projectFormSchema = projectSchema.omit({ gallery: true, techStack: true, services: true, deliverables: true }).extend({
+const projectFormSchemaBase = projectSchema.omit({ gallery: true, techStack: true, services: true, deliverables: true, coverThumbnails: true }).extend({
   galleryInput: z.string().optional(),
   techStackInput: z.string().optional(),
   servicesInput: z.string().optional(),
-  deliverablesInput: z.string().optional()
-}).transform((values) => ({
+  deliverablesInput: z.string().optional(),
+  coverThumbnailsInput: z.string().optional(),
+  coverThumbnailUploadPreview: z.string().optional(),
+});
+
+const projectFormSchema = projectFormSchemaBase.transform((values) => ({
   ...values,
   gallery: splitCsv(values.galleryInput ?? ""),
   techStack: splitCsv(values.techStackInput ?? ""),
   services: splitCsv(values.servicesInput ?? ""),
-  deliverables: splitCsv(values.deliverablesInput ?? "")
+  deliverables: splitCsv(values.deliverablesInput ?? ""),
+  coverThumbnails: splitCsv(values.coverThumbnailsInput ?? "").map((url, index) => ({
+    url,
+    alt: "",
+    sortOrder: index
+  }))
 }));
 
 function csv(value?: string[]) {
@@ -91,11 +100,12 @@ type SectionId = typeof SECTIONS[number]["id"];
 function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites?: Array<{ slug: string }> } }) {
   const router = useRouter();
   const [galleryUploadPreview, setGalleryUploadPreview] = useState("");
+  const [coverThumbnailUploadPreview, setCoverThumbnailUploadPreview] = useState("");
   const [activeSection, setActiveSection] = useState<SectionId>("basic-details");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   
-  const form = useForm<z.input<typeof projectFormSchema>>({
-    resolver: zodResolver(projectFormSchema),
+  const form = useForm<z.input<typeof projectFormSchemaBase>>({
+    resolver: zodResolver(projectFormSchemaBase),
     defaultValues: {
       title: initialData?.title ?? "",
       slug: initialData?.slug ?? "",
@@ -112,7 +122,7 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
       stackSummary: initialData?.stackSummary ?? "",
       benefits: jsonArray(initialData?.benefits),
       capabilities: jsonArray(initialData?.capabilities),
-      coverImage: initialData?.coverImage ?? "",
+coverImage: initialData?.coverImage ?? "",
       coverImageAlt: initialData?.coverImageAlt ?? "",
       galleryImages: jsonArray(initialData?.galleryImages),
       liveUrl: initialData?.liveUrl ?? "",
@@ -132,7 +142,9 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
       galleryInput: csv(initialData?.gallery),
       techStackInput: csv(initialData?.techStack),
       servicesInput: csv(initialData?.services),
-      deliverablesInput: csv(initialData?.deliverables)
+      deliverablesInput: csv(initialData?.deliverables),
+      coverThumbnailsInput: csv((initialData?.coverThumbnails as string[]) ?? []),
+      coverThumbnailUploadPreview: ""
     }
   });
   
@@ -142,6 +154,7 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
   const title = useWatch({ control: form.control, name: "title" });
   const coverImage = useWatch({ control: form.control, name: "coverImage" });
   const galleryInput = useWatch({ control: form.control, name: "galleryInput" });
+  const coverThumbnailsInput = useWatch({ control: form.control, name: "coverThumbnailsInput" });
   const published = useWatch({ control: form.control, name: "published" });
   const featured = useWatch({ control: form.control, name: "featured" });
   const siteSlugs = useWatch({ control: form.control, name: "siteSlugs" });
@@ -158,6 +171,19 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
       shouldValidate: true
     });
     galleryImages.append({ url: value, alt: "", caption: "", sortOrder: galleryImages.fields.length });
+  }
+
+  function appendCoverThumbnail(value: string) {
+    setCoverThumbnailUploadPreview(value);
+    if (!value) return;
+
+    const existing = splitCsv(coverThumbnailsInput ?? "");
+    if (existing.includes(value)) return;
+
+    form.setValue("coverThumbnailsInput", [...existing, value].join(", "), {
+      shouldDirty: true,
+      shouldValidate: true
+    });
   }
 
   async function onSubmit(values: z.input<typeof projectFormSchema>) {
@@ -304,7 +330,7 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
             name="capabilities"
           />
           
-          <FormSection id="media" title="Project media" description="Add a compact cover preview and optional gallery images for the public case study.">
+          <FormSection id="media" title="Project media" description="Add a compact cover preview, hero thumbnails, and optional gallery images for the public case study.">
             <div className="grid gap-5 md:grid-cols-2 md:items-start">
               <ImageUploadField
                 label="Cover image"
@@ -314,6 +340,20 @@ function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites
                 cropAspect={false}
               />
               <Field label="Cover image alt text"><input {...form.register("coverImageAlt")} className={inputClass} placeholder="Describe the project preview" /></Field>
+              <ImageUploadField
+                label="Add hero thumbnail"
+                folder="projects/cover-thumbnails"
+                value={coverThumbnailUploadPreview ?? ""}
+                onChange={(value) => form.setValue("coverThumbnailUploadPreview", value, { shouldDirty: true, shouldValidate: true })}
+                placeholder="Upload or paste a thumbnail image URL"
+                cropAspect={false}
+              />
+              <Field label="Hero thumbnails, comma-separated">
+                <input {...form.register("coverThumbnailsInput")} className={inputClass} />
+              </Field>
+              <div className="grid gap-3 md:col-span-2">
+                <p className="text-sm text-[color:var(--text-muted)]">Enter thumbnail URLs as comma-separated values. Each thumbnail will be displayed as a clickable thumbnail below the hero image.</p>
+              </div>
               <ImageUploadField
                 label="Add gallery image"
                 folder="projects/gallery"

@@ -260,6 +260,7 @@ model Project {
   capabilities     Json?
   coverImage       String?
   coverImageAlt    String?
+  coverThumbnails  Json?
   gallery          String[]
   galleryImages    Json?
   techStack        String[]

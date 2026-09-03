@@ -60,6 +60,7 @@ export function ProjectCaseStudy({ project, site }: { project: PublicProject; si
             <ProjectGallery
               coverImage={project.coverImage}
               coverAlt={project.coverImageAlt || `${project.title} project preview`}
+              coverThumbnails={project.coverThumbnails ?? []}
               gallery={gallery}
               projectTitle={project.title}
             />

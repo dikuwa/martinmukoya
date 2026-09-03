@@ -8,11 +8,12 @@ import type { ProjectGalleryImage } from "@/lib/public-content";
 interface ProjectGalleryProps {
   coverImage: string;
   coverAlt: string;
+  coverThumbnails: ProjectGalleryImage[];
   gallery: ProjectGalleryImage[];
   projectTitle: string;
 }
 
-export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: ProjectGalleryProps) {
+export function ProjectGallery({ coverImage, coverAlt, coverThumbnails, gallery, projectTitle }: ProjectGalleryProps) {
   const [activeImage, setActiveImage] = useState(() => ({ url: coverImage, alt: coverAlt }));
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -22,7 +23,9 @@ export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: 
 
   const isActive = (image: ProjectGalleryImage) => image.url === activeImage.url;
 
-  if (gallery.length === 0) {
+  const thumbnails = coverThumbnails.length > 0 ? coverThumbnails : [];
+
+  if (thumbnails.length === 0) {
     return (
       <div className="overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)] shadow-[0_30px_90px_color-mix(in_oklch,var(--primary)_18%,transparent)]">
         <div className="flex h-10 items-center gap-1.5 border-b border-[color:var(--border-subtle)] px-4" aria-hidden="true">
@@ -65,7 +68,7 @@ export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: 
           onLoad={() => setIsLoaded(true)}
         />
       </div>
-      <div className="flex flex-wrap gap-2 px-4 py-4" role="tablist" aria-label="Project screenshots">
+      <div className="flex justify-center gap-2 px-4 py-4" role="tablist" aria-label="Project thumbnails">
         <button
           role="tab"
           aria-selected={activeImage.url === coverImage}
@@ -89,7 +92,7 @@ export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: 
           />
           <span className="text-[11px] font-semibold text-[color:var(--text-muted)] truncate max-w-[80px]">Main</span>
         </button>
-        {gallery.map((image, index) => (
+        {thumbnails.map((image, index) => (
           <button
             key={`${image.url}-${index}`}
             role="tab"
@@ -102,7 +105,7 @@ export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: 
                 ? "border-[color:var(--primary)] ring-2 ring-[color:var(--primary)]/20"
                 : "border-[color:var(--border-subtle)] hover:border-[color:var(--primary)]/40"
             )}
-            aria-label={`View screenshot ${index + 1}`}
+            aria-label={`View thumbnail ${index + 1}`}
           >
             <Image
               src={image.url}
@@ -112,9 +115,6 @@ export function ProjectGallery({ coverImage, coverAlt, gallery, projectTitle }: 
               className="rounded-[8px] object-cover object-top"
               sizes="56px"
             />
-            <span className="text-[11px] font-semibold text-[color:var(--text-muted)] truncate max-w-[80px]">
-              {image.caption || `View ${index + 1}`}
-            </span>
           </button>
         ))}
       </div>
