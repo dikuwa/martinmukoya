@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
-import { Globe, Newspaper, Plus, Clock } from "lucide-react";
+import { Globe, Newspaper, Plus, Clock, Sparkles, Eye } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -59,8 +60,20 @@ async function BlogTable({ searchParams }: PageProps) {
         columns={[
           { header: "Post", cell: (item) => (
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
-                {postInitial(item.title)}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius)] bg-[color:var(--surface-soft)]">
+                {item.coverImage ? (
+                  <Image
+                    src={item.coverImage}
+                    alt={item.title}
+                    width={36}
+                    height={36}
+                    className="object-cover object-center rounded-[var(--radius)]"
+                  />
+                ) : (
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+                    {postInitial(item.title)}
+                  </span>
+                )}
               </span>
               <div className="min-w-0">
                 <p className="truncate font-bold text-[color:var(--text-strong)]">{item.title}</p>
@@ -90,6 +103,17 @@ async function BlogTable({ searchParams }: PageProps) {
               {item.published ? "Published" : "Draft"}
             </StatusPill>
           )},
+          { header: "", cell: (item) => item.featured ? (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--accent)]">
+              <Sparkles size={14} />
+              Featured
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--text-faint)]">
+              <Eye size={14} />
+              Standard
+            </span>
+          ), className: "w-28" },
           { header: "Updated", cell: (item) => (
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-[color:var(--text-muted)]">
               <Clock size={13} className="shrink-0 text-[color:var(--text-faint)]" />

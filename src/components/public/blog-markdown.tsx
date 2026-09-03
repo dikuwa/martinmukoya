@@ -2,6 +2,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { remarkUnderline } from "@/lib/remark-underline";
+import { headingText, slugifyHeading } from "@/lib/blog-headings";
 import { CodeBlock } from "@/components/ui/code-block";
 
 function isInternalHref(href?: string) {
@@ -14,8 +15,8 @@ export function BlogMarkdown({ content }: { content: string }) {
       remarkPlugins={[remarkGfm, remarkUnderline]}
       components={{
         h1: ({ children }) => <h2 className="text-balance font-display text-3xl font-black leading-tight text-[color:var(--text-strong)]">{children}</h2>,
-        h2: ({ children }) => <h2 className="text-balance font-display text-2xl font-black leading-tight text-[color:var(--text-strong)]">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-balance text-xl font-bold leading-snug text-[color:var(--text-strong)]">{children}</h3>,
+        h2: ({ children }) => <h2 id={slugifyHeading(headingText(children))} className="scroll-mt-24 text-balance font-display text-2xl font-black leading-tight text-[color:var(--text-strong)]">{children}</h2>,
+        h3: ({ children }) => <h3 id={slugifyHeading(headingText(children))} className="scroll-mt-24 text-balance text-xl font-bold leading-snug text-[color:var(--text-strong)]">{children}</h3>,
         p: ({ children }) => <p>{children}</p>,
         ul: ({ children }) => <ul className="list-disc space-y-2 pl-6">{children}</ul>,
         ol: ({ children }) => <ol className="list-decimal space-y-2 pl-6">{children}</ol>,

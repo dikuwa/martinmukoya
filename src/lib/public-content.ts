@@ -23,9 +23,19 @@ export type PublicProject = PublicSiteConfig["projects"][number] & {
   ctaSecondaryLabel?: string;
   ctaSecondaryUrl?: string;
 };
-export type PublicBlogPost = PublicSiteConfig["blogPosts"][number];
+export type PublicBlogPost = PublicSiteConfig["blogPosts"][number] & {
+  coverImageAlt?: string;
+};
 export type PublicTestimonial = PublicSiteConfig["testimonials"][number];
 export type PublicFAQ = PublicSiteConfig["faqs"][number];
+
+export type PublicContent = {
+  projects: PublicProject[];
+  featuredProjects: PublicProject[];
+  blogPosts: PublicBlogPost[];
+  testimonials: PublicTestimonial[];
+  faqs: PublicFAQ[];
+};
 
 function contentParagraphs(content: string) {
   const paragraphs = content
@@ -40,12 +50,12 @@ function objectArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value.filter((item): item is T => Boolean(item && typeof item === "object")) : [];
 }
 
-export async function getPublicContent(site: PublicSiteConfig, siteId?: string | null) {
+export async function getPublicContent(site: PublicSiteConfig, siteId?: string | null): Promise<PublicContent> {
   if (!siteId) {
     return {
       projects: site.projects,
       featuredProjects: site.projects.filter((project) => project.featured),
-      blogPosts: site.blogPosts,
+      blogPosts: site.blogPosts as PublicBlogPost[],
       testimonials: site.testimonials,
       faqs: site.faqs
     };
@@ -117,6 +127,7 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       category: post.category || "Updates",
       tags: post.tags,
       coverImage: post.coverImage || "/assets/backgrounds/webP/brand-01.webp",
+      coverImageAlt: post.coverImageAlt || undefined,
       publishedAt: (post.publishedAt || post.createdAt).toISOString(),
       content: contentParagraphs(post.content)
     }))

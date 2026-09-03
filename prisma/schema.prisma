@@ -298,11 +298,13 @@ model BlogPost {
   excerpt        String
   content        String
   coverImage     String?
+  coverImageAlt  String?
   tags           String[]
   category       String?
   seoTitle       String
   seoDescription String
   published      Boolean   @default(false)
+  featured       Boolean   @default(false)
   publishedAt    DateTime?
   authorId       String?
   createdAt      DateTime  @default(now())

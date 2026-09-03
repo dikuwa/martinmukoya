@@ -5,10 +5,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyCodeButton } from "@/components/copy-code-button";
 import { BlogMarkdown } from "@/components/public/blog-markdown";
+import { BlogToc } from "@/components/public/blog-toc";
 import { Reveal } from "@/components/public/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container, Section } from "@/components/ui/container";
+import { extractBlogHeadings } from "@/lib/blog-headings";
 import { getPublicContent } from "@/lib/public-content";
 import { publicSiteConfigs } from "@/lib/public-site-config";
 import { getOverriddenPublicSiteConfig } from "@/lib/site-overrides";
@@ -68,6 +70,10 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
     notFound();
   }
 
+  const markdown = post.content.join("\n\n");
+  const headings = extractBlogHeadings(markdown);
+  const hasToc = headings.length >= 2;
+
   const code = `const lead = await captureLead({\n  source: "website",\n  serviceType: "booking-system",\n  preferredContact: "whatsapp"\n});`;
   const schema = {
     "@context": "https://schema.org",
@@ -112,14 +118,15 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
         </Container>
         <Container className="mt-10">
           <Card className="relative aspect-[16/8] overflow-hidden">
-            <Image src={post.coverImage} alt={post.title + " — cover image"} fill priority className="object-cover" sizes="100vw" />
+            <Image src={post.coverImage} alt={post.coverImageAlt || post.title + " — cover image"} fill priority className="object-cover" sizes="100vw" />
           </Card>
         </Container>
       </Section>
       <Section className="pt-0">
-        <Container className="max-w-3xl">
-          <article className="space-y-6 text-base leading-8 text-[color:var(--text-normal)]">
-            <BlogMarkdown content={post.content.join("\n\n")} />
+        <Container className={hasToc ? "lg:max-w-6xl" : "max-w-3xl"}>
+          <div className={hasToc ? "grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start" : undefined}>
+          <article className="min-w-0 space-y-6 text-base leading-8 text-[color:var(--text-normal)]">
+            <BlogMarkdown content={markdown} />
             <div className="overflow-hidden rounded-[calc(var(--radius,1rem))] border" style={{ backgroundColor: "var(--code-bg)", borderColor: "var(--code-border)" }}>
               <div className="flex items-center justify-between border-b px-5 py-3.5" style={{ backgroundColor: "var(--code-header-bg)", borderColor: "var(--code-border)" }}>
                 <span className="text-xs font-medium tracking-wide" style={{ color: "var(--code-muted)" }}>Example handover shape</span>
@@ -128,6 +135,12 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
               <pre className="overflow-x-auto p-5 text-[0.925rem] leading-7" style={{ color: "var(--code-text)" }}><code className="font-mono">{code}</code></pre>
             </div>
           </article>
+          {hasToc ? (
+            <aside className="hidden lg:block">
+              <BlogToc headings={headings} />
+            </aside>
+          ) : null}
+          </div>
           <Button asChild className="mt-10" variant="secondary">
             <Link href="/blog">Back to Blog</Link>
           </Button>

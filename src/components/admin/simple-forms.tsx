@@ -120,10 +120,12 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
       excerpt: initialData?.excerpt ?? "",
       content: initialData?.content ?? "",
       coverImage: initialData?.coverImage ?? "",
+      coverImageAlt: initialData?.coverImageAlt ?? "",
       category: initialData?.category ?? "",
       seoTitle: initialData?.seoTitle ?? "",
       seoDescription: initialData?.seoDescription ?? "",
       published: initialData?.published ?? true,
+      featured: initialData?.featured ?? false,
       siteSlugs: initialSiteSlugs(initialData),
       tagsInput: initialData?.tags?.join(", ") ?? ""
     }
@@ -200,16 +202,24 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
           value={coverImage ?? ""}
           onChange={(value) => form.setValue("coverImage", value, { shouldDirty: true, shouldValidate: true })}
           placeholder="https://example.com/image.jpg"
+          cropShape="rect"
           cropAspect={false}
         />
+        <Field label="Cover image alt text"><input {...form.register("coverImageAlt")} className={inputClass} placeholder="Describe the post cover" /></Field>
         <Field label="SEO title" error={form.formState.errors.seoTitle?.message}><input {...form.register("seoTitle")} className={inputClass} /></Field>
       </div>
       <Field label="SEO description" error={form.formState.errors.seoDescription?.message}><textarea {...form.register("seoDescription")} className={textareaClass} rows={2} /></Field>
       <SiteCheckboxes register={form.register} />
-      <DashboardCheckbox
-        label="Published"
-        {...form.register("published")}
-      />
+      <div className="flex flex-wrap gap-5">
+        <DashboardCheckbox
+          label="Published"
+          {...form.register("published")}
+        />
+        <DashboardCheckbox
+          label="Featured"
+          {...form.register("featured")}
+        />
+      </div>
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Saving..." : "Save Post"}</Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin/blog")}>Cancel</Button>
