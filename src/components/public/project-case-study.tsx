@@ -12,6 +12,11 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ProjectGallery } from "@/components/public/project-gallery";
+import { useRef, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 function populated(value?: string | null) { return Boolean(value?.trim()); }
 
@@ -60,11 +65,11 @@ export function ProjectCaseStudy({ project, site }: { project: PublicProject; si
         </Container>
       </section>
 
-      {facts.length > 0 && <section aria-label="Project facts"><Container className="lg:max-w-[1320px]"><div className="flex flex-wrap gap-px overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)]">{facts.map(([label, value, iconKey]) => { const Icon = resolveProjectIcon(iconKey, `${label} ${value}`); return <div key={label} className="min-w-0 flex-1 basis-[calc(50%-2px)] min-w-[140px] bg-[color:var(--surface)] px-4 py-4 sm:px-5 md:basis-[calc(33.333%-2px)] lg:basis-[calc(20%-2px)]"><div className="flex items-start gap-3"><Icon className="mt-0.5 shrink-0 text-[color:var(--primary)]" size={18} aria-hidden="true" /><div className="min-w-0"><p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--text-faint)]">{label}</p><p className="mt-1 break-words text-sm font-bold leading-5 text-[color:var(--text-strong)]">{value}</p></div></div></div>})}</div></Container></section>}
+      {facts.length > 0 && <section aria-label="Project facts"><Container className="lg:max-w-[1320px]"><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">{facts.map(([label, value, iconKey]) => { const Icon = resolveProjectIcon(iconKey, `${label} ${value}`); return <div key={label} className="border border-[color:var(--border-subtle)] rounded-[14px] bg-[color:var(--surface)] px-4 py-4 sm:px-5"><div className="flex items-start gap-3"><Icon className="mt-0.5 shrink-0 text-[color:var(--primary)]" size={18} aria-hidden="true" /><div className="min-w-0"><p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--text-faint)]">{label}</p><p className="mt-1 break-words text-sm font-bold leading-5 text-[color:var(--text-strong)]">{value}</p></div></div></div>})}</div></Container></section>}
 
       <OptionalItems items={project.benefits} label="Project impact" className="pt-10 lg:pt-12" />
 
-      <section className="py-14 md:py-18 lg:py-20"><Container className="lg:max-w-[1320px]"><div className="grid gap-px overflow-hidden rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)] lg:grid-cols-3">{insights.map((item, index) => { const Icon = resolveProjectIcon(item.iconKey, item.title); return <Reveal key={item.title} delay={index * 0.05}><div className="h-full bg-[color:var(--surface)] p-6 sm:p-8"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[color:var(--primary)]/12 text-[color:var(--primary)]"><Icon size={19} aria-hidden="true" /></span><h2 className="font-display text-2xl font-black text-[color:var(--text-strong)]">{item.title}</h2></div><div className="mt-5 whitespace-pre-line text-sm leading-7 text-[color:var(--text-muted)]">{item.body}</div></div></Reveal>})}</div></Container></section>
+      <section className="py-14 md:py-18 lg:py-20"><Container className="lg:max-w-[1320px]"><div className="grid lg:grid-cols-3 gap-4">{insights.map((item, index) => { const Icon = resolveProjectIcon(item.iconKey, item.title); return <Reveal key={item.title} delay={index * 0.05}><div className="border border-[color:var(--border-subtle)] rounded-[14px] bg-[color:var(--surface)] p-6 sm:p-8 h-full"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[color:var(--primary)]/12 text-[color:var(--primary)]"><Icon size={19} aria-hidden="true" /></span><h2 className="font-display text-2xl font-black text-[color:var(--text-strong)]">{item.title}</h2></div><div className="mt-5 whitespace-pre-line text-sm leading-7 text-[color:var(--text-muted)]">{item.body}</div></div></Reveal>})}</div></Container></section>
 
       {(project.techStack.length > 0 || gallery.length > 0) && <section className="border-y border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/55 py-14 md:py-20"><Container className="grid gap-10 lg:max-w-[1320px] lg:grid-cols-[0.72fr_1.28fr] lg:gap-14"><Reveal><h2 className="font-display text-[clamp(2rem,4vw,3.5rem)] font-black leading-tight text-[color:var(--text-strong)]">Features &amp; stack</h2><p className="mt-4 max-w-[55ch] text-sm leading-7 text-[color:var(--text-muted)]">{project.stackSummary || project.description}</p>{project.techStack.length > 0 && <div className="mt-6 flex flex-wrap gap-2">{Array.from(new Set(project.techStack)).map((tech) => <Badge key={tech}>{tech}</Badge>)}</div>}</Reveal>{gallery.length > 0 && <Reveal className={`grid gap-3 ${gallery.length > 1 ? "sm:grid-cols-2" : ""}`}>{gallery.map((image, index) => <figure key={`${image.url}-${index}`} className={`relative overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] ${gallery.length === 3 && index === 0 ? "sm:row-span-2 sm:aspect-auto sm:min-h-full" : "aspect-[16/10]"}`}><Image src={image.url} alt={image.alt || `${project.title} project screenshot ${index + 1}`} fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 36vw" />{image.caption && <figcaption className="sr-only">{image.caption}</figcaption>}</figure>)}</Reveal>}</Container></section>}
 
@@ -79,6 +84,37 @@ export function ProjectCaseStudy({ project, site }: { project: PublicProject; si
 
 function OptionalItems({ items, label, heading, className = "" }: { items?: ProjectListItem[]; label: string; heading?: string; className?: string }) {
   const sorted = items?.filter((item) => populated(item.title)).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)) ?? [];
+  
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  useEffect(() => {
+    if (sorted.length === 0) return;
+    if (cardRefs.current.length === 0) return;
+    
+    const validRefs = cardRefs.current.filter((ref): ref is HTMLDivElement => ref !== null);
+    if (validRefs.length === 0) return;
+    
+    // Use ScrollTrigger.batch for batch animation
+    const batch = ScrollTrigger.batch(validRefs, {
+      start: "top 88%",
+      once: true,
+      onEnter: (elements) => {
+        gsap.from(elements, {
+          opacity: 0,
+          y: 30,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.035,
+        });
+      },
+    });
+    
+    return () => {
+      batch.forEach((st: ScrollTrigger) => st.kill());
+    };
+  }, [sorted]);
+  
   if (!sorted.length) return null;
-  return <section aria-label={label} className={className}><Container className="lg:max-w-[1320px]">{heading && <h2 className="mb-7 font-display text-3xl font-black text-[color:var(--text-strong)]">{heading}</h2>}<div className="flex flex-wrap gap-px overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)]">{sorted.map((item, index) => { const Icon = resolveProjectIcon(item.iconKey, `${item.title} ${item.description || ""}`); return <Reveal key={item.id || `${item.title}-${index}`} delay={index * 0.035}><div className="flex-1 basis-[calc(50%-2px)] min-w-[240px] bg-[color:var(--surface)] p-5 lg:basis-[calc(25%-2px)]"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)]/12 text-[color:var(--primary)]"><Icon size={17} aria-hidden="true" /></span><div><h3 className="font-display text-sm font-black leading-5 text-[color:var(--text-strong)]">{item.title}</h3>{item.description && <p className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">{item.description}</p>}</div></div></div></Reveal>})}</div></Container></section>;
+  
+  return <section aria-label={label} className={className}><Container className="lg:max-w-[1320px]">{heading && <h2 className="mb-7 font-display text-3xl font-black text-[color:var(--text-strong)]">{heading}</h2>}<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{sorted.map((item, index) => { const Icon = resolveProjectIcon(item.iconKey, `${item.title} ${item.description || ""}`); return <div key={item.id || `${item.title}-${index}`} ref={(el) => { cardRefs.current[index] = el; }} className="border border-[color:var(--border-subtle)] rounded-[14px] bg-[color:var(--surface)] p-5 opacity-0"><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)]/12 text-[color:var(--primary)]"><Icon size={17} aria-hidden="true" /></span><div><h3 className="font-display text-sm font-black leading-5 text-[color:var(--text-strong)]">{item.title}</h3>{item.description && <p className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">{item.description}</p>}</div></div></div>})}</div></Container></section>;
 }

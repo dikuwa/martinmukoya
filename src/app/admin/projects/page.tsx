@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonTable } from "@/components/ui/skeleton-card";
 import { db } from "@/lib/db";
 import { Globe, FolderKanban, Plus, Sparkles, Eye } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -46,7 +47,18 @@ async function ProjectsTable({ searchParams }: PageProps) {
     orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
-    include: { sites: true }
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      coverImage: true,
+      industry: true,
+      services: true,
+      published: true,
+      featured: true,
+      updatedAt: true,
+      sites: { select: { name: true, slug: true } }
+    }
   });
   const sites = await db.site.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } });
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -73,8 +85,20 @@ async function ProjectsTable({ searchParams }: PageProps) {
         columns={[
           { header: "Project", cell: (item) => (
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
-                {projectInitial(item.title)}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius)] bg-[color:var(--surface-soft)]">
+                {item.coverImage ? (
+                  <Image
+                    src={item.coverImage}
+                    alt={item.title}
+                    width={36}
+                    height={36}
+                    className="object-cover object-center rounded-[var(--radius)]"
+                  />
+                ) : (
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[rgba(107,38,217,0.1)] text-xs font-bold text-[color:var(--primary)]">
+                    {projectInitial(item.title)}
+                  </span>
+                )}
               </span>
               <div className="min-w-0">
                 <p className="truncate font-bold text-[color:var(--text-strong)]">{item.title}</p>

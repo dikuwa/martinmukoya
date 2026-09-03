@@ -40,6 +40,10 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
   });
   const [cardWidth, setCardWidth] = useState(420);
 
+  // Create duplicated items for infinite loop effect
+  const duplicatedItems = [...items, ...items];
+  const realItemsCount = items.length;
+
   // Measure card width (card + gap) after mount and on resize
   useEffect(() => {
     function measure() {
@@ -141,14 +145,28 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
     el.scrollLeft = drag.scrollLeft - dx;
   }, []);
 
+  // Helper to snap back to real item if on a clone
+  const snapToRealIndex = useCallback((idx: number) => {
+    if (idx >= realItemsCount) {
+      const realIdx = idx % realItemsCount;
+      const el = scrollRef.current;
+      if (el) {
+        // Instant snap without animation
+        el.scrollLeft = realIdx * cardWidth;
+      }
+      return realIdx;
+    }
+    return idx;
+  }, [cardWidth, realItemsCount]);
+
   // Auto-scroll effect
   useEffect(() => {
     if (isPaused || items.length <= 1) return;
 
     const interval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % items.length;
+      const nextIndex = currentIndex + 1;
       scrollToIndex(nextIndex);
-      setCurrentIndex(nextIndex);
+      setCurrentIndex(prev => snapToRealIndex(prev + 1));
     }, AUTO_SCROLL_INTERVAL);
 
     return () => clearInterval(interval);
@@ -159,10 +177,11 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
     const el = scrollRef.current;
     if (!el || cardWidth <= 0) return;
     const idx = Math.round(el.scrollLeft / cardWidth);
-    if (idx !== currentIndex && idx >= 0 && idx < items.length) {
-      setCurrentIndex(idx);
+    const snappedIdx = snapToRealIndex(idx);
+    if (snappedIdx !== currentIndex) {
+      setCurrentIndex(snappedIdx);
     }
-  }, [cardWidth, currentIndex, items.length]);
+  }, [cardWidth, currentIndex, items.length, snapToRealIndex]);
 
   // Clean up pause timeout on unmount
   useEffect(() => {
@@ -198,9 +217,9 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
               : undefined)
           }}
         >
-          {items.map((item) => (
+          {duplicatedItems.map((item, index) => (
             <article
-              key={item.clientName}
+              key={`${item.clientName}-${index}`}
               onPointerDown={pauseWhileReading}
               className="flex min-h-[24rem] w-[min(82vw,23rem)] shrink-0 flex-col rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-6 shadow-[0_3px_10px_rgba(0,0,0,0.06)]"
               style={{ scrollSnapAlign: "start" }}
@@ -236,7 +255,7 @@ export function TestimonialCarousel({ items, siteSlug }: { items: Testimonial[];
                   pauseAutoScroll();
                 }}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
+                  idx === (currentIndex % items.length)
                     ? "w-6 bg-[color:var(--primary)]"
                     : "w-2 bg-[color:var(--border-subtle)] hover:bg-[color:var(--text-faint)]"
                 }`}
