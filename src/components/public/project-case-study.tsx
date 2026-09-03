@@ -1,3 +1,5 @@
+"use client";
+
 import { Reveal } from "@/components/public/motion";
 import { TrackedAnchor } from "@/components/public/tracked-anchor";
 import { TrackedLink } from "@/components/public/tracked-link";
