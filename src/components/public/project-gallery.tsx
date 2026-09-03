@@ -68,7 +68,8 @@ export function ProjectGallery({ coverImage, coverAlt, coverThumbnails, gallery,
           onLoad={() => setIsLoaded(true)}
         />
       </div>
-      <div className="flex justify-center gap-2 px-4 py-4" role="tablist" aria-label="Project thumbnails">
+      <div className="overflow-x-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Project thumbnails">
+        <div className="mx-auto flex w-max gap-2">
         <button
           role="tab"
           aria-selected={activeImage.url === coverImage}
@@ -90,7 +91,6 @@ export function ProjectGallery({ coverImage, coverAlt, coverThumbnails, gallery,
             className="rounded-[8px] object-cover object-top"
             sizes="56px"
           />
-          <span className="text-[11px] font-semibold text-[color:var(--text-muted)] truncate max-w-[80px]">Main</span>
         </button>
         {thumbnails.map((image, index) => (
           <button
@@ -117,6 +117,7 @@ export function ProjectGallery({ coverImage, coverAlt, coverThumbnails, gallery,
             />
           </button>
         ))}
+        </div>
       </div>
     </div>
   );

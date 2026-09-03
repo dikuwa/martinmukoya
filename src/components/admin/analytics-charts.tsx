@@ -21,6 +21,15 @@ const CHART_COLORS = [
 
 const ANIMATION_DURATION = 700;
 
+/** Longest label that fits the Y-axis column; longer names get ellipsized (full name is in the tooltip). */
+const MAX_AXIS_LABEL_CHARS = 20;
+
+function formatCategoryTick(value: string) {
+  return value.length > MAX_AXIS_LABEL_CHARS
+    ? `${value.slice(0, MAX_AXIS_LABEL_CHARS - 1)}…`
+    : value;
+}
+
 /* ─── Shared card chrome ──────────────────────────────────────────────────── */
 
 function ChartCard({
@@ -90,7 +99,8 @@ export function BarChartCard({
             <YAxis
               type="category"
               dataKey="name"
-              width={110}
+              width={140}
+              tickFormatter={formatCategoryTick}
               tick={{ fontSize: 11, fill: "var(--text-muted)" }}
               tickLine={false}
               axisLine={false}
@@ -151,7 +161,7 @@ export function DonutCard({
 
   return (
     <ChartCard title={title} icon={icon} className={className}>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="h-[180px] w-[180px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -188,9 +198,9 @@ export function DonutCard({
           </ResponsiveContainer>
         </div>
         {/* Legend */}
-        <div className="grid gap-2 text-xs">
+        <div className="grid min-w-0 flex-1 gap-2 text-xs">
           {data.map((item, index) => (
-            <div key={item.name} className="flex items-center gap-2">
+            <div key={item.name} className="flex min-w-0 items-center gap-2">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ background: CHART_COLORS[index % CHART_COLORS.length] }}
@@ -198,7 +208,7 @@ export function DonutCard({
               <span className="truncate text-[color:var(--text-muted)]">
                 {item.name}
               </span>
-              <span className="ml-auto font-bold tabular-nums text-[color:var(--text-strong)]">
+              <span className="ml-auto shrink-0 font-bold tabular-nums text-[color:var(--text-strong)]">
                 {item.value}
               </span>
             </div>

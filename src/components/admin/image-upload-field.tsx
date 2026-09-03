@@ -17,7 +17,7 @@ export function ImageUploadField({
   folder = "uploads",
   placeholder = "Paste image URL or upload an image",
   cropAspect,
-  cropShape = "round",
+  cropShape = "rect",
 }: {
   label: string;
   value?: string;
@@ -26,7 +26,7 @@ export function ImageUploadField({
   placeholder?: string;
   /** Aspect ratio for the crop modal. Defaults to 1 (square). Set to `false` to disable cropping entirely. */
   cropAspect?: number | false;
-  /** Crop area shape. Defaults to "round" for profile pics. */
+  /** Crop area shape. Defaults to "rect". Pass "round" explicitly for avatars/profile images. */
   cropShape?: CropShape;
 }) {
   const hiddenFileRef = useRef<HTMLInputElement | null>(null);

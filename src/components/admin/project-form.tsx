@@ -7,12 +7,13 @@ import { DashboardSelect } from "@/components/ui/dashboard-select";
 import type { Project } from "@/generated/prisma/client";
 import { projectSchema } from "@/lib/validation/content";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
-import { ArrowDown, ArrowUp, Plus, Trash2, Hash, Save, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, Plus, Trash2, Hash, Save, X } from "lucide-react";
 import { projectIconOptions } from "@/lib/project-icons";
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -20,13 +21,11 @@ const siteOptions = [
   { label: "Martin Mukoya", value: "martin-mukoya" },
   { label: "FlexTech Media", value: "flextech-media" }
 ] as const;
-const projectFormSchemaBase = projectSchema.omit({ gallery: true, techStack: true, services: true, deliverables: true, coverThumbnails: true }).extend({
+const projectFormSchemaBase = projectSchema.omit({ gallery: true, techStack: true, services: true, deliverables: true }).extend({
   galleryInput: z.string().optional(),
   techStackInput: z.string().optional(),
   servicesInput: z.string().optional(),
   deliverablesInput: z.string().optional(),
-  coverThumbnailsInput: z.string().optional(),
-  coverThumbnailUploadPreview: z.string().optional(),
 });
 
 const projectFormSchema = projectFormSchemaBase.transform((values) => ({
@@ -35,11 +34,6 @@ const projectFormSchema = projectFormSchemaBase.transform((values) => ({
   techStack: splitCsv(values.techStackInput ?? ""),
   services: splitCsv(values.servicesInput ?? ""),
   deliverables: splitCsv(values.deliverablesInput ?? ""),
-  coverThumbnails: splitCsv(values.coverThumbnailsInput ?? "").map((url, index) => ({
-    url,
-    alt: "",
-    sortOrder: index
-  }))
 }));
 
 function csv(value?: string[]) {
@@ -82,6 +76,67 @@ function ReorderButtons({ index, count, move, remove }: { index: number; count: 
   return <div className="flex items-end gap-1"><Button type="button" size="icon" variant="ghost" aria-label="Move up" disabled={index === 0} onClick={() => move(index, index - 1)}><ArrowUp size={16} /></Button><Button type="button" size="icon" variant="ghost" aria-label="Move down" disabled={index === count - 1} onClick={() => move(index, index + 1)}><ArrowDown size={16} /></Button><Button type="button" size="icon" variant="ghost" aria-label="Remove item" onClick={() => remove(index)}><Trash2 size={16} /></Button></div>;
 }
 
+function CoverThumbnailUploader({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const hiddenFileRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFilePick(file: File) {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.set("file", file, file.name);
+      formData.set("folder", "projects/cover-thumbnails");
+
+      const response = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData
+      });
+
+      const payload = (await response.json().catch(() => null)) as {
+        url?: string;
+        error?: string;
+      } | null;
+
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error || "Upload failed");
+      }
+
+      onUploaded(payload.url);
+      toast.success("Thumbnail uploaded");
+    } catch (error) {
+      toast.error(
+        "Thumbnail not uploaded — " +
+          (error instanceof Error ? error.message : "Please try again.")
+      );
+    } finally {
+      setUploading(false);
+      if (hiddenFileRef.current) hiddenFileRef.current.value = "";
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => hiddenFileRef.current?.click()}
+      disabled={uploading}
+      className="flex aspect-square items-center justify-center rounded-[calc(var(--radius)*0.75)] border-2 border-dashed border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] text-[color:var(--text-faint)] transition hover:border-[color:var(--primary)]/40"
+      aria-label="Upload thumbnail"
+    >
+      {uploading ? <Loader2 size={24} className="animate-spin" /> : <Plus size={24} />}
+      <input
+        ref={hiddenFileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void handleFilePick(file);
+        }}
+      />
+    </button>
+  );
+}
+
 const SECTIONS = [
   { id: "basic-details", title: "Basic project details", description: "Identity, ownership, visibility, and publication settings." },
   { id: "overview", title: "Project overview", description: "The compact facts shown immediately below the hero." },
@@ -100,7 +155,6 @@ type SectionId = typeof SECTIONS[number]["id"];
 function ProjectForm({ initialData }: { initialData?: Partial<Project> & { sites?: Array<{ slug: string }> } }) {
   const router = useRouter();
   const [galleryUploadPreview, setGalleryUploadPreview] = useState("");
-  const [coverThumbnailUploadPreview, setCoverThumbnailUploadPreview] = useState("");
   const [activeSection, setActiveSection] = useState<SectionId>("basic-details");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   
@@ -143,18 +197,17 @@ coverImage: initialData?.coverImage ?? "",
       techStackInput: csv(initialData?.techStack),
       servicesInput: csv(initialData?.services),
       deliverablesInput: csv(initialData?.deliverables),
-      coverThumbnailsInput: csv((initialData?.coverThumbnails as string[]) ?? []),
-      coverThumbnailUploadPreview: ""
+      coverThumbnails: jsonArray(initialData?.coverThumbnails)
     }
   });
   
   const benefits = useFieldArray({ control: form.control, name: "benefits" });
   const capabilities = useFieldArray({ control: form.control, name: "capabilities" });
   const galleryImages = useFieldArray({ control: form.control, name: "galleryImages" });
+  const coverThumbnails = useFieldArray({ control: form.control, name: "coverThumbnails" });
   const title = useWatch({ control: form.control, name: "title" });
   const coverImage = useWatch({ control: form.control, name: "coverImage" });
   const galleryInput = useWatch({ control: form.control, name: "galleryInput" });
-  const coverThumbnailsInput = useWatch({ control: form.control, name: "coverThumbnailsInput" });
   const published = useWatch({ control: form.control, name: "published" });
   const featured = useWatch({ control: form.control, name: "featured" });
   const siteSlugs = useWatch({ control: form.control, name: "siteSlugs" });
@@ -171,19 +224,6 @@ coverImage: initialData?.coverImage ?? "",
       shouldValidate: true
     });
     galleryImages.append({ url: value, alt: "", caption: "", sortOrder: galleryImages.fields.length });
-  }
-
-  function appendCoverThumbnail(value: string) {
-    setCoverThumbnailUploadPreview(value);
-    if (!value) return;
-
-    const existing = splitCsv(coverThumbnailsInput ?? "");
-    if (existing.includes(value)) return;
-
-    form.setValue("coverThumbnailsInput", [...existing, value].join(", "), {
-      shouldDirty: true,
-      shouldValidate: true
-    });
   }
 
   async function onSubmit(values: z.input<typeof projectFormSchema>) {
@@ -340,19 +380,32 @@ coverImage: initialData?.coverImage ?? "",
                 cropAspect={false}
               />
               <Field label="Cover image alt text"><input {...form.register("coverImageAlt")} className={inputClass} placeholder="Describe the project preview" /></Field>
-              <ImageUploadField
-                label="Add hero thumbnail"
-                folder="projects/cover-thumbnails"
-                value={coverThumbnailUploadPreview ?? ""}
-                onChange={(value) => form.setValue("coverThumbnailUploadPreview", value, { shouldDirty: true, shouldValidate: true })}
-                placeholder="Upload or paste a thumbnail image URL"
-                cropAspect={false}
-              />
-              <Field label="Hero thumbnails, comma-separated">
-                <input {...form.register("coverThumbnailsInput")} className={inputClass} />
-              </Field>
-              <div className="grid gap-3 md:col-span-2">
-                <p className="text-sm text-[color:var(--text-muted)]">Enter thumbnail URLs as comma-separated values. Each thumbnail will be displayed as a clickable thumbnail below the hero image.</p>
+              <div className="grid gap-4 md:col-span-2">
+                <div className="grid gap-2">
+                  <span className="text-sm font-bold text-[color:var(--text-strong)]">Hero thumbnails</span>
+                  <p className="text-xs leading-5 text-[color:var(--text-muted)]">Optional clickable thumbnails shown below the hero. Upload images, add alt text per thumbnail, and reorder as needed.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {coverThumbnails.fields.map((field, index) => (
+                    <div key={field.id} className="grid content-start gap-2">
+                      <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*0.75)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)]">
+                        <Image src={field.url} alt="" fill sizes="160px" className="object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => coverThumbnails.remove(index)}
+                          className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                          aria-label={`Remove thumbnail ${index + 1}`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <input {...form.register(`coverThumbnails.${index}.alt`)} className={inputClass} placeholder="Alt text" />
+                      <ReorderButtons index={index} count={coverThumbnails.fields.length} move={coverThumbnails.move} remove={coverThumbnails.remove} />
+                      <input type="hidden" {...form.register(`coverThumbnails.${index}.sortOrder`, { valueAsNumber: true })} value={index} readOnly />
+                    </div>
+                  ))}
+                  <CoverThumbnailUploader onUploaded={(value) => coverThumbnails.append({ url: value, alt: "", sortOrder: coverThumbnails.fields.length })} />
+                </div>
               </div>
               <ImageUploadField
                 label="Add gallery image"
