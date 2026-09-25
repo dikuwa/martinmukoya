@@ -1,7 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import { getDb } from "../src/lib/db";
-import { obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
+import { desertTechCaseStudyRefresh, obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -60,11 +60,23 @@ async function main() {
     });
   }
 
+  const desertTech = await db.project.findUnique({
+    where: { slug: desertTechCaseStudyRefresh.slug }
+  });
+
+  if (desertTech) {
+    const { slug: _slug, ...refresh } = desertTechCaseStudyRefresh;
+    await db.project.update({
+      where: { slug: desertTechCaseStudyRefresh.slug },
+      data: refresh
+    });
+  }
+
   await db.project.deleteMany({
     where: { slug: { in: obsoletePortfolioProjectSlugs } }
   });
 
-  console.log(`Portfolio sync complete: ${portfolioProjects.length} real case studies published.`);
+  console.log(`Portfolio sync complete: ${portfolioProjects.length} real case studies published; Desert Technology compacted when present.`);
 }
 
 main()
