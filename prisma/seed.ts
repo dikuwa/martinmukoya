@@ -1,7 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import { ContactMessageStatus, LeadStatus, PreferredContact, Prisma, ServiceType, UserRole } from "../src/generated/prisma/client";
-import { getDb } from "../src/lib/db";
+import { getDb } from "../src/lib/db";\nimport { obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -129,51 +129,73 @@ async function main() {
     )
   );
 
-  for (const [index, [title, slug, industry, service, summary]] of projectSeeds.entries()) {
-    const assignedSites = index < 4
-      ? { set: [{ id: martinSite.id }] }
-      : { set: [{ id: martinSite.id }, { id: flextechSite.id }] };
-    const connectSites = index < 4
-      ? { connect: { id: martinSite.id } }
-      : { connect: [{ id: martinSite.id }, { id: flextechSite.id }] };
-
+  for (const project of projectSeeds) {
     await db.project.upsert({
-      where: { slug },
+      where: { slug: project.slug },
       update: {
-        title,
-        summary,
-        industry,
-        services: [service, "Web Applications"],
-        sortOrder: index,
+        title: project.title,
+        summary: project.summary,
+        description: project.description,
+        problem: project.problem,
+        solution: project.solution,
+        outcome: project.outcome,
+        clientType: project.clientType,
+        industry: project.industry,
+        eyebrow: project.eyebrow,
+        role: project.role,
+        deliverables: project.deliverables,
+        stackSummary: project.stackSummary,
+        benefits: project.benefits,
+        capabilities: project.capabilities,
+        coverImage: project.coverImage,
+        coverImageAlt: project.coverImageAlt,
+        gallery: project.gallery,
+        techStack: project.techStack,
+        services: project.services,
+        liveUrl: project.liveUrl,
+        githubUrl: project.githubUrl,
+        caseStudyContent: project.caseStudyContent,
+        featured: project.featured,
         published: true,
-        featured: index < 5,
-        sites: assignedSites
+        sortOrder: project.sortOrder,
+        sites: { set: [{ id: martinSite.id }] }
       },
       create: {
-        title,
-        slug,
-        summary,
-        description: `${title} is a practical portfolio case study focused on clearer intake, stronger follow-up, and less manual coordination.`,
-        problem: "The business needed a more reliable way to collect information, reduce repeated questions, and understand the next action.",
-        solution: "The solution uses a focused customer journey, structured data capture, admin-ready records, and plain-language handover notes.",
-        outcome: "The team gains a clearer operating rhythm and a more professional customer experience.",
-        clientType: index % 2 === 0 ? "SME" : "Organization",
-        industry,
-        coverImage: `/assets/site/0${(index % 3) + 1}.JPG`,
-        gallery: [`/assets/site/0${(index % 3) + 1}.JPG`, `/assets/backgrounds/webP/map-0${(index % 3) + 1}.webp`],
-        techStack: ["Next.js", "TypeScript", "Prisma", "PostgreSQL", "Redis"],
-        services: [service, "Web Applications"],
-        liveUrl: "https://example.com",
-        githubUrl: "https://github.com/",
-        caseStudyContent: "This case study explains the business problem, the design decisions, the implementation approach, and the measurable operational improvements.",
-        featured: index < 5,
+        title: project.title,
+        slug: project.slug,
+        summary: project.summary,
+        description: project.description,
+        problem: project.problem,
+        solution: project.solution,
+        outcome: project.outcome,
+        clientType: project.clientType,
+        industry: project.industry,
+        eyebrow: project.eyebrow,
+        role: project.role,
+        deliverables: project.deliverables,
+        stackSummary: project.stackSummary,
+        benefits: project.benefits,
+        capabilities: project.capabilities,
+        coverImage: project.coverImage,
+        coverImageAlt: project.coverImageAlt,
+        gallery: project.gallery,
+        techStack: project.techStack,
+        services: project.services,
+        liveUrl: project.liveUrl,
+        githubUrl: project.githubUrl,
+        caseStudyContent: project.caseStudyContent,
+        featured: project.featured,
         published: true,
-        sortOrder: index,
+        sortOrder: project.sortOrder,
         authorId: admin.id,
-        sites: connectSites
+        sites: { connect: { id: martinSite.id } }
       }
     });
   }
+
+  await db.project.deleteMany({
+    where: { slug: { in: obsoletePortfolioProjectSlugs } }
+  });
 
   for (const [index, [title, slug, category, excerpt]] of blogSeeds.entries()) {
     const blogSites = index < 6
