@@ -311,3 +311,15 @@ export const obsoletePortfolioProjectSlugs = [
   "workshop-inventory-tracker",
   "whatsapp-lead-qualification-bot"
 ];
+
+
+export const desertTechCaseStudyRefresh = {
+  slug: "e-commerce-business-management-platform",
+  summary: "A responsive technology catalogue and business management platform for Desert Technology, connecting product discovery, customer enquiries, orders, stock, documents and day-to-day administration.",
+  description: "A customer-facing technology catalogue connected to a secure administration dashboard for products, stock, enquiries, orders, payments and business content.",
+  problem: "Desert Technology promoted products and services across social media and messaging channels while stock updates, enquiries, orders and documents were handled separately. The business needed one reliable place to maintain catalogue information and coordinate daily operations.",
+  solution: "I built a responsive product catalogue around the company’s existing enquiry-based sales process and connected it to an administration dashboard. Authorised users can manage products, brands, categories, promotions, customers, orders, payments, quotations, receipts, follow-ups and public website content without editing source code.",
+  outcome: "Desert Technology gained a clearer customer journey and a central operational workspace for maintaining product information, handling enquiries and managing business records.",
+  stackSummary: "A responsive Next.js commerce and business-management platform with shared catalogue data, role-based administration and reusable document workflows.",
+  caseStudyContent: "The key decision was to keep the customer-facing catalogue and internal operations connected to the same structured data. Product, stock and promotional updates made in the dashboard can flow into the public experience without maintaining a second catalogue. Role-based access separates owner, admin and staff responsibilities, while order, payment and document records give the business a clearer operational history."
+};
