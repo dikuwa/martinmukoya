@@ -1,4 +1,6 @@
-import { portfolioProjects } from "@/lib/portfolio-projects";\n\nexport const contact = {
+import { portfolioProjects } from "@/lib/portfolio-projects";
+
+export const contact = {
   email: "info@martinmukoya.com",
   phone: "+264 81 8563 005",
   phoneHref: "tel:+264818563005",
@@ -67,100 +69,7 @@ export const services = [
   }
 ];
 
-export const projects = [
-  {
-    title: "Clinic Booking System",
-    slug: "clinic-booking-system",
-    summary:
-      "A mobile-first appointment flow for a clinic that needed fewer missed calls and clearer patient intake.",
-    description:
-      "A practical booking platform with service selection, appointment requests, admin review, and automated follow-up notes.",
-    problem:
-      "The clinic relied on phone calls and WhatsApp messages, which made it easy to lose appointment details during busy hours.",
-    solution:
-      "I designed a guided booking flow with clear service options, patient contact capture, admin review screens, and structured notifications.",
-    outcome:
-      "The team gained a cleaner intake process and a more reliable way to follow up with patients before appointments.",
-    clientType: "Healthcare",
-    industry: "Clinic",
-    coverImage: "/assets/site/01.JPG",
-    gallery: ["/assets/site/01.JPG", "/assets/backgrounds/webP/map-01.webp"],
-    techStack: ["Next.js", "Prisma", "PostgreSQL", "Resend"],
-    services: ["Booking Systems", "Web Applications"],
-    liveUrl: "https://example.com",
-    githubUrl: "https://github.com/",
-    featured: true
-  },
-  {
-    title: "Service Business Lead Hub",
-    slug: "service-business-lead-hub",
-    summary:
-      "A lead-generation site and admin workflow for a local service provider that needed better enquiry quality.",
-    description:
-      "A conversion-focused website with structured contact forms, service pages, and a dashboard-ready lead model.",
-    problem:
-      "Visitors were asking broad questions through several channels, making it hard to understand project urgency and fit.",
-    solution:
-      "I rebuilt the journey around clear service pages, stronger CTAs, guided enquiry forms, and lead source tracking.",
-    outcome:
-      "The business could separate serious enquiries from casual questions and respond with more useful context.",
-    clientType: "SME",
-    industry: "Professional services",
-    coverImage: "/assets/site/02.JPG",
-    gallery: ["/assets/site/02.JPG", "/assets/backgrounds/webP/map-02.webp"],
-    techStack: ["Next.js", "React Query", "Zod", "Redis"],
-    services: ["Web Applications", "Automation"],
-    liveUrl: "https://example.com",
-    githubUrl: "https://github.com/",
-    featured: true
-  },
-  {
-    title: "Local Commerce Storefront",
-    slug: "local-commerce-storefront",
-    summary:
-      "A product catalogue and order enquiry flow for a retailer moving from social posts to a more dependable storefront.",
-    description:
-      "A storefront concept with product discovery, purchase intent capture, order records, and a clear contact handover.",
-    problem:
-      "Products were promoted manually across social channels, but stock questions and order requests were difficult to track.",
-    solution:
-      "I created a structured catalogue experience with product cards, order CTAs, and a path toward admin-managed inventory.",
-    outcome:
-      "Customers had a clearer buying path, while the business gained more organized product and order conversations.",
-    clientType: "Retail",
-    industry: "Commerce",
-    coverImage: "/assets/site/03.JPG",
-    gallery: ["/assets/site/03.JPG", "/assets/backgrounds/webP/map-03.webp"],
-    techStack: ["Next.js", "TypeScript", "Prisma", "Cloudflare R2"],
-    services: ["E-commerce", "Web Applications"],
-    liveUrl: "https://example.com",
-    githubUrl: "https://github.com/",
-    featured: true
-  },
-  {
-    title: "AI Service Assistant",
-    slug: "ai-service-assistant",
-    summary:
-      "A focused assistant concept that answers common questions, qualifies service enquiries, and prepares a cleaner handover.",
-    description:
-      "A practical AI assistant flow built around FAQs, service fit, handover summaries, and clear next steps for business owners.",
-    problem:
-      "The business was answering repeated questions manually and often had to collect the same project context several times.",
-    solution:
-      "I structured an assistant experience that explains services, captures intent, and turns chat context into a useful lead summary.",
-    outcome:
-      "Visitors get faster guidance while the business receives better starting context for follow-up.",
-    clientType: "SME",
-    industry: "Automation",
-    coverImage: "/assets/hero-images/webp/hero-04.webp",
-    gallery: ["/assets/hero-images/webp/hero-04.webp", "/assets/backgrounds/webP/brand-03.webp"],
-    techStack: ["Next.js", "AI SDK", "Redis", "Zod"],
-    services: ["AI Automation", "Web Applications"],
-    liveUrl: "https://example.com",
-    githubUrl: "https://github.com/",
-    featured: true
-  }
-];
+export const projects = portfolioProjects;
 
 export const testimonials = [
   {
