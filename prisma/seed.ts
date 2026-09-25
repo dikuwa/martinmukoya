@@ -1,7 +1,8 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import { ContactMessageStatus, LeadStatus, PreferredContact, Prisma, ServiceType, UserRole } from "../src/generated/prisma/client";
-import { getDb } from "../src/lib/db";\nimport { obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
+import { getDb } from "../src/lib/db";
+import { obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -22,16 +23,7 @@ const seedSites = [
   }
 ] as const;
 
-const projectSeeds = [
-  ["Clinic Booking System", "clinic-booking-system", "Healthcare", "Booking Systems", "A mobile-first appointment flow for clinics that need fewer missed calls and clearer patient intake."],
-  ["Service Business Lead Hub", "service-business-lead-hub", "Professional services", "Web Applications", "A conversion-focused lead hub that helps a local service provider qualify enquiries faster."],
-  ["Local Commerce Storefront", "local-commerce-storefront", "Commerce", "E-commerce", "A catalogue and order enquiry system for a retailer moving beyond social media selling."],
-  ["AI Service Assistant", "ai-service-assistant", "Automation", "AI Automation", "A focused assistant that answers repeated questions and prepares better handovers."],
-  ["School Operations Portal", "school-operations-portal", "Education", "Web Applications", "A lightweight portal concept for notices, parent enquiries, and internal school requests."],
-  ["Training Provider Booking Flow", "training-provider-booking-flow", "Training", "Booking Systems", "A course booking flow with participant intake, schedule visibility, and follow-up notes."],
-  ["Workshop Inventory Tracker", "workshop-inventory-tracker", "Operations", "Web Applications", "A practical stock and job tracking dashboard for a workshop team."],
-  ["WhatsApp Lead Qualification Bot", "whatsapp-lead-qualification-bot", "Automation", "AI Automation", "An automation concept that turns broad WhatsApp enquiries into structured lead summaries."]
-] as const;
+const projectSeeds = portfolioProjects;
 
 const blogSeeds = [
   ["Why business websites need better lead capture", "better-lead-capture", "Business systems", "A practical look at why forms, CTAs, and follow-up structure matter more than decorative sections."],
