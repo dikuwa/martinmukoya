@@ -1,4 +1,4 @@
-export const contact = {
+import { portfolioProjects } from "@/lib/portfolio-projects";\n\nexport const contact = {
   email: "info@martinmukoya.com",
   phone: "+264 81 8563 005",
   phoneHref: "tel:+264818563005",
