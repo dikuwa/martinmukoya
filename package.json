@@ -20,7 +20,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-admin": "tsx prisma/seed-admin.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "portfolio:sync": "tsx scripts/sync-portfolio-projects.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",
@@ -81,4 +82,4 @@
     "tsx": "^4.19.0",
     "typescript": "^5.9.3"
   }
-}
+}\n
