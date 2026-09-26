@@ -1,7 +1,7 @@
 import "dotenv/config";
 import dotenv from "dotenv";
 import { getDb } from "../src/lib/db";
-import { desertTechCaseStudyRefresh, obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
+import { desertTechCaseStudyRefresh, obsoletePortfolioProjectSlugs, obsoletePortfolioProofNames, portfolioProjects, portfolioProofItems } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -76,7 +76,32 @@ async function main() {
     where: { slug: { in: obsoletePortfolioProjectSlugs } }
   });
 
-  console.log(`Portfolio sync complete: ${portfolioProjects.length} real case studies published; Desert Technology compacted when present.`);
+  const proofNames = portfolioProofItems.map((item) => item.clientName);
+  await db.testimonial.deleteMany({
+    where: {
+      sites: { some: { id: site.id } },
+      clientName: { in: [...obsoletePortfolioProofNames, ...proofNames] }
+    }
+  });
+
+  for (const [index, item] of portfolioProofItems.entries()) {
+    await db.testimonial.create({
+      data: {
+        clientName: item.clientName,
+        role: item.role,
+        company: item.company,
+        quote: item.quote,
+        image: item.image,
+        featured: index < 4,
+        published: true,
+        sortOrder: index,
+        authorId: admin?.id,
+        sites: { connect: { id: site.id } }
+      }
+    });
+  }
+
+  console.log(`Portfolio sync complete: ${portfolioProjects.length} real case studies published; project proof section refreshed; Desert Technology compacted when present.`);
 }
 
 main()
