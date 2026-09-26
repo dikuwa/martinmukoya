@@ -41,14 +41,14 @@ const blogSeeds = [
 ] as const;
 
 const testimonialSeeds = [
-  ["Local business owner", "Founder", "Service company", "Martin helped us think beyond a simple website. The final system made enquiries easier to understand and follow up on.", "/assets/testimonials/testimonials.png"],
-  ["Operations lead", "Manager", "Clinic team", "The booking flow gave our team a clearer way to collect patient details before we call back.", "/assets/testimonials/testimonial2.png"],
-  ["Recruiter review", "Technical hiring", "Software team", "The work shows product thinking, strong fundamentals, and the ability to explain technical decisions in business language.", "/assets/hero-images/png/me-hero.png"],
-  ["Startup founder", "Founder", "Digital services startup", "The process was clear from the first call. We ended with a sharper project direction and a better way to capture serious leads.", "/assets/site/02.JPG"],
-  ["Training coordinator", "Coordinator", "Learning provider", "The booking questions helped us understand participants before the first session.", "/assets/site/01.JPG"],
-  ["Retail operator", "Owner", "Local commerce brand", "The storefront concept gave customers a clearer path than sending screenshots through chat.", "/assets/site/03.JPG"],
-  ["School administrator", "Administrator", "Education team", "Martin explained the system in a way our non-technical team could actually discuss.", "/assets/hero-images/webp/about.webp"],
-  ["Agency collaborator", "Project partner", "Digital studio", "Reliable, thoughtful, and practical. The handover notes were as useful as the code.", "/assets/hero-images/webp/hero-image.webp"]
+  ["ScolaPro", "School Operations Platform", "Education Technology · Namibia", "Designed around real school workflows: attendance, academics, learners, staff, parents, reporting and offline-ready operations in one governed platform.", "/assets/hero-images/webp/about.webp"],
+  ["GovFleet Namibia", "Fleet Workflow Platform", "GovTech · Namibia", "Turns transport requests, approvals, vehicle allocation, trip authorities, inspections, fuel and driver records into one traceable operational workflow.", "/assets/backgrounds/webP/map-01.webp"],
+  ["Mondesa Health", "Multi-Tenant Healthcare Platform", "HealthTech · Namibia", "Built with clear separation between public healthcare discovery, protected practice workspaces and platform administration.", "/assets/backgrounds/webP/brand-02.webp"],
+  ["Tanhwe Guest House", "Booking & Hospitality System", "Hospitality · Namibia", "Connects the guest-facing website with room availability, reservations, customers, payments and operational administration.", "/assets/site/01.JPG"],
+  ["Swakop Wellness Centre", "Booking & Business Platform", "Wellness · Swakopmund", "Brings service discovery, bookings, clients, follow-ups, business documents and day-to-day administration into one connected experience.", "/assets/backgrounds/webP/brand-04.webp"],
+  ["ProSmile Dental", "Practice Website", "Dental · Swakopmund", "A trust-first local healthcare website focused on clear treatment discovery, accessible design and a direct path to appointment enquiries.", "/assets/backgrounds/webP/brand-05.webp"],
+  ["Ice & Spice Café", "Website & AI Assistant", "Hospitality · Swakopmund", "Combines menu discovery, local business information and a controlled knowledge-based assistant for useful customer questions.", "/assets/backgrounds/webP/brand-06.webp"],
+  ["Desert Technology", "Commerce & Operations Platform", "Technology Retail · Namibia", "Connects a customer-facing technology catalogue with products, orders, stock, documents and operational management behind the scenes.", "/assets/site/03.JPG"]
 ] as const;
 
 const faqSeeds = [
