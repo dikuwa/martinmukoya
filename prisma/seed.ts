@@ -2,7 +2,7 @@ import "dotenv/config";
 import dotenv from "dotenv";
 import { ContactMessageStatus, LeadStatus, PreferredContact, Prisma, ServiceType, UserRole } from "../src/generated/prisma/client";
 import { getDb } from "../src/lib/db";
-import { obsoletePortfolioProjectSlugs, portfolioProjects } from "../src/lib/portfolio-projects";
+import { obsoletePortfolioProjectSlugs, portfolioProjects, portfolioProofItems } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -40,16 +40,13 @@ const blogSeeds = [
   ["The difference between automation and noise", "automation-vs-noise", "AI automation", "Useful automation removes repeated work. Noisy automation simply adds another place to check."]
 ] as const;
 
-const testimonialSeeds = [
-  ["ScolaPro", "School Operations Platform", "Education Technology · Namibia", "Designed around real school workflows: attendance, academics, learners, staff, parents, reporting and offline-ready operations in one governed platform.", "/assets/hero-images/webp/about.webp"],
-  ["GovFleet Namibia", "Fleet Workflow Platform", "GovTech · Namibia", "Turns transport requests, approvals, vehicle allocation, trip authorities, inspections, fuel and driver records into one traceable operational workflow.", "/assets/backgrounds/webP/map-01.webp"],
-  ["Mondesa Health", "Multi-Tenant Healthcare Platform", "HealthTech · Namibia", "Built with clear separation between public healthcare discovery, protected practice workspaces and platform administration.", "/assets/backgrounds/webP/brand-02.webp"],
-  ["Tanhwe Guest House", "Booking & Hospitality System", "Hospitality · Namibia", "Connects the guest-facing website with room availability, reservations, customers, payments and operational administration.", "/assets/site/01.JPG"],
-  ["Swakop Wellness Centre", "Booking & Business Platform", "Wellness · Swakopmund", "Brings service discovery, bookings, clients, follow-ups, business documents and day-to-day administration into one connected experience.", "/assets/backgrounds/webP/brand-04.webp"],
-  ["ProSmile Dental", "Practice Website", "Dental · Swakopmund", "A trust-first local healthcare website focused on clear treatment discovery, accessible design and a direct path to appointment enquiries.", "/assets/backgrounds/webP/brand-05.webp"],
-  ["Ice & Spice Café", "Website & AI Assistant", "Hospitality · Swakopmund", "Combines menu discovery, local business information and a controlled knowledge-based assistant for useful customer questions.", "/assets/backgrounds/webP/brand-06.webp"],
-  ["Desert Technology", "Commerce & Operations Platform", "Technology Retail · Namibia", "Connects a customer-facing technology catalogue with products, orders, stock, documents and operational management behind the scenes.", "/assets/site/03.JPG"]
-] as const;
+const testimonialSeeds = portfolioProofItems.map((item) => [
+  item.clientName,
+  item.role,
+  item.company,
+  item.quote,
+  item.image
+] as const);
 
 const faqSeeds = [
   ["How much does a website or system cost?", "Pricing depends on scope, integrations, content, and timeline. The first step is understanding what the system needs to do for your business.", "pricing"],
