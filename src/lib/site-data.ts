@@ -73,36 +73,68 @@ export const projects = portfolioProjects;
 
 export const testimonials = [
   {
-    clientName: "Local business owner",
-    role: "Founder",
-    company: "Service company",
+    clientName: "ScolaPro",
+    role: "School Operations Platform",
+    company: "Education Technology · Namibia",
     quote:
-      "Martin helped us think beyond a simple website. The final system made enquiries easier to understand and follow up on.",
-    image: "/assets/testimonials/testimonials.png"
+      "Designed around real school workflows: attendance, academics, learners, staff, parents, reporting and offline-ready operations in one governed platform.",
+    image: "/assets/hero-images/webp/about.webp"
   },
   {
-    clientName: "Operations lead",
-    role: "Manager",
-    company: "Clinic team",
+    clientName: "GovFleet Namibia",
+    role: "Fleet Workflow Platform",
+    company: "GovTech · Namibia",
     quote:
-      "The booking flow gave our team a clearer way to collect patient details before we call back. It feels practical and easy to use.",
-    image: "/assets/testimonials/testimonial2.png"
+      "Turns transport requests, approvals, vehicle allocation, trip authorities, inspections, fuel and driver records into one traceable operational workflow.",
+    image: "/assets/backgrounds/webP/map-01.webp"
   },
   {
-    clientName: "Recruiter review",
-    role: "Technical hiring",
-    company: "Software team",
+    clientName: "Mondesa Health",
+    role: "Multi-Tenant Healthcare Platform",
+    company: "HealthTech · Namibia",
     quote:
-      "The work shows product thinking, strong fundamentals, and the ability to explain technical decisions in business language.",
-    image: "/assets/hero-images/png/me-hero.png"
+      "Built with clear separation between public healthcare discovery, protected practice workspaces and platform administration.",
+    image: "/assets/backgrounds/webP/brand-02.webp"
   },
   {
-    clientName: "Startup founder",
-    role: "Founder",
-    company: "Digital services startup",
+    clientName: "Tanhwe Guest House",
+    role: "Booking & Hospitality System",
+    company: "Hospitality · Namibia",
     quote:
-      "The process was clear from the first call. We ended with a sharper project direction and a better way to capture serious leads.",
-    image: "/assets/site/02.JPG"
+      "Connects the guest-facing website with room availability, reservations, customers, payments and operational administration.",
+    image: "/assets/site/01.JPG"
+  },
+  {
+    clientName: "Swakop Wellness Centre",
+    role: "Booking & Business Platform",
+    company: "Wellness · Swakopmund",
+    quote:
+      "Brings service discovery, bookings, clients, follow-ups, business documents and day-to-day administration into one connected experience.",
+    image: "/assets/backgrounds/webP/brand-04.webp"
+  },
+  {
+    clientName: "ProSmile Dental",
+    role: "Practice Website",
+    company: "Dental · Swakopmund",
+    quote:
+      "A trust-first local healthcare website focused on clear treatment discovery, accessible design and a direct path to appointment enquiries.",
+    image: "/assets/backgrounds/webP/brand-05.webp"
+  },
+  {
+    clientName: "Ice & Spice Café",
+    role: "Website & AI Assistant",
+    company: "Hospitality · Swakopmund",
+    quote:
+      "Combines menu discovery, local business information and a controlled knowledge-based assistant for useful customer questions.",
+    image: "/assets/backgrounds/webP/brand-06.webp"
+  },
+  {
+    clientName: "Desert Technology",
+    role: "Commerce & Operations Platform",
+    company: "Technology Retail · Namibia",
+    quote:
+      "Connects a customer-facing technology catalogue with products, orders, stock, documents and operational management behind the scenes.",
+    image: "/assets/site/03.JPG"
   }
 ];
 
