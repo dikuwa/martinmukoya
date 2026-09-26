@@ -1,4 +1,4 @@
-import { portfolioProjects } from "@/lib/portfolio-projects";
+import { portfolioProjects, portfolioProofItems } from "@/lib/portfolio-projects";
 
 export const contact = {
   email: "info@martinmukoya.com",
@@ -71,72 +71,7 @@ export const services = [
 
 export const projects = portfolioProjects;
 
-export const testimonials = [
-  {
-    clientName: "ScolaPro",
-    role: "School Operations Platform",
-    company: "Education Technology · Namibia",
-    quote:
-      "Designed around real school workflows: attendance, academics, learners, staff, parents, reporting and offline-ready operations in one governed platform.",
-    image: "/assets/hero-images/webp/about.webp"
-  },
-  {
-    clientName: "GovFleet Namibia",
-    role: "Fleet Workflow Platform",
-    company: "GovTech · Namibia",
-    quote:
-      "Turns transport requests, approvals, vehicle allocation, trip authorities, inspections, fuel and driver records into one traceable operational workflow.",
-    image: "/assets/backgrounds/webP/map-01.webp"
-  },
-  {
-    clientName: "Mondesa Health",
-    role: "Multi-Tenant Healthcare Platform",
-    company: "HealthTech · Namibia",
-    quote:
-      "Built with clear separation between public healthcare discovery, protected practice workspaces and platform administration.",
-    image: "/assets/backgrounds/webP/brand-02.webp"
-  },
-  {
-    clientName: "Tanhwe Guest House",
-    role: "Booking & Hospitality System",
-    company: "Hospitality · Namibia",
-    quote:
-      "Connects the guest-facing website with room availability, reservations, customers, payments and operational administration.",
-    image: "/assets/site/01.JPG"
-  },
-  {
-    clientName: "Swakop Wellness Centre",
-    role: "Booking & Business Platform",
-    company: "Wellness · Swakopmund",
-    quote:
-      "Brings service discovery, bookings, clients, follow-ups, business documents and day-to-day administration into one connected experience.",
-    image: "/assets/backgrounds/webP/brand-04.webp"
-  },
-  {
-    clientName: "ProSmile Dental",
-    role: "Practice Website",
-    company: "Dental · Swakopmund",
-    quote:
-      "A trust-first local healthcare website focused on clear treatment discovery, accessible design and a direct path to appointment enquiries.",
-    image: "/assets/backgrounds/webP/brand-05.webp"
-  },
-  {
-    clientName: "Ice & Spice Café",
-    role: "Website & AI Assistant",
-    company: "Hospitality · Swakopmund",
-    quote:
-      "Combines menu discovery, local business information and a controlled knowledge-based assistant for useful customer questions.",
-    image: "/assets/backgrounds/webP/brand-06.webp"
-  },
-  {
-    clientName: "Desert Technology",
-    role: "Commerce & Operations Platform",
-    company: "Technology Retail · Namibia",
-    quote:
-      "Connects a customer-facing technology catalogue with products, orders, stock, documents and operational management behind the scenes.",
-    image: "/assets/site/03.JPG"
-  }
-];
+export const testimonials = portfolioProofItems;
 
 export const flextechServices = [
   {
