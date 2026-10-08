@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import type { PublicSiteConfig } from "@/lib/public-site-config";
 
-export type ProjectListItem = { id?: string; title: string; description?: string; iconKey?: string; sortOrder?: number };
+export type ProjectListItem = { id?: string; title: string; description: string; iconKey: string; sortOrder: number };
 export type ProjectGalleryImage = { id?: string; url: string; alt?: string; caption?: string; sortOrder?: number };
 export type PublicProject = PublicSiteConfig["projects"][number] & {
   eyebrow?: string;
@@ -26,7 +26,13 @@ export type PublicProject = PublicSiteConfig["projects"][number] & {
 export type PublicBlogPost = PublicSiteConfig["blogPosts"][number] & {
   coverImageAlt?: string;
 };
-export type PublicTestimonial = PublicSiteConfig["testimonials"][number];
+export type PublicTestimonial = Omit<PublicSiteConfig["testimonials"][number], "clientName" | "role" | "company" | "quote" | "image"> & {
+  clientName: string;
+  role: string;
+  company: string;
+  quote: string;
+  image: string;
+};
 export type PublicFAQ = PublicSiteConfig["faqs"][number];
 
 export type PublicContent = {
@@ -56,8 +62,8 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       projects: site.projects,
       featuredProjects: site.projects.filter((project) => project.featured),
       blogPosts: site.blogPosts as PublicBlogPost[],
-      testimonials: site.testimonials,
-      faqs: site.faqs
+      testimonials: [...site.testimonials],
+      faqs: [...site.faqs]
     };
   }
 
@@ -91,15 +97,15 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       outcome: project.outcome || "The build created a cleaner path from visitor intent to business follow-up.",
       clientType: project.clientType || "Business",
       industry: project.industry || "Digital systems",
-      eyebrow: project.eyebrow || undefined,
+      eyebrow: project.eyebrow || "",
       timeline: project.timeline || undefined,
-      role: project.role || undefined,
+      role: project.role || "",
       deliverables: project.deliverables,
-      stackSummary: project.stackSummary || undefined,
+      stackSummary: project.stackSummary || "",
       benefits: objectArray<ProjectListItem>(project.benefits),
       capabilities: objectArray<ProjectListItem>(project.capabilities),
       coverImage: project.coverImage || "/assets/hero-images/webp/hero-image.webp",
-      coverImageAlt: project.coverImageAlt || undefined,
+      coverImageAlt: project.coverImageAlt || "",
       coverThumbnails: objectArray<ProjectGalleryImage>(project.coverThumbnails),
       gallery: project.gallery.length > 0 ? project.gallery : [project.coverImage || "/assets/hero-images/webp/hero-image.webp"],
       galleryImages: objectArray<ProjectGalleryImage>(project.galleryImages),
@@ -115,7 +121,8 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
       ctaPrimaryUrl: project.ctaPrimaryUrl || undefined,
       ctaSecondaryLabel: project.ctaSecondaryLabel || undefined,
       ctaSecondaryUrl: project.ctaSecondaryUrl || undefined,
-      featured: project.featured
+      featured: project.featured,
+      sortOrder: project.sortOrder
     }))
     : site.projects;
 
@@ -154,7 +161,7 @@ export async function getPublicContent(site: PublicSiteConfig, siteId?: string |
     projects,
     featuredProjects: projects.filter((project) => project.featured),
     blogPosts,
-    testimonials,
+    testimonials: [...testimonials],
     faqs
   };
 }
