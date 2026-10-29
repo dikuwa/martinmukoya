@@ -386,6 +386,7 @@ model Booking {
   company            String?
   projectDescription String
   budgetRange        String?
+  contractAmount     Decimal?      @db.Decimal(12, 2)
   status             BookingStatus @default(ACTIVE)
   createdById        String?
   createdAt          DateTime      @default(now())

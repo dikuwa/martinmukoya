@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 
 const field = "h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm outline-none focus:border-[color:var(--primary)]";
 
-export function BookingEditForm({ booking, sites }: { booking: { id: string; siteId: string; customerName: string; customerEmail: string | null; customerPhone: string | null; company: string | null; budgetRange: string | null; projectDescription: string; leadId: string | null }; sites: Array<{ id: string; name: string }> }) {
+export function BookingEditForm({ booking, sites }: { booking: { id: string; siteId: string; customerName: string; customerEmail: string | null; customerPhone: string | null; company: string | null; budgetRange: string | null; projectDescription: string; leadId: string | null; contractAmount: { toString(): string } | string | number | null }; sites: Array<{ id: string; name: string }> }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
@@ -52,6 +52,9 @@ export function BookingEditForm({ booking, sites }: { booking: { id: string; sit
           <input name={name} defaultValue={String(booking[name as keyof typeof booking] || "")} className={field} />
         </label>
       ))}
+      <label className="grid gap-2 text-sm font-bold">Contract amount (N$)
+        <input name="contractAmount" type="number" min="0" step="0.01" defaultValue={booking.contractAmount != null ? String(booking.contractAmount) : ""} className={field} />
+      </label>
       <label className="grid gap-2 text-sm font-bold md:col-span-2">Project description
         <textarea name="projectDescription" defaultValue={booking.projectDescription} className={`${field} min-h-32 py-3`} />
       </label>
