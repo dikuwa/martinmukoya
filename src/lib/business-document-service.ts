@@ -11,12 +11,12 @@ export type BusinessDocInput = {
   title: string;
   subject?: string;
   siteId?: string;
-  contactId?: string;
-  leadId?: string;
-  projectId?: string;
-  financialDocumentId?: string;
+  contactId?: string | null;
+  leadId?: string | null;
+  projectId?: string | null;
+  financialDocumentId?: string | null;
   serviceId?: string;
-  templateId?: string;
+  templateId?: string | null;
   templateVersion?: number;
   templateSnapshot?: Prisma.InputJsonObject;
   companyName?: string;

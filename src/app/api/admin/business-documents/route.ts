@@ -13,7 +13,7 @@ const createSchema = z.object({
   contactId: z.string().trim().optional().nullable(),
   leadId: z.string().trim().optional().nullable(),
   projectId: z.string().trim().optional().nullable(),
-  financialDocumentId: z.string().trim().optional(),
+  financialDocumentId: z.string().trim().optional().nullable(),
   serviceId: z.string().optional(),
   templateId: z.string().trim().optional().nullable(),
   companyName: z.string().trim().max(200).optional(),

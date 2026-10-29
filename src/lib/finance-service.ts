@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
-import { calculateDocumentTotals, type FinancialLineInput } from "@/lib/financial";
+import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
 import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
 
 async function getSiteSettings(siteId: string | null, prefix: string) {
@@ -125,15 +125,15 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
   return db.$transaction(async (tx) => {
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
     if (!invoiceTx || invoiceTx.type !== "INVOICE" || !["ISSUED", "PARTIALLY_PAID"].includes(invoiceTx.status)) throw new Error("Select an outstanding issued invoice.");
-    const paid = invoiceTx.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-    const balance = Number(invoiceTx.total) - paid;
-    if (amount > balance + 0.001) throw new Error("Payment cannot exceed the outstanding balance.");
+    const paid = sumActivePayments(invoiceTx.payments);
+    const outstanding = computeOutstanding(invoiceTx.total, paid);
+    if (amount > outstanding + 0.001) throw new Error("Payment cannot exceed the outstanding balance.");
     const receipt = await tx.financialDocument.create({ data: {
       number: documentNumber("RECEIPT"), type: "RECEIPT", status: "PAID", siteId: invoiceTx.siteId, bookingId: invoiceTx.bookingId,
       customerName: invoiceTx.customerName, customerEmail: invoiceTx.customerEmail, customerPhone: invoiceTx.customerPhone,
       customerCompany: invoiceTx.customerCompany, customerAddress: invoiceTx.customerAddress, issuerSnapshot: issuer,
       subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(invoiceTx.total).toFixed(2),
-      balanceAfter: (balance - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
+      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
       notes: input.notes, lineItems: { create: { description: `Payment received for ${invoiceTx.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },
     } });
     const payment = await tx.payment.create({ data: {
@@ -141,13 +141,47 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
       receiptDocumentId: receipt.id, amount: amount.toFixed(2), method: input.method,
       paidAt: input.paidAt ? new Date(input.paidAt) : new Date(), reference: input.reference, notes: input.notes, recordedById: input.userId,
     }, include: { receiptDocument: true, invoice: true, booking: true } });
-    const fullyPaid = Math.abs(balance - amount) < 0.001;
+    const fullyPaid = paymentSettlesInvoice(invoiceTx.total, paid, amount);
     const balanceNote = fullyPaid
       ? "Paid in full."
-      : `Balance remaining: N$${(balance - amount).toFixed(2)}. Invoice status: Partially paid.`;
+      : `Balance remaining: N$${(outstanding - amount).toFixed(2)}. Invoice status: Partially paid.`;
     const receiptNotes = [input.notes, balanceNote].filter(Boolean).join("\n\n");
     await tx.financialDocument.update({ where: { id: receipt.id }, data: { notes: receiptNotes || null } });
     await tx.financialDocument.update({ where: { id: invoiceTx.id }, data: { status: fullyPaid ? "PAID" : "PARTIALLY_PAID" } });
     return payment;
+  });
+}
+
+export async function recordBookingDeposit(input: { bookingId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
+  const amount = Number(input.amount);
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
+
+  const booking = await db.booking.findUnique({ where: { id: input.bookingId } });
+  if (!booking) throw new Error("Project not found.");
+  const contractAmount = booking.contractAmount;
+  if (contractAmount == null) throw new Error("Set the project contract amount before recording a payment.");
+
+  const issuer = await getIssuerSnapshot(booking.siteId);
+  return db.$transaction(async (tx) => {
+    const activePayments = await tx.payment.findMany({ where: { bookingId: booking.id, reversedAt: null } });
+    const paid = sumActivePayments(activePayments);
+    const outstanding = computeOutstanding(contractAmount, paid);
+    if (amount > outstanding + 0.001) throw new Error("Payment cannot exceed the outstanding balance.");
+    const fullyPaid = paymentSettlesInvoice(contractAmount, paid, amount);
+    const balanceNote = fullyPaid ? "Paid in full." : `Balance remaining: N$${(outstanding - amount).toFixed(2)}. Project partially paid.`;
+    const receipt = await tx.financialDocument.create({ data: {
+      number: documentNumber("RECEIPT"), type: "RECEIPT", status: "PAID", siteId: booking.siteId, bookingId: booking.id,
+      customerName: booking.customerName, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone,
+      customerCompany: booking.company, issuerSnapshot: issuer,
+      subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(contractAmount).toFixed(2),
+      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
+      notes: [input.notes, balanceNote].filter(Boolean).join("\n\n") || null,
+      lineItems: { create: { description: `Deposit for project ${booking.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },
+    } });
+    return tx.payment.create({ data: {
+      number: paymentNumber(), siteId: booking.siteId, bookingId: booking.id, receiptDocumentId: receipt.id,
+      amount: amount.toFixed(2), method: input.method, paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
+      reference: input.reference, notes: input.notes, recordedById: input.userId,
+    }, include: { receiptDocument: true, booking: true } });
   });
 }

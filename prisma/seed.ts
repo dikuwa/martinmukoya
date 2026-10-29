@@ -2,6 +2,7 @@ import "dotenv/config";
 import dotenv from "dotenv";
 import { ContactMessageStatus, LeadStatus, PreferredContact, Prisma, ServiceType, UserRole } from "../src/generated/prisma/client";
 import { getDb } from "../src/lib/db";
+import { obsoletePortfolioProjectSlugs, portfolioProjects, portfolioProofItems } from "../src/lib/portfolio-projects";
 
 dotenv.config({ path: ".env.local", override: true });
 
@@ -22,16 +23,7 @@ const seedSites = [
   }
 ] as const;
 
-const projectSeeds = [
-  ["Clinic Booking System", "clinic-booking-system", "Healthcare", "Booking Systems", "A mobile-first appointment flow for clinics that need fewer missed calls and clearer patient intake."],
-  ["Service Business Lead Hub", "service-business-lead-hub", "Professional services", "Web Applications", "A conversion-focused lead hub that helps a local service provider qualify enquiries faster."],
-  ["Local Commerce Storefront", "local-commerce-storefront", "Commerce", "E-commerce", "A catalogue and order enquiry system for a retailer moving beyond social media selling."],
-  ["AI Service Assistant", "ai-service-assistant", "Automation", "AI Automation", "A focused assistant that answers repeated questions and prepares better handovers."],
-  ["School Operations Portal", "school-operations-portal", "Education", "Web Applications", "A lightweight portal concept for notices, parent enquiries, and internal school requests."],
-  ["Training Provider Booking Flow", "training-provider-booking-flow", "Training", "Booking Systems", "A course booking flow with participant intake, schedule visibility, and follow-up notes."],
-  ["Workshop Inventory Tracker", "workshop-inventory-tracker", "Operations", "Web Applications", "A practical stock and job tracking dashboard for a workshop team."],
-  ["WhatsApp Lead Qualification Bot", "whatsapp-lead-qualification-bot", "Automation", "AI Automation", "An automation concept that turns broad WhatsApp enquiries into structured lead summaries."]
-] as const;
+const projectSeeds = portfolioProjects;
 
 const blogSeeds = [
   ["Why business websites need better lead capture", "better-lead-capture", "Business systems", "A practical look at why forms, CTAs, and follow-up structure matter more than decorative sections."],
@@ -48,16 +40,13 @@ const blogSeeds = [
   ["The difference between automation and noise", "automation-vs-noise", "AI automation", "Useful automation removes repeated work. Noisy automation simply adds another place to check."]
 ] as const;
 
-const testimonialSeeds = [
-  ["Local business owner", "Founder", "Service company", "Martin helped us think beyond a simple website. The final system made enquiries easier to understand and follow up on.", "/assets/testimonials/testimonials.png"],
-  ["Operations lead", "Manager", "Clinic team", "The booking flow gave our team a clearer way to collect patient details before we call back.", "/assets/testimonials/testimonial2.png"],
-  ["Recruiter review", "Technical hiring", "Software team", "The work shows product thinking, strong fundamentals, and the ability to explain technical decisions in business language.", "/assets/hero-images/png/me-hero.png"],
-  ["Startup founder", "Founder", "Digital services startup", "The process was clear from the first call. We ended with a sharper project direction and a better way to capture serious leads.", "/assets/site/02.JPG"],
-  ["Training coordinator", "Coordinator", "Learning provider", "The booking questions helped us understand participants before the first session.", "/assets/site/01.JPG"],
-  ["Retail operator", "Owner", "Local commerce brand", "The storefront concept gave customers a clearer path than sending screenshots through chat.", "/assets/site/03.JPG"],
-  ["School administrator", "Administrator", "Education team", "Martin explained the system in a way our non-technical team could actually discuss.", "/assets/hero-images/webp/about.webp"],
-  ["Agency collaborator", "Project partner", "Digital studio", "Reliable, thoughtful, and practical. The handover notes were as useful as the code.", "/assets/hero-images/webp/hero-image.webp"]
-] as const;
+const testimonialSeeds = portfolioProofItems.map((item) => [
+  item.clientName,
+  item.role,
+  item.company,
+  item.quote,
+  item.image
+] as const);
 
 const faqSeeds = [
   ["How much does a website or system cost?", "Pricing depends on scope, integrations, content, and timeline. The first step is understanding what the system needs to do for your business.", "pricing"],
@@ -129,51 +118,73 @@ async function main() {
     )
   );
 
-  for (const [index, [title, slug, industry, service, summary]] of projectSeeds.entries()) {
-    const assignedSites = index < 4
-      ? { set: [{ id: martinSite.id }] }
-      : { set: [{ id: martinSite.id }, { id: flextechSite.id }] };
-    const connectSites = index < 4
-      ? { connect: { id: martinSite.id } }
-      : { connect: [{ id: martinSite.id }, { id: flextechSite.id }] };
-
+  for (const project of projectSeeds) {
     await db.project.upsert({
-      where: { slug },
+      where: { slug: project.slug },
       update: {
-        title,
-        summary,
-        industry,
-        services: [service, "Web Applications"],
-        sortOrder: index,
+        title: project.title,
+        summary: project.summary,
+        description: project.description,
+        problem: project.problem,
+        solution: project.solution,
+        outcome: project.outcome,
+        clientType: project.clientType,
+        industry: project.industry,
+        eyebrow: project.eyebrow,
+        role: project.role,
+        deliverables: project.deliverables,
+        stackSummary: project.stackSummary,
+        benefits: project.benefits,
+        capabilities: project.capabilities,
+        coverImage: project.coverImage,
+        coverImageAlt: project.coverImageAlt,
+        gallery: project.gallery,
+        techStack: project.techStack,
+        services: project.services,
+        liveUrl: project.liveUrl,
+        githubUrl: project.githubUrl,
+        caseStudyContent: project.caseStudyContent,
+        featured: project.featured,
         published: true,
-        featured: index < 5,
-        sites: assignedSites
+        sortOrder: project.sortOrder,
+        sites: { set: [{ id: martinSite.id }] }
       },
       create: {
-        title,
-        slug,
-        summary,
-        description: `${title} is a practical portfolio case study focused on clearer intake, stronger follow-up, and less manual coordination.`,
-        problem: "The business needed a more reliable way to collect information, reduce repeated questions, and understand the next action.",
-        solution: "The solution uses a focused customer journey, structured data capture, admin-ready records, and plain-language handover notes.",
-        outcome: "The team gains a clearer operating rhythm and a more professional customer experience.",
-        clientType: index % 2 === 0 ? "SME" : "Organization",
-        industry,
-        coverImage: `/assets/site/0${(index % 3) + 1}.JPG`,
-        gallery: [`/assets/site/0${(index % 3) + 1}.JPG`, `/assets/backgrounds/webP/map-0${(index % 3) + 1}.webp`],
-        techStack: ["Next.js", "TypeScript", "Prisma", "PostgreSQL", "Redis"],
-        services: [service, "Web Applications"],
-        liveUrl: "https://example.com",
-        githubUrl: "https://github.com/",
-        caseStudyContent: "This case study explains the business problem, the design decisions, the implementation approach, and the measurable operational improvements.",
-        featured: index < 5,
+        title: project.title,
+        slug: project.slug,
+        summary: project.summary,
+        description: project.description,
+        problem: project.problem,
+        solution: project.solution,
+        outcome: project.outcome,
+        clientType: project.clientType,
+        industry: project.industry,
+        eyebrow: project.eyebrow,
+        role: project.role,
+        deliverables: project.deliverables,
+        stackSummary: project.stackSummary,
+        benefits: project.benefits,
+        capabilities: project.capabilities,
+        coverImage: project.coverImage,
+        coverImageAlt: project.coverImageAlt,
+        gallery: project.gallery,
+        techStack: project.techStack,
+        services: project.services,
+        liveUrl: project.liveUrl,
+        githubUrl: project.githubUrl,
+        caseStudyContent: project.caseStudyContent,
+        featured: project.featured,
         published: true,
-        sortOrder: index,
+        sortOrder: project.sortOrder,
         authorId: admin.id,
-        sites: connectSites
+        sites: { connect: { id: martinSite.id } }
       }
     });
   }
+
+  await db.project.deleteMany({
+    where: { slug: { in: obsoletePortfolioProjectSlugs } }
+  });
 
   for (const [index, [title, slug, category, excerpt]] of blogSeeds.entries()) {
     const blogSites = index < 6

@@ -8,6 +8,7 @@ import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatNad } from "@/lib/financial";
 
 type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string };
 type Invoice = { id: string; label: string; balance: number };
@@ -176,25 +177,29 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
   );
 }
 
-export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
+export function PaymentPanel({ invoices, projects }: { invoices: Invoice[]; projects: Invoice[] }) {
   const router = useRouter();
-  // Filter out invoices with zero or negative balance
-  const availableInvoices = useMemo(
-    () => invoices.filter((inv) => inv.balance > 0),
-    [invoices]
+  // Invoices and project contracts both carry an outstanding balance. Keep them
+  // all listed so the panel never disappears; a settled target stays selectable
+  // and simply reports that there is nothing to record.
+  const targets = useMemo(
+    () => [...invoices.map((item) => ({ ...item, kind: "invoice" as const })), ...projects.map((item) => ({ ...item, kind: "booking" as const }))],
+    [invoices, projects]
   );
-  const [invoiceId, setInvoiceId] = useState(availableInvoices[0]?.id || "");
+  const firstOutstanding = targets.find((item) => item.balance > 0) || targets[0];
+  const [targetKey, setTargetKey] = useState(() => (firstOutstanding ? `${firstOutstanding.kind}:${firstOutstanding.id}` : ""));
   const [saving, setSaving] = useState(false);
-  const invoice = availableInvoices.find((item) => item.id === invoiceId);
-  const isZeroBalance = invoice ? invoice.balance <= 0 : false;
+  const target = targets.find((item) => `${item.kind}:${item.id}` === targetKey) || firstOutstanding;
+  const isZeroBalance = target ? target.balance <= 0 : false;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isZeroBalance) return;
+    if (isZeroBalance || !target) return;
     const form = event.currentTarget;
     setSaving(true);
     const data = Object.fromEntries(new FormData(form));
-    const response = await fetch("/api/admin/payments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, invoiceId }) });
+    const body = target.kind === "invoice" ? { ...data, invoiceId: target.id } : { ...data, bookingId: target.id };
+    const response = await fetch("/api/admin/payments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const payload = await response.json();
     setSaving(false);
     if (!response.ok) return toast.error(payload.error || "Payment could not be recorded");
@@ -209,24 +214,27 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
         <h2 className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
       </div>
-      {availableInvoices.length ? (
+      {target ? (
         <>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Invoice
+          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Invoice or project
             <DashboardSelect
-              value={invoiceId}
-              onChange={e => setInvoiceId(e.target.value)}
-              options={availableInvoices.map(item => ({ label: item.label, value: item.id }))}
+              value={`${target.kind}:${target.id}`}
+              onChange={e => setTargetKey(e.target.value)}
+              options={targets.map(item => ({ label: item.label, value: `${item.kind}:${item.id}` }))}
               className={input}
             />
           </label>
           {isZeroBalance ? (
             <p className="text-sm text-[color:var(--text-muted)] bg-[color:var(--surface-soft)] rounded-xl p-3">
-              This invoice has no outstanding balance — nothing to record.
+              This is fully paid — nothing left to record.
             </p>
           ) : (
             <>
+              <p className="rounded-xl bg-[color:var(--surface-soft)] p-3 text-sm font-bold">
+                Outstanding balance: <span className="text-[color:var(--text-strong)]">{formatNad(target.balance)}</span>
+              </p>
               <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Amount (N$)
-                <input name="amount" required type="number" min="0.01" max={invoice?.balance} step="0.01" className={input} disabled={isZeroBalance} />
+                <input name="amount" required type="number" min="0.01" max={target.balance} step="0.01" className={input} disabled={isZeroBalance} />
               </label>
               <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Method
                 <DashboardSelect
@@ -256,7 +264,7 @@ export function PaymentPanel({ invoices }: { invoices: Invoice[] }) {
           )}
         </>
       ) : (
-        <p className="rounded-xl bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--text-muted)]">No outstanding issued invoices.</p>
+        <p className="rounded-xl bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--text-muted)]">Nothing to record yet. Add a contract amount to a project, or issue an invoice, then record the payment here.</p>
       )}
     </Card>
   );

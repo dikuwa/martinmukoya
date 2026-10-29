@@ -66,3 +66,24 @@ export function calculateDocumentTotals(input: {
 export function formatNad(value: string | number) {
   return `N$${new Intl.NumberFormat("en-NA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))}`;
 }
+
+export type MoneyValue = string | number | { toString(): string };
+export type PaymentLike = { amount: MoneyValue; reversedAt?: Date | string | null };
+
+/** Total of every payment that has not been reversed. */
+export function sumActivePayments(payments: PaymentLike[]) {
+  return payments
+    .filter((payment) => !payment.reversedAt)
+    .reduce((sum, payment) => sum + Number(payment.amount), 0);
+}
+
+/** What is still owed on a document: the total minus what has been paid, never below zero. */
+export function computeOutstanding(total: MoneyValue, paid: MoneyValue) {
+  const outstanding = Number(total) - Number(paid);
+  return outstanding > 0 ? outstanding : 0;
+}
+
+/** True when a new payment covers whatever was still outstanding on the document. */
+export function paymentSettlesInvoice(total: MoneyValue, paid: MoneyValue, amount: MoneyValue) {
+  return Math.abs(Number(total) - Number(paid) - Number(amount)) < 0.001;
+}
