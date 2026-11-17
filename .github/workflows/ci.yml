@@ -20,7 +20,7 @@ env:
 jobs:
   # ── Build & typecheck & unit tests ──
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -89,7 +89,7 @@ jobs:
   # ── E2E tests (Playwright) ──
   # Runs in parallel with the build job — doesn't depend on build artifacts
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
