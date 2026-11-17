@@ -101,3 +101,47 @@ Check these after deployment:
 - PostHog receives a test event.
 - `/sitemap.xml` and `/robots.txt` load.
 - Mobile nav and chat widget do not overlap form fields.
+
+## Security rollout: server-only public tables
+
+`prisma db push` does **not** apply SQL migrations. After every authorized schema
+push, apply `prisma/migrations/20261117000000_secure_public_tables/migration.sql`
+with a table-owner connection, and extend its table allowlist for new Prisma
+models and implicit relation tables. Do not push, seed, or reset a database just
+to apply this security fix. `.env.local` overrides the shell URL in Prisma config;
+verify its target before `pnpm db:secure`.
+
+Before rollout, connect using the **deployed application's** `DATABASE_URL` (not
+just an owner/admin tool connection) and run:
+
+```sql
+SELECT current_user, session_user, rolbypassrls, rolsuper
+FROM pg_roles WHERE rolname = current_user;
+SELECT c.relname, pg_get_userbyid(c.relowner) AS owner,
+       has_table_privilege(current_user, c.oid, 'SELECT') AS can_select,
+       has_table_privilege(current_user, c.oid, 'INSERT') AS can_insert,
+       has_table_privilege(current_user, c.oid, 'UPDATE') AS can_update,
+       has_table_privilege(current_user, c.oid, 'DELETE') AS can_delete
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') ORDER BY c.relname;
+```
+
+Require `rolbypassrls` and all required privileges. Table ownership establishes
+independence from `PUBLIC` grants; for a non-owner, inspect explicit/inherited
+ACLs and verify required privileges inside a rollback-only transaction that
+revokes PUBLIC. Confirm no external integrations require anon/authenticated
+access to these application tables. Required external access needs separately
+reviewed scoped policies/grants before rollout; never add an open policy.
+
+The script is atomic and repeatable: enables RLS, removes table and column API
+and PUBLIC grants, and adds a restrictive deny policy that survives existing
+permissive policies. It aborts if inherited grants remain (including TRUNCATE
+and Postgres 17 MAINTAIN). Resolve inherited role grants explicitly, then rerun;
+do not remove privileges from unrelated roles blindly. Trusted server roles
+remain unchanged. Absent allowlisted tables are skipped. Unrelated tables,
+views, sequences and functions need separate inventory/review.
+
+Run `bash tests/rls.integration.sh` with Docker. Re-run Security Advisor, inspect
+API effective privileges and verify API requests are denied, then test admin
+login, public pages, contact/lead submission and chat with synthetic records.
+Record the exact database target, changed tables, advisor findings and results.
