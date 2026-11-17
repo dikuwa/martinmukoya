@@ -7,24 +7,15 @@ on:
     branches: [main]
 
 env:
-  # These are needed for the Next.js build and Prisma client generation
-  # Set the actual values as repository secrets in GitHub:
-  #   Settings → Secrets and variables → Actions
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL }}
-  UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN }}
-  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-  BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
-  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-  RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-  NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
-  ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  # For admin image uploads (optional — build still works without these)
-  CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
-  CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
-  CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
-  CLOUDFLARE_R2_BUCKET_NAME: ${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}
+  # Synthetic credentials target only the disposable services below, including postinstall.
+  DATABASE_URL: postgresql://test:test@localhost:5432/test
+  UPSTASH_REDIS_URL: http://localhost:8079
+  UPSTASH_REDIS_TOKEN: ci-redis-token
+  BETTER_AUTH_SECRET: ci-synthetic-auth-secret-at-least-32-characters
+  BETTER_AUTH_URL: http://localhost:3000
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  ADMIN_EMAIL: admin@example.test
+  ADMIN_PASSWORD: Synthetic-CI-only-password-2026!
 
 jobs:
   # ── Build & typecheck & unit tests ──
@@ -46,6 +37,22 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis-http:
+        image: hiett/serverless-redis-http:latest
+        env:
+          SRH_MODE: env
+          SRH_TOKEN: ci-redis-token
+          SRH_CONNECTION_STRING: redis://redis:6379
+        ports:
+          - 8079:80
+
     steps:
       - uses: actions/checkout@v4
 
@@ -63,37 +70,21 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Push schema to test database
         run: pnpm db:push
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: TypeScript check
         run: npx tsc --noEmit
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Run unit tests
         run: pnpm test
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Verify public table security
         run: bash tests/rls.integration.sh
 
       - name: Build Next.js app
         run: pnpm build
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          # Stub values for build
-          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL || 'http://localhost:6379' }}
-          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN || 'stub' }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci-build-secret-min-32-chars-long!!' }}
-          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL || 'http://localhost:3000' }}
-          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
 
   # ── E2E tests (Playwright) ──
   # Runs in parallel with the build job — doesn't depend on build artifacts
@@ -115,6 +106,22 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis-http:
+        image: hiett/serverless-redis-http:latest
+        env:
+          SRH_MODE: env
+          SRH_TOKEN: ci-redis-token
+          SRH_CONNECTION_STRING: redis://redis:6379
+        ports:
+          - 8079:80
+
     steps:
       - uses: actions/checkout@v4
 
@@ -132,25 +139,18 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Push schema to test database
         run: pnpm db:push
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Seed test database
         run: pnpm db:seed
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+      - name: Seed synthetic admin credential
+        run: pnpm db:seed-admin
 
       - name: Seed E2E test data (known document IDs for direct-navigation tests)
         run: npx tsx prisma/seed-e2e.ts
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -158,31 +158,20 @@ jobs:
       - name: Start Next.js dev server
         run: |
           pnpm dev > /tmp/next-dev.log 2>&1 &
-          for i in $(seq 1 30); do
+          ready=false
+          for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null)
-            if [ "$code" != "000" ]; then
+            if [ "$code" = "200" ]; then
               echo "Server ready with status $code"
+              ready=true
               break
             fi
             sleep 2
           done
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL || 'http://localhost:6379' }}
-          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN || 'stub' }}
-          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci-build-secret-min-32-chars-long!!' }}
-          BETTER_AUTH_URL: http://localhost:3000
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # E2E test credentials
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          if [ "$ready" != true ]; then cat /tmp/next-dev.log; exit 1; fi
 
       - name: Run E2E tests
         run: npx playwright test --reporter=list
-        env:
-          BASE_URL: http://localhost:3000
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
       - uses: actions/upload-artifact@v4
         if: failure()
