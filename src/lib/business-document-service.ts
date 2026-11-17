@@ -1,3 +1,4 @@
+import { financialDocumentIsPublic, businessDocumentIsPublic, newShareToken } from "@/lib/shared-document-access";
 import "server-only";
 
 import { randomBytes } from "crypto";
@@ -40,7 +41,7 @@ export type BusinessDocInput = {
 };
 
 function shortCode(): string {
-  return randomBytes(5).toString("base64url").slice(0, 7);
+  return newShareToken();
 }
 
 function docNumber(type: string): string {
@@ -142,6 +143,12 @@ export async function issueBusinessDocument(id: string, userId?: string) {
 }
 
 export async function createSharedDocumentLink(documentId: string, docType: "business" | "financial") {
+  if (docType === "financial") {
+    if (!financialDocumentIsPublic(await db.financialDocument.findUnique({ where: { id: documentId } }))) throw new Error("Document is not shareable.");
+  } else {
+    const document = await db.businessDocument.findUnique({ where: { id: documentId } });
+    if (!businessDocumentIsPublic(document)) throw new Error("Document is not shareable.");
+  }
   const code = shortCode();
   const existing = await db.sharedDocument.findFirst({
     where: docType === "business" ? { businessDocumentId: documentId } : { financialDocumentId: documentId }
@@ -160,23 +167,27 @@ export async function createSharedDocumentLink(documentId: string, docType: "bus
 }
 
 export async function revokeShareLink(shortCode: string) {
-  return db.sharedDocument.update({
-    where: { shortCode },
-    data: { shareEnabled: false, expiresAt: new Date() }
+  return db.$transaction(async (tx) => {
+    const share = await tx.sharedDocument.findUnique({ where: { shortCode } });
+    if (!share) throw new Error("Share link not found.");
+    if (share.financialDocumentId) await tx.financialDocument.update({ where: { id: share.financialDocumentId }, data: { shareToken: null } });
+    return tx.sharedDocument.update({ where: { shortCode }, data: { shareEnabled: false, expiresAt: new Date() } });
   });
 }
 
 export async function regenerateShareLink(oldCode: string) {
-  const existing = await db.sharedDocument.findUnique({ where: { shortCode: oldCode } });
-  if (!existing) throw new Error("Share link not found.");
-  await db.sharedDocument.update({ where: { shortCode: oldCode }, data: { shareEnabled: false } });
-  return db.sharedDocument.create({
-    data: {
-      shortCode: shortCode(),
-      documentType: existing.documentType,
-      financialDocumentId: existing.financialDocumentId,
-      businessDocumentId: existing.businessDocumentId,
+  return db.$transaction(async (tx) => {
+    const existing = await tx.sharedDocument.findUnique({ where: { shortCode: oldCode } });
+    if (!existing) throw new Error("Share link not found.");
+    // Rotate in place: each document has exactly one share row; retire its legacy credential too.
+    if (existing.documentType === "financial") {
+      if (!financialDocumentIsPublic(await tx.financialDocument.findUnique({ where: { id: existing.financialDocumentId! } }))) throw new Error("Document is not shareable.");
+      await tx.financialDocument.update({ where: { id: existing.financialDocumentId! }, data: { shareToken: null } });
+    } else {
+      const document = await tx.businessDocument.findUnique({ where: { id: existing.businessDocumentId! } });
+      if (!businessDocumentIsPublic(document)) throw new Error("Document is not shareable.");
     }
+    return tx.sharedDocument.update({ where: { shortCode: oldCode }, data: { shortCode: shortCode(), shareEnabled: true, expiresAt: null } });
   });
 }
 

@@ -3,6 +3,8 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, Suspense, type ReactNode } from "react";
 
+import { redactShareUrls } from "@/lib/analytics-redaction";
+
 const COOKIE_CONSENT_KEY = "cookie-consent-v1";
 
 const posthogKey =
@@ -40,6 +42,8 @@ function PostHogPageView() {
         ph.init(posthogKey, {
           api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
           capture_pageview: false,
+          disable_session_recording: true,
+          before_send: (event) => event ? { ...event, properties: redactShareUrls(event.properties) as typeof event.properties } : null,
           persistence: "localStorage+cookie",
         });
       }

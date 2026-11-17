@@ -1,3 +1,4 @@
+import { redactShareUrls } from "@/lib/analytics-redaction";
 import posthog from "posthog-js";
 
 type TrackEventInput = {
@@ -13,6 +14,7 @@ type TrackEventInput = {
 };
 
 export function trackEvent(input: TrackEventInput) {
+  input = redactShareUrls(input) as TrackEventInput;
   const payload = JSON.stringify(input);
 
   if (typeof window !== "undefined") {

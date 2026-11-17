@@ -1,3 +1,4 @@
+import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -15,7 +16,8 @@ const declineSchema = z.object({
 export async function POST(request: Request, context: Context) {
   // Rate limit: 5 accept/decline actions per 5 minutes per IP
   const ip = getClientIp(request);
-  const { success } = await rateLimit(`share:action:${ip}`, { limit: 5, windowSeconds: 300 });
+  const { success, unavailable } = await rateLimit(`share:action:${ip}`, { limit: 5, windowSeconds: 300 });
+  if (unavailable) return NextResponse.json({ error: "Service temporarily unavailable." }, { status: 503 });
   if (!success) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
@@ -26,7 +28,7 @@ export async function POST(request: Request, context: Context) {
       include: { businessDocument: true, financialDocument: true },
     });
 
-    if (!share || !share.shareEnabled || (share.expiresAt && share.expiresAt < new Date())) {
+    if (!share || !sharedDocumentIsPublic(share)) {
       return NextResponse.json({ error: "Document not found or link has expired." }, { status: 404 });
     }
 

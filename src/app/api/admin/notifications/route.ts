@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { syncNotifications } from "@/lib/notifications";
@@ -18,6 +19,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: Request) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     // Sync missed notifications from any site
     await syncNotifications();
 
@@ -111,6 +115,9 @@ export async function GET(request: Request) {
  */
 export async function PATCH() {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const result = await db.notification.updateMany({
       where: { read: false },
       data: { read: true, readAt: new Date() },
@@ -134,6 +141,9 @@ export async function PATCH() {
  */
 export async function DELETE(request: Request) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { searchParams } = new URL(request.url);
     const clearAll = searchParams.get("all") === "true";
 

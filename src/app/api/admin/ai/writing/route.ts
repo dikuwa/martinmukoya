@@ -22,6 +22,7 @@ export async function POST(request: Request) {
   const { session, error } = await requireAdmin();
   if (error) return error;
   const limit = await rateLimit(`documents-ai:${session!.user.id}:${getClientIp(request)}`, { limit: 20, windowSeconds: 3600 });
+  if (limit.unavailable) return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
   if (!limit.success) return NextResponse.json({ error: "Document AI usage limit reached. Try again later." }, { status: 429 });
   try {
     const parsed = requestSchema.safeParse(await request.json());

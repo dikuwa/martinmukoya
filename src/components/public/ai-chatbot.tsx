@@ -345,6 +345,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           businessName: bookingData.company || undefined,
           conversationSummary,
           sessionId,
+          visitorToken,
           siteSlug: siteSlugRef.current,
           services: bookingData.services,
           customServiceDetails: bookingData.customServiceDetails || undefined,
@@ -398,7 +399,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
       setLeadSubmitting(false);
       leadSubmittingRef.current = false;
     }
-  }, [bookingData, selectedServiceNames, messages, sessionId, leadError]);
+  }, [bookingData, selectedServiceNames, messages, sessionId, visitorToken, leadError]);
 
   // ── Back button handler ──
   const goBack = useCallback(() => {
@@ -681,6 +682,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
           body: JSON.stringify({
             content: apiContent,
             sessionId,
+            visitorToken,
             siteSlug: siteSlugRef.current,
           }),
         });
@@ -767,7 +769,7 @@ export function AIChatbot({ siteSlug = "martin-mukoya" }: { siteSlug?: string })
         cb?.(fullText);
       }
     },
-    [sessionId]
+    [sessionId, visitorToken]
   );
 
   // ── Retry submit ──

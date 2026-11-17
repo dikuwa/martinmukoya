@@ -1,3 +1,4 @@
+import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { trackSharedDocumentView } from "@/lib/business-document-service";
@@ -8,7 +9,8 @@ type Context = { params: Promise<{ code: string }> };
 export async function GET(request: Request, context: Context) {
   // Rate limit: 20 views per minute per IP
   const ip = getClientIp(request);
-  const { success } = await rateLimit(`share:view:${ip}`, { limit: 20, windowSeconds: 60 });
+  const { success, unavailable } = await rateLimit(`share:view:${ip}`, { limit: 20, windowSeconds: 60 });
+  if (unavailable) return NextResponse.json({ error: "Service temporarily unavailable." }, { status: 503 });
   if (!success) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
@@ -26,7 +28,7 @@ export async function GET(request: Request, context: Context) {
       },
     });
 
-    if (!share || !share.shareEnabled || (share.expiresAt && share.expiresAt < new Date())) {
+    if (!share || !sharedDocumentIsPublic(share)) {
       return NextResponse.json({ error: "Document not found or link has expired." }, { status: 404 });
     }
 

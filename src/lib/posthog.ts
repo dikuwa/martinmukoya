@@ -1,3 +1,4 @@
+import { redactShareUrls } from "@/lib/analytics-redaction";
 import { PostHog } from "posthog-node";
 
 let posthogClient: PostHog | null = null;
@@ -25,7 +26,7 @@ export async function capturePostHogServerEvent(input: {
     client.capture({
       distinctId: input.distinctId ?? "anonymous-visitor",
       event: input.eventType,
-      properties: input.properties
+      properties: redactShareUrls(input.properties) as Record<string, unknown>
     });
     await client.flush();
   } catch {

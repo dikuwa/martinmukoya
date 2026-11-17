@@ -10,6 +10,9 @@ type RouteContext = { params: Promise<{ key: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { key } = await context.params;
     const setting = await db.siteSetting.findFirst({ where: { OR: [{ id: key }, { key }] }, include: { site: true } });
 

@@ -252,6 +252,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const content: string = (body?.content || "").toString();
     const requestedSessionId = typeof body?.sessionId === "string" ? body.sessionId : undefined;
+    if (body?.sessionId != null && (typeof body.sessionId !== "string" || !body.sessionId.trim())) {
+      return Response.json({ error: "Invalid session" }, { status: 400 });
+    }
+    if (requestedSessionId && (typeof body.visitorToken !== "string" || !body.visitorToken)) {
+      return Response.json({ error: "Invalid chat credentials" }, { status: 403 });
+    }
+    const session = requestedSessionId
+      ? await db.chatSession.findFirst({ where: { id: requestedSessionId, visitorToken: body.visitorToken } })
+      : null;
+    if (requestedSessionId && !session) {
+      return Response.json({ error: "Invalid chat credentials" }, { status: 403 });
+    }
     const clientSiteSlug = typeof body?.siteSlug === "string" ? body.siteSlug : undefined;
 
     // quick guardrails
@@ -270,6 +282,9 @@ export async function POST(req: Request) {
     // rate limit per IP
     const ip = getClientIp(req);
     const rl = await rateLimit(`ai-chat:${ip}`, { limit: 30, windowSeconds: 60 });
+    if (rl.unavailable) {
+      return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
+    }
     if (!rl.success) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
     }
@@ -286,9 +301,6 @@ export async function POST(req: Request) {
 
     const shouldHandToHuman = handoverRe.test(content);
     const site = detectedSite;
-    const session = requestedSessionId
-      ? await db.chatSession.findUnique({ where: { id: requestedSessionId } })
-      : null;
     const activeSession = session ?? await db.chatSession.create({
       data: {
         siteId: site?.id,

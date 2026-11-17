@@ -22,7 +22,8 @@ const chatbotLeadSchema = z.object({
   preferredContact: z.enum(["EMAIL", "PHONE", "WHATSAPP"]).optional().default("EMAIL"),
   businessName: z.string().trim().optional().or(z.literal("")),
   conversationSummary: z.string().trim().optional().or(z.literal("")),
-  sessionId: z.string().trim().optional(),
+  sessionId: z.string().trim().min(1).nullish(),
+  visitorToken: z.string().optional().nullable(),
   services: z.array(z.string()).optional(),
   customServiceDetails: z.string().trim().optional().or(z.literal("")),
   timelineFlexible: z.boolean().optional(),
@@ -33,6 +34,9 @@ export async function POST(request: Request) {
     const ip = getClientIp(request);
     const limit = await rateLimit(`rate:chatbot-leads:${ip}`, { limit: 5, windowSeconds: 60 * 60 });
 
+    if (limit.unavailable) {
+      return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
+    }
     if (!limit.success) {
       return NextResponse.json(
         { error: "Too many submissions. Please try again later." },
@@ -42,6 +46,14 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const parsed = chatbotLeadSchema.parse(body);
+
+    if (parsed.sessionId) {
+      if (!parsed.visitorToken || !await db.chatSession.findFirst({
+        where: { id: parsed.sessionId, visitorToken: parsed.visitorToken }, select: { id: true }
+      })) {
+        return NextResponse.json({ error: "Invalid chat credentials" }, { status: 403 });
+      }
+    }
 
     // Require at least email or phone
     if (!parsed.email && !parsed.phone) {
@@ -150,7 +162,7 @@ export async function POST(request: Request) {
     if (parsed.sessionId) {
       await db.chatSession
         .update({
-          where: { id: parsed.sessionId },
+          where: { id: parsed.sessionId, visitorToken: parsed.visitorToken! },
           data: {
             leadId: lead.id,
             mode: "WAITING_FOR_HUMAN",

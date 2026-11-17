@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { syncNotifications } from "@/lib/notifications";
@@ -19,6 +20,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     // Sync missed notifications from any site
     await syncNotifications();
 

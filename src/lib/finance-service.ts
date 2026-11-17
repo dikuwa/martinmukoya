@@ -1,3 +1,4 @@
+import { newShareToken } from "@/lib/shared-document-access";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
@@ -82,7 +83,7 @@ export async function issueDocument(id: string) {
     const document = await tx.financialDocument.findUnique({ where: { id } });
     if (!document || document.status !== "DRAFT" || document.type === "RECEIPT") throw new Error("Only draft quotes and invoices can be issued.");
     return tx.financialDocument.update({ where: { id }, data: {
-      number: documentNumber(document.type), status: "ISSUED", issuedAt: new Date(), shareToken: randomUUID(),
+      number: documentNumber(document.type), status: "ISSUED", issuedAt: new Date(), shareToken: newShareToken(),
     }, include: { lineItems: { orderBy: { sortOrder: "asc" } }, booking: true } });
   });
 }
@@ -133,7 +134,7 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
       customerName: invoiceTx.customerName, customerEmail: invoiceTx.customerEmail, customerPhone: invoiceTx.customerPhone,
       customerCompany: invoiceTx.customerCompany, customerAddress: invoiceTx.customerAddress, issuerSnapshot: issuer,
       subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(invoiceTx.total).toFixed(2),
-      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
+      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: newShareToken(), createdById: input.userId,
       notes: input.notes, lineItems: { create: { description: `Payment received for ${invoiceTx.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },
     } });
     const payment = await tx.payment.create({ data: {
@@ -174,7 +175,7 @@ export async function recordBookingDeposit(input: { bookingId: string; amount: s
       customerName: booking.customerName, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone,
       customerCompany: booking.company, issuerSnapshot: issuer,
       subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(contractAmount).toFixed(2),
-      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: randomUUID(), createdById: input.userId,
+      balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: newShareToken(), createdById: input.userId,
       notes: [input.notes, balanceNote].filter(Boolean).join("\n\n") || null,
       lineItems: { create: { description: `Deposit for project ${booking.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },
     } });

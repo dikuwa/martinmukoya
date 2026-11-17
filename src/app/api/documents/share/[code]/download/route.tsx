@@ -1,3 +1,4 @@
+import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { db } from "@/lib/db";
@@ -14,15 +15,16 @@ export const runtime = "nodejs";
 export async function GET(request: Request, context: Context) {
   // Rate limit: 10 downloads per minute per IP
   const ip = getClientIp(request);
-  const { success } = await rateLimit(`share:download:${ip}`, { limit: 10, windowSeconds: 60 });
+  const { success, unavailable } = await rateLimit(`share:download:${ip}`, { limit: 10, windowSeconds: 60 });
+  if (unavailable) return NextResponse.json({ error: "Service temporarily unavailable." }, { status: 503 });
   if (!success) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
   try {
     const code = (await context.params).code;
-    const share = await db.sharedDocument.findUnique({ where: { shortCode: code } });
+    const share = await db.sharedDocument.findUnique({ where: { shortCode: code }, include: { financialDocument: true, businessDocument: true } });
 
-    if (!share || !share.shareEnabled || (share.expiresAt && share.expiresAt < new Date())) {
+    if (!share || !sharedDocumentIsPublic(share)) {
       return NextResponse.json({ error: "Document not found or link has expired." }, { status: 404 });
     }
 

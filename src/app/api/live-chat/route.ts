@@ -25,6 +25,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   const limit = await rateLimit(`live-chat:${ip}`, { limit: 40, windowSeconds: 60 });
+  if (limit.unavailable) return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
   if (!limit.success) return Response.json({ error: "Rate limit exceeded" }, { status: 429 });
   const parsed = postSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: "Invalid message" }, { status: 400 });

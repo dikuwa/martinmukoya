@@ -1,3 +1,7 @@
+import { headers } from "next/headers";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { sharedDocumentIsPublic, financialDocumentIsPublic } from "@/lib/shared-document-access";
+import { createSharedDocumentLink } from "@/lib/business-document-service";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { FinancialDocumentPreview } from "@/components/admin/financial-document-preview";
@@ -10,32 +14,24 @@ import { getIssuerSnapshot } from "@/lib/finance-service";
 type Props = { params: Promise<{ code: string }> };
 
 export default async function SharedDocumentPage({ params }: Props) {
+  const limit = await rateLimit(`share:page:${getClientIp({ headers: await headers() })}`, { limit: 20, windowSeconds: 60 });
+  if (!limit.success) return <main>Document service temporarily unavailable. Please try again later.</main>;
   const code = (await params).code;
 
   // Support both old /documents/share/:token and new /d/:code
-  const share = await db.sharedDocument.findUnique({ where: { shortCode: code } });
+  const share = await db.sharedDocument.findUnique({ where: { shortCode: code }, include: { financialDocument: true, businessDocument: true } });
   const legacyDoc = share ? null : await db.financialDocument.findUnique({ where: { shareToken: code } });
 
   if (!share && !legacyDoc) notFound();
 
-  // Handle legacy share tokens - redirect to new share format
   if (legacyDoc && !share) {
-    const existing = await db.sharedDocument.findUnique({ where: { financialDocumentId: legacyDoc.id } });
-    if (!existing) {
-      const newShare = await db.sharedDocument.create({
-        data: {
-          shortCode: code.slice(0, 7),
-          documentType: "financial",
-          financialDocumentId: legacyDoc.id,
-        }
-      });
-      redirect(`/d/${newShare.shortCode}`);
-    } else {
-      redirect(`/d/${existing.shortCode}`);
-    }
+    if (!financialDocumentIsPublic(legacyDoc)) notFound();
+    const existing = await db.sharedDocument.findUnique({ where: { financialDocumentId: legacyDoc.id }, include: { financialDocument: true, businessDocument: true } });
+    if (existing && !sharedDocumentIsPublic(existing)) notFound();
+    const target = existing ?? await createSharedDocumentLink(legacyDoc.id, "financial");
+    redirect(`/d/${target.shortCode}`);
   }
-
-  if (!share || !share.shareEnabled || (share.expiresAt && share.expiresAt < new Date())) notFound();
+  if (!share || !sharedDocumentIsPublic(share)) notFound();
 
   // Track view asynchronously
   void trackSharedDocumentView(code).catch(() => undefined);

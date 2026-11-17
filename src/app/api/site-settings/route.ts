@@ -9,6 +9,9 @@ import { z } from "zod";
 
 export async function GET(request: Request) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const query = parseListQuery(request);
     const { skip, take } = getPagination(query);
     const where: Prisma.SiteSettingWhereInput = {};

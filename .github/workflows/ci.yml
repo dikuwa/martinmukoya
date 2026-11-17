@@ -51,7 +51,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.12.4
 
       - uses: actions/setup-node@v4
         with:
@@ -80,6 +80,9 @@ jobs:
         run: pnpm test
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+      - name: Verify public table security
+        run: bash tests/rls.integration.sh
 
       - name: Build Next.js app
         run: pnpm build
@@ -117,7 +120,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.12.4
 
       - uses: actions/setup-node@v4
         with:

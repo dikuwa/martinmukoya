@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     const ip = getClientIp(request);
     const limit = await rateLimit(`rate:leads:${ip}`, { limit: 5, windowSeconds: 60 * 60 });
 
+    if (limit.unavailable) return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
     if (!limit.success) {
       return ok({ error: "Too many project requests. Please try again later." }, { status: 429 });
     }
