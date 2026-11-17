@@ -99,7 +99,7 @@ test.describe("Seeded business document", () => {
         // Share already exists — fetch it from the public view via a fallback
         // The sidebar should show the existing share code on the page
         const sidebarText = document.body.innerText;
-        const match = sidebarText.match(/\/d\/([a-zA-Z0-9]+)/);
+        const match = sidebarText.match(/\/d\/([a-zA-Z0-9_-]+)/);
         if (match) shortCode = match[1];
       }
 
