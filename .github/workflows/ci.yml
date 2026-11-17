@@ -173,6 +173,10 @@ jobs:
       - name: Run E2E tests
         run: npx playwright test --reporter=list
 
+      - name: Print server diagnostics
+        if: failure()
+        run: cat /tmp/next-dev.log || true
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

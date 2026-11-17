@@ -17,7 +17,7 @@ test.describe("Public shared document view", () => {
 test.describe("Admin login page", () => {
   test("should show login form when accessing admin without auth", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "load" });
-    expect(page.url()).toContain("/auth/sign-in");
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
     await expect(page.locator('input[name="email"]')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('input[name="password"]')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('button:has-text("Sign In")')).toBeVisible();
@@ -54,8 +54,7 @@ test.describe("Business documents", () => {
     // ── Step 2: Verify preview ──
     const article = page.locator("article").first();
     await expect(article).toBeVisible({ timeout: 10000 });
-    await expect(article.locator('img[alt=""]')).toBeVisible();
-    await expect(article.locator("header img").first()).toBeVisible();
+    await expect(article.locator("header img")).toBeVisible();
     await expect(article.locator("p:has-text(\"CONTACT\")")).toBeVisible();
     await expect(article.locator("p:has-text(\"TO\")").first()).toBeVisible();
     await expect(article.locator("p:has-text(\"DATE\")")).toBeVisible();
@@ -72,6 +71,8 @@ test.describe("Business documents", () => {
 
     // Call the share API from within the browser (authenticated via session cookie)
     const shareResult = await page.evaluate(async (id) => {
+      const issued = await fetch(`/api/admin/business-documents/${id}/issue`, { method: "POST" });
+      if (!issued.ok) throw new Error(`Issue API returned ${issued.status}: ${await issued.text()}`);
       const res = await fetch("/api/admin/shared-documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

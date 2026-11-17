@@ -1,65 +1,77 @@
-# Security review — 17 November 2026
+# Production security rollout — 17 November 2026
 
-Implemented on `fix/security-review-20261117`. Application rollout and live RLS
-application are separate operations. No application deployment, live RLS change,
-share-link migration, schema push, seed or reset was performed by this task.
+The security fixes are deployed at https://www.martinmukoya.com and published to
+`dikuwa/martinmukoya` main. RLS was applied separately from the application release.
+No production schema push, seed or reset was used.
 
-## Application changes
+## Protection applied
 
-- Every notification handler checks admin authorization before work; settings GET
-  endpoints also require admin. Existing public pages use server-side helpers and
-  do not need a new public settings API.
-- Existing chat sessions require their matching visitor token for AI chat and lead
-  linking. Unknown sessions fail without replacement or token disclosure; the
-  client sends its stored token.
-- All shared document access paths check document state and revocation. Financial
-  void/reversal revokes shares in the same transaction. New credentials have 192
-  random bits. Regeneration updates the unique share row and retires the legacy
-  financial credential. See [shared-link-rollout.md](shared-link-rollout.md).
-- Share URLs and named credentials are recursively redacted from analytics;
-  PostHog's own API token is preserved. Recording is disabled and referrers use
-  `no-referrer`.
-- Rate limiting fails closed with controlled errors on missing/unhealthy Redis.
-  Only validated Vercel-controlled IP headers are trusted. Other hosts share a
-  bucket and require a configured trusted-proxy design before deploying there.
-- pnpm 10.12.4 lockfile is tracked; npm lockfile removed, CI pins pnpm, Vercel uses
-  frozen pnpm installation. CommonJS hooks have a narrow `require` lint override.
+- All notification methods and settings GET endpoints require admin authorization
+  before work. Public pages retain their server-side settings consumers.
+- Existing chat sessions require the matching visitor token for AI messages and
+  lead linking; unknown sessions fail without replacement or token disclosure.
+- Shared document page/API/PDF/action/legacy paths check status and revocation.
+  Voiding and receipt reversal revoke shares in the same financial transaction.
+- New share credentials use 192 random bits. Regeneration rotates the unique share
+  row and invalidates its financial legacy credential. Analytics recursively
+  redacts shared-link URLs/referrers/properties, preserves PostHog's API key,
+  disables recording, and uses `Referrer-Policy: no-referrer`.
+- Missing/unhealthy Redis fails closed. IP extraction trusts only validated
+  Vercel-controlled headers; another hosting platform needs its own trusted proxy
+  configuration before deployment.
+- pnpm 10.12.4 has a tracked lockfile and frozen Vercel/CI installation. CI uses
+  isolated PostgreSQL, Redis and synthetic credentials, creates a usable test
+  admin account, and pins a Playwright-supported Ubuntu runner.
+
+## Supabase and existing links
+
+Verified the actual production runtime targets `ujuxpamgzerbksmqbxqj` as
+`postgres`, owns all 32 public tables, has all required DML privileges independent
+of PUBLIC, and bypasses RLS. A temporary admin-only candidate diagnostic was used
+for this check, then its deployment was deleted; the diagnostic route is absent
+from the live release (404). Production Redis also passed a real limiter check.
+
+Applied `secure_public_tables`: RLS enabled for all 32 public tables, PUBLIC and
+API table/column grants revoked, restrictive API deny policies added. Effective
+privileges confirm anon/authenticated cannot SELECT, INSERT, UPDATE, DELETE,
+TRUNCATE, REFERENCES, TRIGGER or MAINTAIN protected tables. Both roles have no
+parent-role memberships or RLS bypass. Direct REST probes for User, Session,
+Account, Lead, ContactMessage, SiteSetting and SharedDocument return 401.
+**Security Advisor now reports zero security findings.** No unrelated public
+tables, views or security-definer functions were found. No Data API traffic was
+observed in the audited 24-hour logs; repository access is through server Prisma.
+
+Rotated all **23** weak share codes and cleared associated legacy financial
+credentials. **9** valid shares remain enabled with new tokens; **14** shares are
+disabled because they were already disabled or their documents are non-shareable.
+Old links no longer work. Replacement links are available to administrators;
+client delivery was not automated. See [shared-link-rollout.md](shared-link-rollout.md).
 
 ## Verification
 
-- Unit/regression suite: 83/83 pass, synthetic/stubbed providers and database.
-  Includes every notification method for anonymous/nonadmin/admin; settings;
-  own/wrong/missing/unknown chat credentials; AI and human/lead handoff; public
-  document GET/download/accept/decline; transaction revocation and legacy token
-  rotation; analytics redaction; rate limiting missing/error/normal/exceeded/IP.
-- `bash tests/rls.integration.sh`: pass in disposable Docker PostgreSQL 17.
-  Covers model allowlist, absent tables, idempotence, direct/column grants,
-  existing permissive policy, trusted BYPASSRLS role, denied API operations,
-  inherited TRUNCATE fail-closed behavior.
-- TypeScript: pass. Production build: pass. Full lint: no errors, 40 warnings.
-- Clean temporary pnpm 10.12.4 frozen install: pass (`--ignore-scripts`);
-  normal installed client generation/build checked separately.
-- Built app HTTP checks: home/contact/start-project/sign-in return 200; all eight
-  anonymous notification/settings operations return 401; real admin login and
-  protected count/settings reads succeed; test session signed out.
-- Live homepage/sign-in read-only HTTP checks return 200. No production contact,
-  lead, document mutation or browser submission test was performed. Full
-  production browser and submission QA remains a rollout requirement.
+- 83/83 unit/regression tests pass, including authorization, chat ownership,
+  document public routes, transaction revocation, token rotation, analytics and
+  rate-limit errors/configuration/limits/IP spoofing.
+- Disposable Docker PostgreSQL 17 RLS integration passes: model coverage,
+  repeatability, absent tables, table/column grants, existing permissive policies,
+  trusted access, denied API operations and inherited TRUNCATE fail-closed checks.
+- TypeScript, production build and lint pass; lint retains 40 warnings. Clean
+  frozen installation succeeds, including Prisma generation on the Vercel build.
+- **46/46 production application checks pass**: anonymous/nonadmin guards for every
+  notification method/settings, admin reads/login, contact and lead submissions,
+  own AI/human chat and messages, missing/wrong credentials and lead linking.
+- Production synthetic document tests pass: financial/business pages, APIs, real
+  PDFs, legacy paths, old/void/revoked denial, financial/business accept/decline
+  persistence, authenticated void and receipt reversal with database verification.
+- Real Chrome browser smoke passes: home, contact, start-project and admin login;
+  admin signed out. Browser interception observed three PostHog requests and zero
+  occurrences of a synthetic shared-link token in URLs or payloads.
+- All synthetic users, submissions, chats, notifications, analytics, sites,
+  bookings, documents, shares and payments were removed; exact-ID/marker readback
+  verified cleanup. Destructive bulk notification actions were tested locally,
+  not against existing production notifications.
 
-## Separate RLS rollout remains pending
-
-Confirmed Supabase project `martin_mukoya` (`ujuxpamgzerbksmqbxqj`), healthy.
-Security Advisor reported **31 RLS-disabled public tables**; `User` already had RLS
-and two permissive policies. The prepared migration protects all 32 known tables,
-including `User`, four implicit relation tables and `_prisma_migrations`.
-No unrelated public tables, views or security-definer functions were found.
-`anon` and `authenticated` had neither BYPASSRLS nor parent-role memberships.
-
-The local `.env.local` connection targets this project as `postgres`, owns all
-32 tables, has required privileges independently of PUBLIC, and bypasses RLS.
-Vercel production DATABASE_URL is sensitive and cannot be pulled, so the
-**deployed role and other consumers are still unconfirmed**. Do not infer the
-production role from local or owner-tool access. Confirm those facts, follow the
-preflight in [deployment-checklist.md](deployment-checklist.md), then apply the
-migration and rerun advisor/effective-privilege/API and production application QA.
-Until then the live 31-table finding remains unresolved.
+GitHub workflow results are recorded in [CI runs](https://github.com/dikuwa/martinmukoya/actions/workflows/ci.yml).
+After future authorized `prisma db push` operations, reapply `pnpm db:secure` and
+extend its allowlist for new application and implicit relation tables, as detailed
+in [deployment-checklist.md](deployment-checklist.md).

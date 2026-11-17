@@ -15,3 +15,12 @@ New links use 24 random bytes (192 bits). Public access now rejects existing sho
 5. Keep a record of replacement completion without retaining share secrets in analytics. New Referrer-Policy is no-referrer; PostHog capture recursively redacts share URL paths/referrers and session recording is disabled.
 
 Legacy long financial UUID links can redirect only while both the financial document and any existing share remain valid. A revoked existing share cannot be resurrected through the legacy route. Voiding a financial document and reversing a receipt revoke its share in the same database transaction.
+
+## Completed production rollout — 17 November 2026
+
+All 23 existing weak codes were rotated. Nine valid shares remain enabled under
+new tokens; fourteen are disabled because they were already disabled or belong
+to non-shareable documents. Associated financial legacy credentials were cleared.
+Administrators can retrieve the replacement links for authorized client delivery.
+No client messages were sent automatically by the link migration. Production
+synthetic tests verified active links and denial of old, void and revoked links.

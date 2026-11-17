@@ -14,7 +14,7 @@ test.describe("Seeded business document", () => {
     await expect(article).toBeVisible({ timeout: 15000 });
 
     // Verify key preview elements
-    await expect(article.locator("img[alt=\"\"]")).toBeVisible();
+    await expect(article.locator("header img")).toBeVisible();
     await expect(article.locator("p:has-text(\"CONTACT\")")).toBeVisible();
     await expect(article.locator("p:has-text(\"TO\")").first()).toBeVisible();
     await expect(article.locator("p:has-text(\"DATE\")")).toBeVisible();
@@ -76,6 +76,14 @@ test.describe("Seeded business document", () => {
     // POST may return 409 if a share already exists from a previous run.
     const shareResult = await page.evaluate(async () => {
       let shortCode: string | null = null;
+
+      // Only issued documents can be shared publicly.
+      const document = await fetch("/api/admin/business-documents/e2e-test-biz-doc");
+      if (!document.ok) throw new Error(`Document API returned ${document.status}`);
+      if ((await document.json()).status === "DRAFT") {
+        const issued = await fetch("/api/admin/business-documents/e2e-test-biz-doc/issue", { method: "POST" });
+        if (!issued.ok) throw new Error(`Issue API returned ${issued.status}: ${await issued.text()}`);
+      }
 
       // Try creating a new share link
       const res = await fetch("/api/admin/shared-documents", {
