@@ -258,6 +258,17 @@ export async function POST(req: Request) {
     if (requestedSessionId && (typeof body.visitorToken !== "string" || !body.visitorToken)) {
       return Response.json({ error: "Invalid chat credentials" }, { status: 403 });
     }
+
+    // Rate limit before checking whether the supplied session exists.
+    const ip = getClientIp(req);
+    const rl = await rateLimit(`ai-chat:${ip}`, { limit: 30, windowSeconds: 60 });
+    if (rl.unavailable) {
+      return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
+    }
+    if (!rl.success) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
+    }
+
     const session = requestedSessionId
       ? await db.chatSession.findFirst({ where: { id: requestedSessionId, visitorToken: body.visitorToken } })
       : null;
@@ -277,16 +288,6 @@ export async function POST(req: Request) {
 
     if (FORBIDDEN_RE.test(content)) {
       return new Response(JSON.stringify({ error: "Message contains disallowed content" }), { status: 400 });
-    }
-
-    // rate limit per IP
-    const ip = getClientIp(req);
-    const rl = await rateLimit(`ai-chat:${ip}`, { limit: 30, windowSeconds: 60 });
-    if (rl.unavailable) {
-      return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
-    }
-    if (!rl.success) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
     }
 
     // Detect site — prefer client-provided slug, fall back to server-side detection

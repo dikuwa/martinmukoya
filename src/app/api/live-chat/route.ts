@@ -17,6 +17,10 @@ async function findPublicSession(sessionId: string, token: string, siteSlug: str
 export async function GET(request: Request) {
   const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) return Response.json({ error: "Invalid chat credentials" }, { status: 400 });
+  const ip = getClientIp(request);
+  const limit = await rateLimit(`live-chat-poll:${ip}`, { limit: 300, windowSeconds: 60 });
+  if (limit.unavailable) return Response.json({ error: "Service temporarily unavailable. Please try again later." }, { status: 503 });
+  if (!limit.success) return Response.json({ error: "Rate limit exceeded" }, { status: 429 });
   const session = await findPublicSession(parsed.data.sessionId, parsed.data.token, parsed.data.siteSlug);
   if (!session) return Response.json({ error: "Chat not found" }, { status: 404 });
   return Response.json(publicChat(session));
