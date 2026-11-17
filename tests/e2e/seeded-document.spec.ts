@@ -78,9 +78,9 @@ test.describe("Seeded business document", () => {
       let shortCode: string | null = null;
 
       // Only issued documents can be shared publicly.
-      const document = await fetch("/api/admin/business-documents/e2e-test-biz-doc");
-      if (!document.ok) throw new Error(`Document API returned ${document.status}`);
-      if ((await document.json()).status === "DRAFT") {
+      const documentResponse = await fetch("/api/admin/business-documents/e2e-test-biz-doc");
+      if (!documentResponse.ok) throw new Error(`Document API returned ${documentResponse.status}`);
+      if ((await documentResponse.json()).status === "DRAFT") {
         const issued = await fetch("/api/admin/business-documents/e2e-test-biz-doc/issue", { method: "POST" });
         if (!issued.ok) throw new Error(`Issue API returned ${issued.status}: ${await issued.text()}`);
       }
