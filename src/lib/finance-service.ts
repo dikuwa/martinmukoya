@@ -1,5 +1,6 @@
 import { newShareToken } from "@/lib/shared-document-access";
 import { randomUUID } from "crypto";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
 import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
@@ -12,13 +13,21 @@ async function getSiteSettings(siteId: string | null, prefix: string) {
 
 export async function getIssuerSnapshot(siteId?: string | null): Promise<IssuerSnapshot> {
   // Determine which default issuer to use based on site
-  const isPersonalSite = siteId === "personal" || siteId === "martin-mukoya";
+  // Financial records pass the database site ID, not its public slug.
+  const site = siteId && siteId !== "personal"
+    ? await db.site.findFirst({
+        where: { OR: [{ id: siteId }, { slug: siteId }] },
+        select: { id: true, slug: true },
+      })
+    : null;
+  const isPersonalSite = siteId === "personal" || site?.slug === "martin-mukoya";
   const defaultIssuerToUse = isPersonalSite ? personalIssuer : defaultIssuer;
-  
-  // Query site-specific settings first
-  const siteSettings = siteId && siteId !== "personal" ? await getSiteSettings(siteId, "finance.") : [];
+
+  // Resolve the settings against the canonical site ID.
+  const siteSettings = site ? await getSiteSettings(site.id, "finance.") : [];
   // Query global settings as fallback
-  const globalSettings = await getSiteSettings(null, "finance.");
+  // Personal documents must not inherit FlexTech-only global bank and company data.
+  const globalSettings = isPersonalSite ? [] : await getSiteSettings(null, "finance.");
   
   // Merge: site-specific overrides global, global overrides default
   const settings = [...globalSettings, ...siteSettings];
@@ -118,11 +127,6 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
   const amount = Number(input.amount);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
   
-  // Fetch invoice first to get siteId for issuer
-  const invoice = await db.financialDocument.findUnique({ where: { id: input.invoiceId } });
-  if (!invoice) throw new Error("Invoice not found.");
-  
-  const issuer = await getIssuerSnapshot(invoice.siteId);
   return db.$transaction(async (tx) => {
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
     if (!invoiceTx || invoiceTx.type !== "INVOICE" || !["ISSUED", "PARTIALLY_PAID"].includes(invoiceTx.status)) throw new Error("Select an outstanding issued invoice.");
@@ -132,7 +136,8 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
     const receipt = await tx.financialDocument.create({ data: {
       number: documentNumber("RECEIPT"), type: "RECEIPT", status: "PAID", siteId: invoiceTx.siteId, bookingId: invoiceTx.bookingId,
       customerName: invoiceTx.customerName, customerEmail: invoiceTx.customerEmail, customerPhone: invoiceTx.customerPhone,
-      customerCompany: invoiceTx.customerCompany, customerAddress: invoiceTx.customerAddress, issuerSnapshot: issuer,
+      customerCompany: invoiceTx.customerCompany, customerAddress: invoiceTx.customerAddress,
+      issuerSnapshot: invoiceTx.issuerSnapshot as Prisma.InputJsonValue,
       subtotal: amount.toFixed(2), total: amount.toFixed(2), invoiceTotal: Number(invoiceTx.total).toFixed(2),
       balanceAfter: (outstanding - amount).toFixed(2), issuedAt: new Date(), shareToken: newShareToken(), createdById: input.userId,
       notes: input.notes, lineItems: { create: { description: `Payment received for ${invoiceTx.number}`, category: "payment", quantity: 1, unitPrice: amount.toFixed(2), amount: amount.toFixed(2), sortOrder: 0 } },

@@ -6,7 +6,7 @@ const money = z.union([z.string(), z.number()]);
 const optionalMoney = z.preprocess((value) => value === "" ? null : value, money.optional().nullable());
 
 export const bookingCreateSchema = z.object({
-  siteId: z.string().min(1), leadId: optionalText,
+  siteId: z.string().min(1), leadId: optionalText, contactId: optionalText,
   customerName: z.string().trim().min(2), customerEmail: optionalEmail,
   customerPhone: optionalText, company: optionalText, projectDescription: z.string().trim().min(3), budgetRange: optionalText,
   contractAmount: optionalMoney,

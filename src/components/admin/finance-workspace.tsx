@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatNad } from "@/lib/financial";
 
-type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string };
+type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string; amount?: string; address?: string };
 type Invoice = { id: string; label: string; balance: number };
 type Line = { description: string; category: string; quantity: string; unitPrice: string };
 const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none transition-colors focus:border-[color:var(--primary)]";
@@ -36,9 +36,14 @@ const categoryOptions = [
 
 export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { sources: Source[]; initialBooking?: string; initialLead?: string }) {
   const router = useRouter();
-  const [sourceKey, setSourceKey] = useState(initialBooking ? `booking:${initialBooking}` : initialLead ? `lead:${initialLead}` : sources[0]?.key || "");
+  const initialKey = initialBooking ? `booking:${initialBooking}` : initialLead ? `lead:${initialLead}` : sources[0]?.key || "";
+  const initialSource = sources.find(item => item.key === initialKey);
+  const [sourceKey, setSourceKey] = useState(initialKey);
   const [type, setType] = useState("QUOTE");
-  const [lines, setLines] = useState<Line[]>([{ description: "Project services", category: "service", quantity: "1", unitPrice: "0" }]);
+  const [lines, setLines] = useState<Line[]>([{
+    description: initialSource?.description || "Services", category: "service",
+    quantity: "1", unitPrice: initialSource?.amount || "0",
+  }]);
   const [saving, setSaving] = useState(false);
   const source = useMemo(() => sources.find(item => item.key === sourceKey), [sources, sourceKey]);
 
@@ -92,7 +97,11 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
         <label className={field}>Source
           <DashboardSelect
             value={sourceKey}
-            onChange={e => setSourceKey(e.target.value)}
+            onChange={e => {
+              setSourceKey(e.target.value);
+              const next = sources.find(item => item.key === e.target.value);
+              if (next) setLines([{ description: next.description || "Services", category: "service", quantity: "1", unitPrice: next.amount || "0" }]);
+            }}
             options={sources.map(item => ({ label: item.label, value: item.key }))}
             className={input}
           />
@@ -125,7 +134,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
           />
         </label>
         <label className={field}>Customer address
-          <input name="customerAddress" className={input} />
+          <input key={`${sourceKey}-address`} name="customerAddress" defaultValue={source?.address} className={input} />
         </label>
       </div>
       <div className="grid min-w-0 gap-3 border-t border-[color:var(--border-subtle)] pt-5">
@@ -177,7 +186,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
   );
 }
 
-export function PaymentPanel({ invoices, projects }: { invoices: Invoice[]; projects: Invoice[] }) {
+export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices: Invoice[]; projects: Invoice[]; initialInvoice?: string }) {
   const router = useRouter();
   // Invoices and project contracts both carry an outstanding balance. Keep them
   // all listed so the panel never disappears; a settled target stays selectable
@@ -187,7 +196,7 @@ export function PaymentPanel({ invoices, projects }: { invoices: Invoice[]; proj
     [invoices, projects]
   );
   const firstOutstanding = targets.find((item) => item.balance > 0) || targets[0];
-  const [targetKey, setTargetKey] = useState(() => (firstOutstanding ? `${firstOutstanding.kind}:${firstOutstanding.id}` : ""));
+  const [targetKey, setTargetKey] = useState(() => initialInvoice && invoices.some(invoice => invoice.id === initialInvoice) ? `invoice:${initialInvoice}` : firstOutstanding ? `${firstOutstanding.kind}:${firstOutstanding.id}` : "");
   const [saving, setSaving] = useState(false);
   const target = targets.find((item) => `${item.kind}:${item.id}` === targetKey) || firstOutstanding;
   const isZeroBalance = target ? target.balance <= 0 : false;
@@ -211,7 +220,7 @@ export function PaymentPanel({ invoices, projects }: { invoices: Invoice[]; proj
   return (
     <Card as="form" padding="sm" className="grid min-w-0 gap-4 overflow-hidden sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
       <div>
-        <h2 className="font-display text-xl font-black">Record payment</h2>
+        <h2 id="record-payment" className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
       </div>
       {target ? (

@@ -4,7 +4,7 @@ import type { IssuerSnapshot } from "@/lib/issuer-constants";
 import { DocumentPageBackdrop } from "@/components/documents/document-page-backdrop";
 const allura=Allura({weight:"400",subsets:["latin"],display:"swap"});
 type Line={id:string;description:string;category:string|null;quantity:unknown;unitPrice:unknown;amount:unknown};
-export type PreviewDocument={number:string|null;type:string;status:string;customerName:string;customerEmail:string|null;customerPhone:string|null;customerCompany:string|null;customerAddress:string|null;issuerSnapshot:unknown;currency:string;validUntil:Date|null;dueDate:Date|null;discountAmount:unknown;additionalCharges:unknown;taxRate:unknown;subtotal:unknown;taxAmount:unknown;total:unknown;notes:string|null;paymentTerms:string|null;issuedAt:Date|null;createdAt:Date;booking:{number:string;projectDescription:string};lineItems:Line[];payments?:Array<{amount:unknown;reversedAt:Date|null}>;receiptForPayment?:{number:string;method:string;reference:string|null;paidAt:Date}|null;invoiceTotal?:unknown;balanceAfter?:unknown};
+export type PreviewDocument={number:string|null;type:string;status:string;customerName:string;customerEmail:string|null;customerPhone:string|null;customerCompany:string|null;customerAddress:string|null;issuerSnapshot:unknown;currency:string;validUntil:Date|null;dueDate:Date|null;discountAmount:unknown;additionalCharges:unknown;taxRate:unknown;subtotal:unknown;taxAmount:unknown;total:unknown;notes:string|null;paymentTerms:string|null;issuedAt:Date|null;createdAt:Date;booking:{number:string;projectDescription:string;kind?:string};lineItems:Line[];payments?:Array<{amount:unknown;reversedAt:Date|null}>;receiptForPayment?:{number:string;method:string;reference:string|null;paidAt:Date}|null;invoiceTotal?:unknown;balanceAfter?:unknown};
 
 export function FinancialDocumentPreview({document}:{document:PreviewDocument}){
   const issuer=document.issuerSnapshot as IssuerSnapshot; const paid=document.payments?.filter(p=>!p.reversedAt).reduce((s,p)=>s+Number(p.amount),0)||Number(document.receiptForPayment?document.total:0); const balance=Math.max(0,Number(document.total)-paid);
@@ -40,7 +40,7 @@ export function FinancialDocumentPreview({document}:{document:PreviewDocument}){
         <p className="text-xs text-[#666]">{document.customerPhone}</p>
       </div>
       <div className="md:text-center">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[#777]">Project</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#777]">{document.booking.kind === "SERVICE" ? "Service" : "Project"}</p>
         <p className="mt-1 text-sm font-semibold">{document.booking.projectDescription}</p>
         <p className="mt-1 text-xs text-[#666]">{document.booking.number}</p>
       </div>
