@@ -141,7 +141,11 @@ function DocumentPage({ pageNumber, totalPages, elements, doc, business, showDra
       {isFirstPage && (
         <header className="flex items-start justify-between gap-6">
           <div className="min-w-0">
-            <Image src={business.logo} alt={business.name} width={208} height={56} unoptimized className="h-14 max-w-52 object-contain object-left" />
+            {business.logo?.trim() ? (
+              <Image src={business.logo} alt={business.name} width={208} height={56} unoptimized className="h-14 max-w-52 object-contain object-left" />
+            ) : (
+              <span className="text-xl font-bold tracking-tight">{business.name}</span>
+            )}
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#777]">CONTACT</p>
