@@ -4,12 +4,14 @@ import { db } from "@/lib/db";
 import { DocumentActions } from "@/components/admin/document-actions";
 import { FinancialDocumentPreview } from "@/components/admin/financial-document-preview";
 import { Card } from "@/components/ui/card";
+import { InvoiceReminderActions } from "@/components/admin/invoice-reminder-actions";
+import { invoiceReminderDetails } from "@/lib/reminder";
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const document = await db.financialDocument.findUnique({
     where: { id: (await params).id },
     include: {
-      booking: true,
+      booking: { include: { contact: true, lead: true } },
       lineItems: { orderBy: { sortOrder: "asc" } },
       payments: true,
       receiptForPayment: true,
@@ -17,6 +19,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
     },
   });
   if (!document) notFound();
+  const reminder = document.type === "INVOICE" && ["ISSUED", "PARTIALLY_PAID"].includes(document.status)
+    ? invoiceReminderDetails(document) : null;
+  const reminderHistory = document.type === "INVOICE"
+    ? await db.invoiceReminder.findMany({ where: { invoiceId: document.id }, orderBy: { createdAt: "desc" }, take: 5 })
+    : [];
 
   const shortLink = document.sharedDocument
     ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${document.sharedDocument.shortCode}`
@@ -55,6 +62,19 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
 
         {/* Sidebar */}
         <aside className="grid gap-4">
+          {reminder && reminder.balance > 0 && <Link className="text-sm font-medium underline" href={`/admin/documents?invoice=${document.id}#record-payment`}>Record payment against this invoice</Link>}
+          {reminder && reminder.balance > 0 && (
+            <InvoiceReminderActions invoiceId={document.id} message={reminder.message}
+              phone={document.booking.contact?.whatsAppNumber || document.booking.lead?.whatsAppNumber || document.customerPhone} email={document.customerEmail}
+              shareLink={shortLink} balance={reminder.balance}/>
+          )}
+          {!!reminderHistory.length && <Card padding="md">
+            <h3 className="mb-3 text-sm font-semibold">Reminder history</h3>
+            <div className="grid gap-2">{reminderHistory.map(item =>
+              <p key={item.id} className="text-xs text-[color:var(--text-muted)]">
+                {item.createdAt.toLocaleDateString("en-GB")} · {item.channel} · Prepared (not confirmed sent)
+              </p>)}</div>
+          </Card>}
           <Card padding="md">
             <h3 className="font-bold text-sm mb-3">Details</h3>
             <dl className="grid gap-2 text-sm">

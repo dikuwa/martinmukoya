@@ -1,0 +1,30 @@
+import { test, expect } from "@playwright/test";
+import { loginAsAdmin } from "./admin-auth";
+
+test.use({ channel: "chrome" });
+test.setTimeout(180_000);
+test("customer, service, invoice, partial payment and reminder", async ({ page }) => {
+  await loginAsAdmin(page, "/admin/customers");
+  await page.locator('input[name="name"]').fill("Synthetic Browser Client");
+  await page.locator('input[name="email"]').fill("synthetic-client@example.invalid");
+  await page.locator('input[name="phone"]').fill("+264811111111");
+  await page.getByRole("button", { name: "Add customer" }).click();
+  await expect(page).toHaveURL(/\/admin\/customers\/[^/]+/);
+  await page.getByRole("textbox", { name: "Description" }).fill("Synthetic computer repair");
+  await page.getByRole("spinbutton", { name: "Price (N$)" }).fill("350");
+  await page.getByRole("button", { name: "Create job & prepare quotation" }).click();
+  await expect(page).toHaveURL(/\/admin\/documents\?booking=/);
+  await expect(page.getByRole("spinbutton", { name: "Rate", exact: true })).toHaveValue("350");
+  await page.getByRole("button", { name: "Quotation" }).click();
+  await page.getByRole("option", { name: "Invoice" }).click();
+  await page.getByRole("button", { name: "Create document" }).click();
+  await expect(page).toHaveURL(/\/admin\/documents\/[^/]+/);
+  await page.getByRole("button", { name: "Issue document" }).click();
+  await expect(page.getByText(/Outstanding N\$ 350\.00/)).toBeVisible();
+  await page.getByRole("link", { name: "Record payment against this invoice" }).click();
+  await page.getByRole("spinbutton", { name: "Amount (N$)", exact: true }).fill("100");
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await expect(page.getByText("Payment recorded and receipt issued")).toBeVisible();
+  await page.goBack();
+  await expect(page.getByText(/Outstanding N\$ 250\.00/)).toBeVisible();
+});

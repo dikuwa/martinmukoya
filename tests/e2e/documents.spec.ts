@@ -106,7 +106,7 @@ test.describe("Business documents", () => {
     await expect(publicArticle.locator("p:has-text(\"PROPOSAL\")")).toBeVisible();
 
     await page.screenshot({ path: "test-results/e2e/public-document-view.png" });
-    expect(consoleErrors.length).toBe(0);
+    expect(consoleErrors, `Public shared document browser errors: ${JSON.stringify(consoleErrors)}`).toEqual([]);
   });
 
   test("should download PDF for a draft business document", async ({ page }) => {

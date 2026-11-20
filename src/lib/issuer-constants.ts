@@ -19,7 +19,7 @@ export const defaultIssuer: IssuerSnapshot = {
 };
 
 export const personalIssuer: IssuerSnapshot = {
-  name: "Martin Mukoya", logo: "", address: "Windhoek, Namibia",
+  name: "Martin Mukoya", logo: "/assets/logos/MK-BLACKGreen.svg", address: "Windhoek, Namibia",
   phone: "+264 81 494 2473", email: "martinmukoya@gmail.com", registration: "", taxNumber: "",
   bankName: "", accountName: "", accountNumber: "", branch: "",
   swiftCode: "", companyDetails: "", paymentMethods: [], paymentInstructions: "",
