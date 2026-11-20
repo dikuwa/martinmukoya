@@ -127,6 +127,6 @@ test.describe("Seeded business document", () => {
     await expect(publicArticle.locator("p:has-text(\"TO\")").first()).toBeVisible();
 
     await page.screenshot({ path: "test-results/e2e/seeded-doc-shared.png" });
-    expect(consoleErrors.length).toBe(0);
+    expect(consoleErrors, `Public shared document browser errors: ${JSON.stringify(consoleErrors)}`).toEqual([]);
   });
 });
