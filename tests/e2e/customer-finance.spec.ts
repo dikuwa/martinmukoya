@@ -17,8 +17,35 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await expect(page.getByRole("spinbutton", { name: "Rate", exact: true })).toHaveValue("350");
   await page.getByRole("button", { name: "Quotation" }).click();
   await page.getByRole("option", { name: "Invoice" }).click();
+  // Dates must survive both an unchanged draft save and a subsequent calendar edit.
+  const date = new Date();
+  date.setDate(15);
+  const dateLabel = (day: Date) => day.toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+  });
+  const dateValue = (day: Date) => `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  await page.getByRole("button", { name: "Select date" }).click();
+  await page.getByRole("button", { name: dateLabel(date) }).click();
+  await expect(page.locator('input[name="dueDate"]')).toHaveValue(dateValue(date));
   await page.getByRole("button", { name: "Create document" }).click();
   await expect(page).toHaveURL(/\/admin\/documents\/[^/]+/);
+  const invoiceUrl = page.url();
+  await page.getByRole("link", { name: "Edit draft" }).click();
+  await expect(page.locator('input[name="dueDate"]')).toHaveValue(dateValue(date));
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page).toHaveURL(invoiceUrl);
+  await page.getByRole("link", { name: "Edit draft" }).click();
+  await expect(page.locator('input[name="dueDate"]')).toHaveValue(dateValue(date));
+  const changedDate = new Date(date);
+  changedDate.setDate(16);
+  await page.getByRole("button", { name: "Select date" }).nth(1).click();
+  await page.getByRole("button", { name: dateLabel(changedDate) }).click();
+  await expect(page.locator('input[name="dueDate"]')).toHaveValue(dateValue(changedDate));
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page).toHaveURL(invoiceUrl);
+  await page.getByRole("link", { name: "Edit draft" }).click();
+  await expect(page.locator('input[name="dueDate"]')).toHaveValue(dateValue(changedDate));
+  await page.goto(invoiceUrl);
   await page.getByRole("button", { name: "Issue document" }).click();
   await expect(page.getByText(/Outstanding N\$ 350\.00/)).toBeVisible();
   await page.getByRole("link", { name: "Record payment against this invoice" }).click();
