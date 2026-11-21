@@ -49,7 +49,8 @@ export BASE_URL="http://localhost:$app_port"
 ./node_modules/.bin/tsx prisma/seed-admin.ts
 ./node_modules/.bin/tsx scripts/seed-customer-finance-e2e.ts
 
-./node_modules/.bin/next start -p "$app_port" > "$root/next.log" 2>&1 &
+# Dev mode compiles the checked-out source; `next start` can serve stale .next assets.
+./node_modules/.bin/next dev -p "$app_port" > "$root/next.log" 2>&1 &
 app_pid=$!
 for i in $(seq 1 50); do
   if curl --silent --fail "http://localhost:$app_port/auth/sign-in" >/dev/null; then break; fi
