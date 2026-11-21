@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { Card } from "@/components/ui/card";
+import { financeErrorMessage } from "@/lib/finance-error";
 
 const field = "h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm outline-none focus:border-[color:var(--primary)]";
 
@@ -12,7 +13,7 @@ export function BookingForm({ sites, customer }: { sites: Array<{ id: string; na
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); const data = new FormData(event.currentTarget);
     const response = await fetch("/api/admin/bookings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(data)) });
-    const payload = await response.json(); setSaving(false); if (!response.ok) return toast.error(payload.error || "Booking could not be created");
+    const payload = await response.json(); setSaving(false); if (!response.ok) return toast.error(financeErrorMessage(payload, "Booking could not be created"));
     toast.success("Booking created"); router.push(`/admin/bookings/${payload.id}`); router.refresh();
   }
   return <Card as="form" padding="lg" className="grid gap-5 md:grid-cols-2" onSubmit={submit}>
