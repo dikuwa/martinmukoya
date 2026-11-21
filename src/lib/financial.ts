@@ -12,6 +12,10 @@ function scaledInteger(value: string | number, scale: number) {
   if (!/^-?\d+(\.\d+)?$/.test(normalized)) throw new Error(`Invalid number: ${normalized}`);
   const negative = normalized.startsWith("-");
   const [whole, fraction = ""] = normalized.replace("-", "").split(".");
+  // Never silently discard nonzero digits from money or quantity inputs.
+  if (fraction.slice(scale).replace(/0/g, "")) {
+    throw new Error(`Too many decimal places for ${normalized}; maximum ${scale}.`);
+  }
   const padded = `${fraction}${"0".repeat(scale)}`.slice(0, scale);
   const result = BigInt(whole) * BigInt(10) ** BigInt(scale) + BigInt(padded || "0");
   return negative ? -result : result;
