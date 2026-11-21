@@ -28,7 +28,8 @@ psql_test() { psql -X -h 127.0.0.1 -p "$db_port" -U postgres -d postgres -v ON_E
 psql_test -c 'CREATE ROLE anon;' -c 'CREATE ROLE authenticated;' > /dev/null
 
 export DATABASE_URL="postgresql://postgres@127.0.0.1:$db_port/postgres"
-git show HEAD:prisma/schema.prisma > "$root/baseline.prisma"
+# The disposable database must start from the pre-finance baseline before migrations.
+git show 0aa349d6e1a7c00a12d12be6d69a9d9652caa9ec:prisma/schema.prisma > "$root/baseline.prisma"
 ./node_modules/.bin/prisma db push --schema "$root/baseline.prisma"
 psql_test < prisma/migrations/20261117000000_secure_public_tables/migration.sql > /dev/null
 psql_test < prisma/migrations/20261120000000_customer_finance_workflows/migration.sql > /dev/null
