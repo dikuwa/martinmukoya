@@ -9,6 +9,7 @@ import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatNad } from "@/lib/financial";
+import { financeErrorMessage } from "@/lib/finance-error";
 
 type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string; amount?: string; address?: string };
 type Invoice = { id: string; label: string; balance: number };
@@ -81,7 +82,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
     const response = await fetch("/api/admin/documents", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const payload = await response.json();
     setSaving(false);
-    if (!response.ok) return toast.error(payload.error || "Document could not be created");
+    if (!response.ok) return toast.error(financeErrorMessage(payload, "Document could not be created"));
     toast.success("Draft created");
     router.push(`/admin/documents/${payload.id}`);
     router.refresh();
@@ -211,7 +212,7 @@ export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices:
     const response = await fetch("/api/admin/payments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     const payload = await response.json();
     setSaving(false);
-    if (!response.ok) return toast.error(payload.error || "Payment could not be recorded");
+    if (!response.ok) return toast.error(financeErrorMessage(payload, "Payment could not be recorded"));
     form.reset();
     toast.success("Payment recorded and receipt issued");
     router.refresh();
