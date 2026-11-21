@@ -17,7 +17,12 @@ export DATABASE_URL="postgresql://postgres@127.0.0.1:${port}/postgres"
 # Recreate the exact committed baseline schema and its existing security rollout,
 # then apply only this feature migration. No live DB connection is used.
 # Pin the schema before customer-finance columns were introduced; HEAD already has them.
-git show 0aa349d6e1a7c00a12d12be6d69a9d9652caa9ec:prisma/schema.prisma > "$root/baseline.prisma"
+baseline_commit=0aa349d6e1a7c00a12d12be6d69a9d9652caa9ec
+if ! git cat-file -e "$baseline_commit^{commit}" 2>/dev/null; then
+  # CI checkout defaults to depth 1; fetch only the pinned historical commit.
+  git fetch --quiet --no-tags --depth=1 origin "$baseline_commit"
+fi
+git show "$baseline_commit:prisma/schema.prisma" > "$root/baseline.prisma"
 ./node_modules/.bin/prisma db push --schema "$root/baseline.prisma"
 psql_test < prisma/migrations/20261117000000_secure_public_tables/migration.sql
 psql_test < prisma/migrations/20261120000000_customer_finance_workflows/migration.sql
