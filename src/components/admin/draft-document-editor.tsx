@@ -7,6 +7,7 @@ import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { financeErrorMessage } from "@/lib/finance-error";
 
 const input = "h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none focus:border-[color:var(--primary)]";
 
@@ -61,7 +62,7 @@ export function DraftDocumentEditor({ initial }: { initial: Initial }) {
     });
     const payload = await response.json();
     setSaving(false);
-    if (!response.ok) return toast.error(payload.error || "Draft could not be saved");
+    if (!response.ok) return toast.error(financeErrorMessage(payload, "Draft could not be saved"));
     toast.success("Draft updated");
     router.push(`/admin/documents/${initial.id}`);
     router.refresh();
