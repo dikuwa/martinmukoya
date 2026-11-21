@@ -27,4 +27,14 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await expect(page.getByText("Payment recorded and receipt issued")).toBeVisible();
   await page.goBack();
   await expect(page.getByText(/Outstanding N\$ 250\.00/)).toBeVisible();
+
+  // Verify reminder preparation without contacting the customer or opening a messaging app.
+  await expect(page.getByRole("heading", { name: "Payment reminder" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Payment reminder text" })).toHaveValue(/N\$ 250\.00/);
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await expect(page.getByText("Reminder prepared (delivery not confirmed)")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Reminder history" })).toBeVisible();
+  await expect(page.getByText(/COPY.*Prepared \(not confirmed sent\)/)).toBeVisible();
 });
