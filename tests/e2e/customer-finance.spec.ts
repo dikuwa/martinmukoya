@@ -52,6 +52,9 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await page.reload();
   await expect(page.getByText(/Outstanding N\$ 50\.00/)).toBeVisible();
 
+  const voidAttempt = await page.request.post(`/api/admin/documents/${invoiceId}/void`);
+  expect(voidAttempt.status()).toBe(409);
+
   const result = await accepted[0].json();
   const reversal = await page.request.post(`/api/admin/payments/${result.id}/reverse`);
   expect(reversal.ok()).toBe(true);
