@@ -1,12 +1,18 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { assertPreviewDatabaseIsolation } from "@/lib/database-isolation";
 
 const globalForPrisma = globalThis as unknown as { pgPool?: Pool; prisma?: PrismaClient };
 
 function getPgPool() {
   if (!globalForPrisma.pgPool) {
     const configuredUrl = process.env.DATABASE_URL!;
+    assertPreviewDatabaseIsolation({
+      vercelEnv: process.env.VERCEL_ENV,
+      databaseUrl: configuredUrl,
+      isolationConfirmed: process.env.PREVIEW_DATABASE_ISOLATED,
+    });
     const connectionString = configuredUrl.includes("pooler.supabase.com")
       ? configuredUrl.replace(":5432/", ":6543/")
       : configuredUrl;
