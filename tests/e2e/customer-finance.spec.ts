@@ -27,8 +27,10 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await expect(page.getByRole("spinbutton", { name: "Rate", exact: true })).toHaveValue("350");
   await page.getByRole("button", { name: "Quotation" }).click();
   await page.getByRole("option", { name: "Invoice" }).click();
+  const documentResponse = page.waitForResponse(response => response.url().endsWith("/api/admin/documents") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create document" }).click();
   await expect(page).toHaveURL(/\/admin\/documents\/[^/]+/);
+  expect((await (await documentResponse).json()).issuerSnapshot.name).toBe("FlexTech Media");
   await page.getByRole("button", { name: "Issue document" }).click();
   await expect(page.getByText(/Outstanding N\$ 350\.00/)).toBeVisible();
   await page.getByRole("link", { name: "Record payment against this invoice" }).click();
@@ -130,4 +132,26 @@ test("catalogue edit, archive and restore on a mobile dark viewport", async ({ p
   await edit.getByRole("button", { name: "Restore service" }).click();
   await expect(edit.locator("summary")).not.toContainText("Archived");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+
+  const customer = await page.request.post("/api/admin/customers", {
+    data: { name: "Synthetic personal issuer client", email: "personal-issuer@example.invalid" },
+  });
+  expect(customer.status()).toBe(201);
+  await page.goto(`/admin/customers/${(await customer.json()).id}`);
+  await page.getByRole("button", { name: "Custom service" }).click();
+  await page.getByRole("option", { name: "Synthetic catalogue service" }).click();
+  await expect(page.getByRole("spinbutton", { name: "Price (N$)" })).toHaveValue("150");
+  await page.getByRole("button", { name: "FlexTech Media", exact: true }).click();
+  await page.getByRole("option", { name: "Martin Mukoya", exact: true }).click();
+  await page.getByRole("button", { name: "Create job & prepare quotation" }).click();
+  await expect(page).toHaveURL(/\/admin\/documents\?booking=/);
+  const quotation = page.waitForResponse(response => response.url().endsWith("/api/admin/documents") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Create document" }).click();
+  const document = await (await quotation).json();
+  expect(document.type).toBe("QUOTE");
+  expect(document.issuerSnapshot.name).toBe("Martin Mukoya");
+  await page.getByRole("button", { name: "Issue document" }).click();
+  await expect(page.getByRole("button", { name: "Issue document" })).toHaveCount(0);
+  const pdf = await page.request.get(`/api/admin/documents/${document.id}/pdf`);
+  expect(pdf.headers()["content-type"]).toContain("application/pdf");
 });
