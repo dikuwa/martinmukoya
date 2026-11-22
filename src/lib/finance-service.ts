@@ -67,7 +67,10 @@ export async function ensureBookingFromLead(leadId: string, userId?: string) {
     };
     const matches = await matchingCustomers(tx, details);
     // Conflicting matches require an explicit customer selection on the booking.
-    let contactId = matches.length === 1 ? matches[0].id : undefined;
+    const match = matches.length === 1 ? matches[0] : undefined;
+    const conflictingEmail = details.email && match?.email &&
+      details.email.trim().toLowerCase() !== match.email.trim().toLowerCase();
+    let contactId = conflictingEmail ? undefined : match?.id;
     if (!matches.length && Object.values(details).some(Boolean)) {
       const customer = await tx.contact.create({ data: {
         ...details, name: lead.name, company: lead.company, createdById: userId,

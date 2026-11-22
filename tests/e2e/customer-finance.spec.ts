@@ -5,6 +5,7 @@ test.use({ channel: "chrome" });
 test.setTimeout(180_000);
 test("customer, service, invoice, partial payment and reminder", async ({ page }) => {
   await loginAsAdmin(page, "/admin/customers");
+  await expect(page.locator("html")).toHaveClass(/\blight\b/);
   await page.locator('input[name="name"]').fill("Synthetic Browser Client");
   await page.locator('input[name="email"]').fill("synthetic-client@example.invalid");
   await page.locator('input[name="phone"]').fill("+264811111111");
@@ -110,8 +111,9 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
 
 test("catalogue edit, archive and restore on a mobile dark viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   await loginAsAdmin(page, "/admin/services");
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   const add = page.locator("form").filter({ has: page.getByRole("heading", { name: "Add a reusable service" }) });
   await add.getByRole("textbox", { name: "Service name" }).fill("Synthetic catalogue service");
   await add.getByRole("spinbutton", { name: "Default price (N$)" }).fill("125");
