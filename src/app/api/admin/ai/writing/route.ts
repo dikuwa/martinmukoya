@@ -5,6 +5,9 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { trackServerEvent } from "@/lib/analytics";
 
+// Authenticated runtime-only endpoint: do not collect its data during build.
+export const dynamic = "force-dynamic";
+
 const requestSchema = z.object({
   surface: z.enum(["blog", "business-document", "template"]),
   action: z.enum(["generate", "improve", "rewrite", "professional", "persuasive", "friendly", "concise", "expand", "shorten", "grammar", "structure", "missing-sections", "missing-clauses", "summarise", "seo-title", "excerpt", "tags", "seo-description"]),
