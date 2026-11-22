@@ -31,7 +31,7 @@ export function QuickJobForm({ customerId, sites, services }: { customerId: stri
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not add job"); }
     finally { setSaving(false); }
   }
-  return <form onSubmit={submit} className="grid gap-3 rounded-md border border-[color:var(--border-subtle)] p-4">
+  return <form method="post" onSubmit={submit} className="grid gap-3 rounded-md border border-[color:var(--border-subtle)] p-4">
     <h2 className="font-semibold">Quick service / job</h2>
     <label className="grid gap-1 text-sm">Saved service
       <DashboardSelect className={field} defaultValue="" onChange={event => {

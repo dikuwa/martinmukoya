@@ -279,7 +279,7 @@ coverImage: initialData?.coverImage ?? "",
 
       {/* Main form content */}
       <main className="min-w-0">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6" id="form-content">
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6" id="form-content">
           <FormSection id="basic-details" title="Basic project details" description="Identity, ownership, visibility, and publication settings.">
             <Field label="Title" error={form.formState.errors.title?.message}>
               <input {...form.register("title")} className={inputClass} />

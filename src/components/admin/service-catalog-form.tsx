@@ -38,7 +38,7 @@ export function ServiceCatalogForm({ service }: { service?: Service }) {
     finally { setSaving(false); }
   }
   const cls = "h-10 w-full rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm";
-  return <form onSubmit={submit} className="grid gap-3 rounded-md border border-[color:var(--border-subtle)] p-4">
+  return <form method="post" onSubmit={submit} className="grid gap-3 rounded-md border border-[color:var(--border-subtle)] p-4">
     <h2 className="font-semibold">{service ? "Edit service" : "Add a reusable service"}</h2>
     <label className="grid gap-1 text-sm">Service name
       <input required className={cls} value={name} onChange={e => setName(e.target.value)}/>
