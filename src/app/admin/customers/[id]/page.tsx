@@ -33,8 +33,8 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     </div>
     {unallocated > 0 && <p className="text-sm text-[color:var(--text-muted)]">Unallocated project deposits: {formatNad(unallocated)}. These are not counted as invoice payments until reconciled.</p>}
     <div className="grid gap-5 lg:grid-cols-2">
-      <div><h2 className="mb-3 font-semibold">Contact details</h2><CustomerForm customer={customer}/></div>
-      <QuickJobForm customerId={customer.id} sites={sites} services={services}/>
+      <div><h2 className="mb-3 font-semibold">Contact details</h2><CustomerForm customer={{ id: customer.id, name: customer.name, company: customer.company, email: customer.email, phone: customer.phone, whatsAppNumber: customer.whatsAppNumber, address: customer.address, town: customer.town, notes: customer.notes, status: customer.status }}/></div>
+      <QuickJobForm customerId={customer.id} sites={sites} services={services.map(service => ({ id: service.id, name: service.name, description: service.description, price: service.price.toString() }))}/>
     </div>
     <section className="grid gap-3">
       <h2 className="font-semibold">Jobs, quotations and invoices</h2>
