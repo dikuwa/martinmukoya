@@ -37,4 +37,24 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await page.reload();
   await expect(page.getByRole("heading", { name: "Reminder history" })).toBeVisible();
   await expect(page.getByText(/COPY.*Prepared \(not confirmed sent\)/)).toBeVisible();
+
+  const invoiceId = new URL(page.url()).pathname.split("/").at(-1);
+  const payment = { invoiceId, amount: "200", method: "CASH" };
+  const responses = await Promise.all([
+    page.request.post("/api/admin/payments", { data: payment }),
+    page.request.post("/api/admin/payments", { data: payment }),
+  ]);
+  const accepted = responses.filter(response => response.status() === 201);
+  expect(accepted).toHaveLength(1);
+  const rejected = responses.find(response => response.status() !== 201)!;
+  expect(rejected.status()).toBe(409);
+  expect((await rejected.json()).error).toMatch(/exceed the outstanding balance/);
+  await page.reload();
+  await expect(page.getByText(/Outstanding N\$ 50\.00/)).toBeVisible();
+
+  const result = await accepted[0].json();
+  const reversal = await page.request.post(`/api/admin/payments/${result.id}/reverse`);
+  expect(reversal.ok()).toBe(true);
+  await page.reload();
+  await expect(page.getByText(/Outstanding N\$ 250\.00/)).toBeVisible();
 });
