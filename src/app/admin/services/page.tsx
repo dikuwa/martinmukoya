@@ -10,11 +10,17 @@ export default async function ServicesPage() {
       actions={<Link className="text-sm underline" href="/admin/customers">Select customer to create a job</Link>}/>
     <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
       <div className="divide-y divide-[color:var(--border-subtle)] rounded-md border border-[color:var(--border-subtle)] p-4">
-        {services.map(service => <div key={service.id} className="flex justify-between gap-3 py-3">
-          <div><h2 className="text-sm font-medium">{service.name}</h2>
-            {service.description && <p className="text-xs text-[color:var(--text-muted)]">{service.description}</p>}
-          </div><span className="shrink-0 text-sm font-medium">{formatNad(String(service.price))}</span>
-        </div>)}
+        {services.map(service => <details key={service.id} className="min-w-0 py-3">
+          <summary className="cursor-pointer break-words text-sm font-medium">
+            {service.name} · {formatNad(String(service.price))}{service.active ? "" : " · Archived"}
+          </summary>
+          <div className="mt-3">
+            <ServiceCatalogForm key={JSON.stringify([service.name, service.description, String(service.price), service.active])} service={{
+              id: service.id, name: service.name, description: service.description,
+              price: String(service.price), active: service.active,
+            }}/>
+          </div>
+        </details>)}
         {!services.length && <p className="text-sm text-[color:var(--text-muted)]">No saved services. Add one or use a custom job from a customer profile.</p>}
       </div>
       <ServiceCatalogForm/>

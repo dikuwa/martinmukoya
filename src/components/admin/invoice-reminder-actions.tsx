@@ -13,7 +13,7 @@ type Props = {
   balance: number;
 };
 export function InvoiceReminderActions({ invoiceId, message: initial, phone, email, shareLink, balance }: Props) {
-  const [message, setMessage] = useState(initial + (shareLink ? `\nInvoice: ${shareLink}` : ""));
+  const [message, setMessage] = useState(initial);
   const [invoiceLink, setInvoiceLink] = useState(shareLink || "");
   const [busy, setBusy] = useState(false);
   async function attachInvoiceLink() {
@@ -29,7 +29,6 @@ export function InvoiceReminderActions({ invoiceId, message: initial, phone, ema
       if (!response.ok || !data.shortCode) throw new Error(data.error || "Unable to create invoice link");
       const link = `${window.location.origin}/d/${data.shortCode}`;
       setInvoiceLink(link);
-      setMessage(current => `${current}\nInvoice: ${link}`);
       toast.success("Invoice link included");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to create invoice link"); }
     finally { setBusy(false); }
@@ -38,25 +37,30 @@ export function InvoiceReminderActions({ invoiceId, message: initial, phone, ema
     if (busy) return;
     if (channel === "WHATSAPP" && !phone) return toast.error("No customer WhatsApp/phone number.");
     if (channel === "EMAIL" && !email) return toast.error("No customer email address.");
-    // Open user-controlled composer only; never claim a message was delivered.
-    if (channel === "WHATSAPP") {
-      const number = phone!.replace(/\D/g, "").replace(/^0/, "264");
-      window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-    } else if (channel === "EMAIL") {
-      window.location.href = `mailto:${encodeURIComponent(email!)}?subject=${encodeURIComponent("Payment reminder")}&body=${encodeURIComponent(message)}`;
-    } else {
-      await navigator.clipboard.writeText(message);
-      toast.success("Reminder copied");
-    }
+    const composer = channel === "WHATSAPP" ? window.open("about:blank", "_blank") : null;
+    if (composer) composer.opener = null;
+    if (channel === "WHATSAPP" && !composer) return toast.error("Allow pop-ups to open WhatsApp.");
     setBusy(true);
     try {
       const response = await fetch("/api/admin/invoice-reminders", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ invoiceId, channel, message }),
+        body: JSON.stringify({ invoiceId, channel, includeLink: Boolean(invoiceLink) }),
       });
-      if (!response.ok) throw new Error("Reminder could not be logged");
+      const prepared = await response.json();
+      if (!response.ok) throw new Error(prepared.error || "Reminder could not be prepared");
+      setMessage(prepared.message);
+      if (composer) {
+        composer.location.href = `https://wa.me/${prepared.destination}?text=${encodeURIComponent(prepared.message)}`;
+      } else if (channel === "EMAIL") {
+        window.location.href = `mailto:${encodeURIComponent(prepared.destination)}?subject=Payment%20reminder&body=${encodeURIComponent(prepared.message)}`;
+      } else {
+        await navigator.clipboard.writeText(prepared.message);
+      }
       toast.success("Reminder prepared (delivery not confirmed)");
-    } catch { toast.error("Reminder prepared but history could not be recorded"); }
+    } catch (error) {
+      composer?.close();
+      toast.error(error instanceof Error ? error.message : "Reminder could not be prepared");
+    }
     finally { setBusy(false); }
   }
   return <div className="grid gap-3 rounded-md border border-[color:var(--border-subtle)] p-4">
@@ -64,7 +68,7 @@ export function InvoiceReminderActions({ invoiceId, message: initial, phone, ema
       <p className="text-xs text-[color:var(--text-muted)]">Outstanding N$ {balance.toFixed(2)} · review before sharing</p>
     </div>
     <textarea aria-label="Payment reminder text" value={message}
-      onChange={e => setMessage(e.target.value)} rows={5}
+      readOnly rows={5}
       className="w-full rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-3 text-sm"/>
     {!invoiceLink && <Button variant="secondary" size="sm" disabled={busy}
       onClick={attachInvoiceLink}>Include invoice link</Button>}

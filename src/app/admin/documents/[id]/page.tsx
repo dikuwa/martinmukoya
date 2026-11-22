@@ -5,7 +5,8 @@ import { DocumentActions } from "@/components/admin/document-actions";
 import { FinancialDocumentPreview } from "@/components/admin/financial-document-preview";
 import { Card } from "@/components/ui/card";
 import { InvoiceReminderActions } from "@/components/admin/invoice-reminder-actions";
-import { invoiceReminderDetails } from "@/lib/reminder";
+import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
+import { invoiceReminderDetails, reminderRecipients } from "@/lib/reminder";
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const document = await db.financialDocument.findUnique({
@@ -28,6 +29,8 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const shortLink = document.sharedDocument
     ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${document.sharedDocument.shortCode}`
     : null;
+  const recipients = reminderRecipients(document);
+  const reminderLink = document.sharedDocument && sharedDocumentIsPublic({ ...document.sharedDocument, financialDocument: document }) ? shortLink : null;
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -65,8 +68,8 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           {reminder && reminder.balance > 0 && <Link className="text-sm font-medium underline" href={`/admin/documents?invoice=${document.id}#record-payment`}>Record payment against this invoice</Link>}
           {reminder && reminder.balance > 0 && (
             <InvoiceReminderActions invoiceId={document.id} message={reminder.message}
-              phone={document.booking.contact?.whatsAppNumber || document.booking.lead?.whatsAppNumber || document.customerPhone} email={document.customerEmail}
-              shareLink={shortLink} balance={reminder.balance}/>
+              phone={recipients.phone} email={recipients.email}
+              shareLink={reminderLink} balance={reminder.balance}/>
           )}
           {!!reminderHistory.length && <Card padding="md">
             <h3 className="mb-3 text-sm font-semibold">Reminder history</h3>

@@ -1,6 +1,8 @@
 import { created, ok, parseJson, serverError, validationError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { matchingCustomers } from "@/lib/customer-identity";
+import { runPaymentTransaction } from "@/lib/payment-transaction";
 import { customerSchema } from "@/lib/validation/customer";
 import { z } from "zod";
 
@@ -24,14 +26,14 @@ export async function POST(request: Request) {
   try {
     const { session, error } = await requireAdmin(); if (error) return error;
     const input = await parseJson(request, customerSchema);
-    const filters = [
-      ...(input.email ? [{ email: { equals: input.email, mode: "insensitive" as const } }] : []),
-      ...(input.phone ? [{ phone: input.phone }] : []),
-      ...(input.whatsAppNumber ? [{ whatsAppNumber: input.whatsAppNumber }] : []),
-    ];
-    const duplicate = await db.contact.findFirst({ where: { OR: filters } });
-    if (duplicate) return ok({ error: "A customer with these contact details exists.", existingId: duplicate.id }, { status: 409 });
-    return created(await db.contact.create({ data: { ...input, email: input.email || null, createdById: session.user.id } }));
+    return await runPaymentTransaction(async tx => {
+      const matches = await matchingCustomers(tx, input);
+      if (matches.length) return ok({
+        error: "A customer with these contact details exists.",
+        existingId: matches.length === 1 ? matches[0].id : undefined,
+      }, { status: 409 });
+      return created(await tx.contact.create({ data: { ...input, email: input.email || null, createdById: session.user.id } }));
+    });
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);
     return serverError(error);

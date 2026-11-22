@@ -1,6 +1,7 @@
 import { newShareToken } from "@/lib/shared-document-access";
 import { randomUUID } from "crypto";
 import { Prisma } from "@/generated/prisma/client";
+import { matchingCustomers } from "@/lib/customer-identity";
 import { db } from "@/lib/db";
 import { PaymentBalanceConflict, runPaymentTransaction } from "@/lib/payment-transaction";
 import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
@@ -53,15 +54,38 @@ export function documentNumber(type: "QUOTE" | "INVOICE" | "RECEIPT") {
 }
 
 export async function ensureBookingFromLead(leadId: string, userId?: string) {
-  const existing = await db.booking.findUnique({ where: { leadId } });
-  if (existing) return existing;
-  const lead = await db.lead.findUnique({ where: { id: leadId } });
-  if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
-  return db.booking.create({ data: {
-    number: bookingNumber(), siteId: lead.siteId, leadId: lead.id, customerName: lead.name, customerEmail: lead.email,
-    customerPhone: lead.phone, company: lead.company, projectDescription: lead.projectGoal || lead.message,
-    budgetRange: lead.budgetRange, createdById: userId,
-  } });
+  return runPaymentTransaction(async tx => {
+    const existing = await tx.booking.findUnique({ where: { leadId } });
+    if (existing?.contactId) return existing;
+    const lead = await tx.lead.findUnique({ where: { id: leadId } });
+    if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
+
+    const details = {
+      email: lead.emailValid ? lead.email : null,
+      phone: lead.phoneValid ? lead.phone : null,
+      whatsAppNumber: lead.whatsAppConfirmed ? lead.whatsAppNumber : null,
+    };
+    const matches = await matchingCustomers(tx, details);
+    // Conflicting matches require an explicit customer selection on the booking.
+    let contactId = matches.length === 1 ? matches[0].id : undefined;
+    if (!matches.length && Object.values(details).some(Boolean)) {
+      const customer = await tx.contact.create({ data: {
+        ...details, name: lead.name, company: lead.company, createdById: userId,
+      } });
+      contactId = customer.id;
+    }
+    if (existing) {
+      return contactId
+        ? tx.booking.update({ where: { id: existing.id }, data: { contactId } })
+        : existing;
+    }
+    return tx.booking.create({ data: {
+      number: bookingNumber(), siteId: lead.siteId, leadId: lead.id, contactId,
+      customerName: lead.name, customerEmail: lead.email, customerPhone: lead.phone,
+      company: lead.company, projectDescription: lead.projectGoal || lead.message,
+      budgetRange: lead.budgetRange, createdById: userId,
+    } });
+  });
 }
 
 export async function createDraft(input: {
