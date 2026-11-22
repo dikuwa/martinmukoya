@@ -19,7 +19,9 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
 
   await page.getByRole("textbox", { name: "Description" }).fill("Synthetic computer repair");
   await page.getByRole("spinbutton", { name: "Price (N$)" }).fill("350");
+  const jobResponse = page.waitForResponse(response => response.url().endsWith("/api/admin/quick-jobs") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Create job & prepare quotation" }).click();
+  const job = await (await jobResponse).json();
   await expect(page).toHaveURL(/\/admin\/documents\?booking=/);
   await expect(page.getByRole("spinbutton", { name: "Rate", exact: true })).toHaveValue("350");
   await page.getByRole("button", { name: "Quotation" }).click();
@@ -90,6 +92,18 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await expect(page).toHaveURL(/\/admin\/bookings\/[^/]+$/);
   await page.goto(customerPath);
   await expect(page.getByRole("link", { name: "Edit project" })).toBeVisible();
+  const lead = await page.request.post("/api/admin/leads", { data: {
+    name: "Synthetic returning lead", email: "SYNTHETIC-CLIENT@example.invalid",
+    siteId: job.siteId, projectGoal: "Synthetic repeat enquiry",
+  } });
+  expect(lead.status()).toBe(201);
+  const leadId = (await lead.json()).id;
+  const convert = () => page.request.post("/api/admin/bookings/from-lead", { data: { leadId } });
+  const converted = await convert();
+  expect(converted.status()).toBe(201);
+  const linked = await converted.json();
+  expect(linked.contactId).toBe(customerPath.split("/").at(-1));
+  expect((await (await convert()).json()).id).toBe(linked.id);
   await expect(page.getByText(/Reversed \d{4}-/)).toBeVisible();
 });
 
