@@ -1,6 +1,6 @@
 import { ok, serverError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
-import { paymentSettlesInvoice, sumActivePayments } from "@/lib/financial";
+import { computeOutstanding, sumActivePayments } from "@/lib/financial";
 import { runPaymentTransaction } from "@/lib/payment-transaction";
 
 type Context = { params: Promise<{ id: string }> };
@@ -34,7 +34,7 @@ export async function POST(_request: Request, context: Context) {
         });
         if (invoice && invoice.status !== "VOID") {
           const paid = sumActivePayments(invoice.payments);
-          const status = paid <= 0 ? "ISSUED" : paymentSettlesInvoice(invoice.total, paid, 0) ? "PAID" : "PARTIALLY_PAID";
+          const status = paid <= 0 ? "ISSUED" : computeOutstanding(invoice.total, paid) < 0.001 ? "PAID" : "PARTIALLY_PAID";
           await tx.financialDocument.update({ where: { id: invoice.id }, data: { status } });
         }
       }
