@@ -29,3 +29,13 @@ One possible independent option is the [Aiven free PostgreSQL tier](https://aive
 - Temporary public tunnels have been shut down; the isolated Mac database is preserved offline.
 
 The temporary HTTPS tunnels are **not** equivalent to a Vercel Preview wired to its own hosted PostgreSQL. No claim of completed Vercel Preview acceptance should be made until step 5 passes.
+
+## Control Room verification — 22 November 2026
+
+- Draft PR #16 remote head `a1e3031` remains unmerged. A local-only follow-up commit `bab85e5` serializes Prisma Decimal-containing values before passing customer, service and booking form props across Server/Client Component boundaries. **Not pushed**: current Vercel Preview environment still carries a Production/Preview shared `DATABASE_URL` target, and hosted database isolation is unverified.
+- On the local PR worktree, changed-file ESLint and TypeScript passed, and **118/118 unit/security tests passed**. All six database-isolation guard checks passed.
+- Disposable PostgreSQL 15 baseline recreation, additive finance migration and `anon`/`authenticated` API-role denial passed. This is not a production migration.
+- Authenticated synthetic Chrome E2E passed **2/2** after the serialization patch: customer creation, duplicate matching, service catalogue editing/archive/restore, quotation/invoice and PDF, concurrent payment acceptance/conflict, reversals, void protection, reminder preparation, and mobile dark-theme workflow. Next.js Decimal serialization warnings: **0** in the final test-server log. The disposable test database was stopped by the runner afterward.
+- The connected Supabase organization is Free with two active projects (`martin_mukoya` and `autoagent`); no separate branch exists. Neon is on a usage-billed Launch organization. Neither should be expanded or repurposed without a verified no-charge path.
+- Aiven Free PostgreSQL is a documented no-credit-card, $0 managed PostgreSQL option (`https://aiven.io/free-postgresql-database`). Account creation/authorization is an owner action; no Aiven account is currently connected to the Mac or ChatGPT. Once connected, confirm plan/quotas, provision a dedicated staging service, test migration and compatibility, configure PR-branch-only Vercel Preview credentials and non-production integrations, verify the destination, then enable `PREVIEW_DATABASE_ISOLATED=true` and run authenticated hosted acceptance.
+- **Release gate remains HOLD**. No production database access, migrations, merges, production deployments, or customer communications were performed. Do not present prior tunnel testing or local E2E as Vercel Preview acceptance.
