@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
 
 const trustedOrigins = Array.from(
   new Set(
@@ -25,7 +25,7 @@ const trustedOrigins = Array.from(
 
 export const auth = betterAuth({
   trustedOrigins,
-  database: prismaAdapter(getDb(), {
+  database: prismaAdapter(db, {
     provider: "postgresql"
   }),
   emailAndPassword: {

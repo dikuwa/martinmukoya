@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
 import ts from "typescript";
+import { serviceSchema } from "../src/lib/validation/customer";
+import { bookingCreateSchema } from "../src/lib/validation/finance";
 
 const nativeRequire = createRequire(import.meta.url);
 const protectedRoutes = [
@@ -11,6 +13,8 @@ const protectedRoutes = [
   ["src/app/api/admin/customers/[id]/route.ts", ["PATCH"]],
   ["src/app/api/admin/quick-jobs/route.ts", ["POST"]],
   ["src/app/api/admin/service-catalog/route.ts", ["GET", "POST"]],
+  ["src/app/api/admin/service-catalog/[id]/route.ts", ["PATCH"]],
+  ["src/app/api/admin/bookings/[id]/route.ts", ["PATCH"]],
   ["src/app/api/admin/invoice-reminders/route.ts", ["POST"]],
 ] as const;
 
@@ -25,6 +29,8 @@ for (const [path, methods] of protectedRoutes) {
         const exports: Record<string, (request: Request, context: unknown) => Promise<Response>> = {};
         const dependencies: Record<string, unknown> = {
           "@/lib/auth-guard": { requireAdmin: async () => ({ error: Response.json({ error: "Forbidden" }, { status }) }) },
+          "@/lib/validation/customer": { serviceSchema },
+          "@/lib/validation/finance": { bookingCreateSchema },
           "@/lib/db": { db: new Proxy({}, { get() { queried = true; throw new Error("Must not access private data"); } }) },
         };
         const require = (name: string) => name in dependencies ? dependencies[name] : name.startsWith("@/") ? {} : nativeRequire(name);

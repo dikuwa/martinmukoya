@@ -1,7 +1,9 @@
 import { newShareToken } from "@/lib/shared-document-access";
 import { randomUUID } from "crypto";
 import { Prisma } from "@/generated/prisma/client";
+import { matchingCustomers } from "@/lib/customer-identity";
 import { db } from "@/lib/db";
+import { PaymentBalanceConflict, runPaymentTransaction } from "@/lib/payment-transaction";
 import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
 import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
 
@@ -52,15 +54,41 @@ export function documentNumber(type: "QUOTE" | "INVOICE" | "RECEIPT") {
 }
 
 export async function ensureBookingFromLead(leadId: string, userId?: string) {
-  const existing = await db.booking.findUnique({ where: { leadId } });
-  if (existing) return existing;
-  const lead = await db.lead.findUnique({ where: { id: leadId } });
-  if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
-  return db.booking.create({ data: {
-    number: bookingNumber(), siteId: lead.siteId, leadId: lead.id, customerName: lead.name, customerEmail: lead.email,
-    customerPhone: lead.phone, company: lead.company, projectDescription: lead.projectGoal || lead.message,
-    budgetRange: lead.budgetRange, createdById: userId,
-  } });
+  return runPaymentTransaction(async tx => {
+    const existing = await tx.booking.findUnique({ where: { leadId } });
+    if (existing?.contactId) return existing;
+    const lead = await tx.lead.findUnique({ where: { id: leadId } });
+    if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
+
+    const details = {
+      email: lead.emailValid ? lead.email : null,
+      phone: lead.phoneValid ? lead.phone : null,
+      whatsAppNumber: lead.whatsAppConfirmed ? lead.whatsAppNumber : null,
+    };
+    const matches = await matchingCustomers(tx, details);
+    // Conflicting matches require an explicit customer selection on the booking.
+    const match = matches.length === 1 ? matches[0] : undefined;
+    const conflictingEmail = details.email && match?.email &&
+      details.email.trim().toLowerCase() !== match.email.trim().toLowerCase();
+    let contactId = conflictingEmail ? undefined : match?.id;
+    if (!matches.length && Object.values(details).some(Boolean)) {
+      const customer = await tx.contact.create({ data: {
+        ...details, name: lead.name, company: lead.company, createdById: userId,
+      } });
+      contactId = customer.id;
+    }
+    if (existing) {
+      return contactId
+        ? tx.booking.update({ where: { id: existing.id }, data: { contactId } })
+        : existing;
+    }
+    return tx.booking.create({ data: {
+      number: bookingNumber(), siteId: lead.siteId, leadId: lead.id, contactId,
+      customerName: lead.name, customerEmail: lead.email, customerPhone: lead.phone,
+      company: lead.company, projectDescription: lead.projectGoal || lead.message,
+      budgetRange: lead.budgetRange, createdById: userId,
+    } });
+  });
 }
 
 export async function createDraft(input: {
@@ -127,12 +155,12 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
   const amount = Number(input.amount);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
   
-  return db.$transaction(async (tx) => {
+  return runPaymentTransaction(async (tx) => {
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
     if (!invoiceTx || invoiceTx.type !== "INVOICE" || !["ISSUED", "PARTIALLY_PAID"].includes(invoiceTx.status)) throw new Error("Select an outstanding issued invoice.");
     const paid = sumActivePayments(invoiceTx.payments);
     const outstanding = computeOutstanding(invoiceTx.total, paid);
-    if (amount > outstanding + 0.001) throw new Error("Payment cannot exceed the outstanding balance.");
+    if (amount > outstanding + 0.001) throw new PaymentBalanceConflict("Payment cannot exceed the outstanding balance.");
     const receipt = await tx.financialDocument.create({ data: {
       number: documentNumber("RECEIPT"), type: "RECEIPT", status: "PAID", siteId: invoiceTx.siteId, bookingId: invoiceTx.bookingId,
       customerName: invoiceTx.customerName, customerEmail: invoiceTx.customerEmail, customerPhone: invoiceTx.customerPhone,
@@ -164,15 +192,17 @@ export async function recordBookingDeposit(input: { bookingId: string; amount: s
 
   const booking = await db.booking.findUnique({ where: { id: input.bookingId } });
   if (!booking) throw new Error("Project not found.");
-  const contractAmount = booking.contractAmount;
-  if (contractAmount == null) throw new Error("Set the project contract amount before recording a payment.");
-
   const issuer = await getIssuerSnapshot(booking.siteId);
-  return db.$transaction(async (tx) => {
+  return runPaymentTransaction(async (tx) => {
+    const currentBooking = await tx.booking.findUnique({ where: { id: booking.id } });
+    if (!currentBooking) throw new Error("Project not found.");
+    const contractAmount = currentBooking.contractAmount;
+    if (contractAmount == null) throw new Error("Set the project contract amount before recording a payment.");
+
     const activePayments = await tx.payment.findMany({ where: { bookingId: booking.id, reversedAt: null } });
     const paid = sumActivePayments(activePayments);
     const outstanding = computeOutstanding(contractAmount, paid);
-    if (amount > outstanding + 0.001) throw new Error("Payment cannot exceed the outstanding balance.");
+    if (amount > outstanding + 0.001) throw new PaymentBalanceConflict("Payment cannot exceed the outstanding balance.");
     const fullyPaid = paymentSettlesInvoice(contractAmount, paid, amount);
     const balanceNote = fullyPaid ? "Paid in full." : `Balance remaining: N$${(outstanding - amount).toFixed(2)}. Project partially paid.`;
     const receipt = await tx.financialDocument.create({ data: {

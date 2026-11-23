@@ -40,7 +40,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
     ["phone", "Phone"], ["whatsAppNumber", "WhatsApp"], ["address", "Address"],
     ["town", "Town"],
   ] as const;
-  return <form onSubmit={submit} className="grid gap-4 rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
+  return <form method="post" onSubmit={submit} className="grid gap-4 rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4">
     <div className="grid gap-3 sm:grid-cols-2">{inputs.map(([name,label]) =>
       <label key={name} className="grid gap-1 text-sm font-medium">{label}
         <input className={field} name={name} type={name === "email" ? "email" : "text"}

@@ -18,15 +18,17 @@ export const customerSchema = z.object({
   path: ["email"],
 });
 
+const price = z.number().finite().nonnegative().max(9_999_999_999.99).multipleOf(0.01);
+
 export const quickJobSchema = z.object({
   customerId: z.string().min(1),
   siteId: z.string().min(1),
   description: z.string().trim().min(3).max(2000),
-  amount: z.number().nonnegative().optional(),
+  amount: price.optional(),
 });
 
 export const serviceSchema = z.object({
   name: z.string().trim().min(2).max(160),
   description: optional,
-  price: z.number().finite().nonnegative(),
+  price,
 });
