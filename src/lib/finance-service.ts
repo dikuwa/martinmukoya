@@ -4,7 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { matchingCustomers } from "@/lib/customer-identity";
 import { db } from "@/lib/db";
 import { PaymentBalanceConflict, runPaymentTransaction } from "@/lib/payment-transaction";
-import { calculateDocumentTotals, computeOutstanding, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
+import { calculateDocumentTotals, computeOutstanding, parsePaymentAmount, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
 import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
 
 async function getSiteSettings(siteId: string | null, prefix: string) {
@@ -152,8 +152,7 @@ export async function declineFinancialDocument(id: string) {
 }
 
 export async function recordPayment(input: { invoiceId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
-  const amount = Number(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
+  const amount = parsePaymentAmount(input.amount);
   
   return runPaymentTransaction(async (tx) => {
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
@@ -187,8 +186,7 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
 }
 
 export async function recordBookingDeposit(input: { bookingId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
-  const amount = Number(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Payment amount must be greater than zero.");
+  const amount = parsePaymentAmount(input.amount);
 
   const booking = await db.booking.findUnique({ where: { id: input.bookingId } });
   if (!booking) throw new Error("Project not found.");
