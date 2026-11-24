@@ -54,7 +54,8 @@ export function documentNumber(type: "QUOTE" | "INVOICE" | "RECEIPT") {
 }
 
 export async function ensureBookingFromLead(leadId: string, userId?: string) {
-  return runPaymentTransaction(async tx => {
+  try {
+    return await runPaymentTransaction(async tx => {
     const existing = await tx.booking.findUnique({ where: { leadId } });
     if (existing?.contactId) return existing;
     const lead = await tx.lead.findUnique({ where: { id: leadId } });
@@ -88,7 +89,14 @@ export async function ensureBookingFromLead(leadId: string, userId?: string) {
       company: lead.company, projectDescription: lead.projectGoal || lead.message,
       budgetRange: lead.budgetRange, source: lead.source || "website", createdById: userId,
     } });
-  });
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const booking = await db.booking.findUnique({ where: { leadId } });
+      if (booking) return booking;
+    }
+    throw error;
+  }
 }
 
 export async function createDraft(input: {
