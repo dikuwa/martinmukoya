@@ -63,6 +63,22 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   const pdf = await page.request.get(`/api/admin/documents/${invoiceId}/pdf`);
   expect(pdf.headers()["content-type"]).toContain("application/pdf");
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
+  const shared = await page.request.post("/api/admin/shared-documents", {
+    data: { documentId: invoiceId, documentType: "financial" },
+  });
+  expect(shared.ok()).toBe(true);
+  const { shortCode } = await shared.json() as { shortCode: string };
+  await page.goto(`/d/${shortCode}`);
+  await expect(page.locator("article").first()).toBeVisible();
+  const print = page.getByRole("button", { name: "Print", exact: true });
+  await expect(print).toBeVisible();
+  await page.emulateMedia({ media: "print" });
+  await expect(print).toBeHidden();
+  const printed = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+  expect(printed.subarray(0, 4).toString()).toBe("%PDF");
+  expect(printed.length).toBeGreaterThan(500);
+  await page.emulateMedia({ media: "screen" });
+  await page.goto(`/admin/documents/${invoiceId}`);
 
   const payment = { invoiceId, amount: "200", method: "CASH" };
   const responses = await Promise.all([
@@ -166,4 +182,18 @@ test("catalogue edit, archive and restore on a mobile dark viewport", async ({ p
   await expect(page.getByRole("button", { name: "Issue document" })).toHaveCount(0);
   const pdf = await page.request.get(`/api/admin/documents/${document.id}/pdf`);
   expect(pdf.headers()["content-type"]).toContain("application/pdf");
+  const shared = await page.request.post("/api/admin/shared-documents", {
+    data: { documentId: document.id, documentType: "financial" },
+  });
+  expect(shared.ok()).toBe(true);
+  const { shortCode } = await shared.json() as { shortCode: string };
+  await page.goto(`/d/${shortCode}`);
+  await expect(page.locator("article").first()).toBeVisible();
+  const print = page.getByRole("button", { name: "Print", exact: true });
+  await expect(print).toBeVisible();
+  await page.emulateMedia({ media: "print" });
+  await expect(print).toBeHidden();
+  const printed = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+  expect(printed.subarray(0, 4).toString()).toBe("%PDF");
+  expect(printed.length).toBeGreaterThan(500);
 });
