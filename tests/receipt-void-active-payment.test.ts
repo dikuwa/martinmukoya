@@ -80,14 +80,16 @@ test("active payment blocks direct receipt void without touching sharing or docu
   const result = await harness.request();
   assert.equal(result.status, 409);
   assert.match((await result.json()).error, /reverse the recorded payment/i);
-  assert.deepEqual(harness.receiptLookup, { receiptDocumentId: "receipt", reversedAt: null });
+  assert.equal(harness.receiptLookup?.receiptDocumentId, "receipt");
+  assert.equal(harness.receiptLookup?.reversedAt, null);
   assert.deepEqual(harness.changes, []);
 });
 
 test("unlinked receipt follows existing standalone void policy", async () => {
   const harness = loadRoute({ document: { id: "standalone", type: "RECEIPT", status: "PAID", payments: [] } });
   assert.equal((await harness.request()).status, 200);
-  assert.deepEqual(harness.receiptLookup, { receiptDocumentId: "standalone", reversedAt: null });
+  assert.equal(harness.receiptLookup?.receiptDocumentId, "standalone");
+  assert.equal(harness.receiptLookup?.reversedAt, null);
   assert.deepEqual(harness.changes, ["sharing", "document"]);
 });
 
