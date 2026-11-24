@@ -74,9 +74,9 @@ export function parsePaymentAmount(value: string | number): number {
     throw new Error("Payment must be a positive amount with at most two decimal places.");
   }
   const [whole, fraction = ""] = raw.split(".");
-  const cents = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0"));
+  const cents = BigInt(whole) * BigInt(100) + BigInt(fraction.padEnd(2, "0"));
   // Keep the conversion to JavaScript numbers safe for existing balance checks.
-  if (cents <= 0n || cents > 99999999999n) {
+  if (cents <= BigInt(0) || cents > BigInt(99999999999)) {
     throw new Error("Payment amount must be between 0.01 and 999999999.99.");
   }
   return Number(cents) / 100;
