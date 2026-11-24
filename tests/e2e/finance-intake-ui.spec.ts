@@ -18,9 +18,10 @@ test("manual referral booking becomes a customer and supports switching financia
   await page.locator('input[name="contractAmount"]').fill("350");
   await page.locator('textarea[name="projectDescription"]').fill("Synthetic referral laptop repair");
   await page.getByRole("button", { name: "Create booking" }).click();
-  await expect(page).toHaveURL(/\/admin\/bookings\/[^/]+$/);
-  const bookingUrl = page.url();
+  // /admin/bookings/new also matches a generic ID regex; ensure navigation finishes.
+  await expect(page).toHaveURL(/\/admin\/bookings\/(?!new$)[^/]+$/);
   await expect(page.getByText("referral", { exact: true })).toBeVisible();
+  const bookingUrl = page.url();
 
   await page.getByRole("link", { name: "Add customer" }).click();
   await expect(page).toHaveURL(/\/admin\/customers\?booking=/);
