@@ -80,6 +80,8 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const cardRef = useRef<HTMLFormElement | null>(null);
   const formStarted = useRef(false);
   const previousStepRef = useRef(step);
@@ -323,6 +325,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   return (
     <form
       ref={cardRef}
+      method="post"
       onSubmit={form.handleSubmit(onSubmit)}
       className="mx-auto w-full max-w-5xl scroll-mt-28 overflow-hidden rounded-[32px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)]"
     >
@@ -547,7 +550,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
                 type="submit"
                 size="lg"
                 className="sm:min-w-64"
-                disabled={form.formState.isSubmitting || submitLead.isPending}
+                disabled={!hydrated || form.formState.isSubmitting || submitLead.isPending}
               >
                 {form.formState.isSubmitting || submitLead.isPending ? "Submitting..." : "Submit Request"}{" "}
                 <ArrowRight size={18} />
