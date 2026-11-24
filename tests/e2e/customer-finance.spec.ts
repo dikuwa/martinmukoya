@@ -82,6 +82,10 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   expect(voidAttempt.status()).toBe(409);
 
   const result = await accepted[0].json();
+  // A receipt proves an active payment; it must not be voided directly.
+  const receiptVoidAttempt = await page.request.post(`/api/admin/documents/${result.receiptDocumentId}/void`);
+  expect(receiptVoidAttempt.status()).toBe(409);
+  expect((await receiptVoidAttempt.json()).error).toMatch(/reverse the recorded payment/i);
   const reversal = await page.request.post(`/api/admin/payments/${result.id}/reverse`);
   expect(reversal.ok()).toBe(true);
   await page.reload();
