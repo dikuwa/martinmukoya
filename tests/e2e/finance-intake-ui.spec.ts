@@ -4,7 +4,7 @@ import { loginAsAdmin } from "./admin-auth";
 test.use({ channel: "chrome" });
 test.setTimeout(180_000);
 
-test("manual referral booking becomes a customer and supports switching financial inputs", async ({ page }) => {
+test("manual referral booking becomes a customer and supports switching financial inputs", async ({ page }, testInfo) => {
   await loginAsAdmin(page, "/admin/bookings/new");
   await expect(page.getByRole("heading", { name: "New booking" })).toBeVisible();
 
@@ -13,7 +13,8 @@ test("manual referral booking becomes a customer and supports switching financia
   await page.getByRole("option", { name: "Referral", exact: true }).click();
   await expect(page.getByRole("button", { name: "Referral", exact: true })).toBeVisible();
   await page.locator('input[name="customerName"]').fill("Synthetic Referral Walk-in Test");
-  await page.locator('input[name="customerPhone"]').fill("0819949301");
+  const phone = `081994930${testInfo.retry + 1}`;
+  await page.locator('input[name="customerPhone"]').fill(phone);
   await page.locator('input[name="contractAmount"]').fill("350");
   await page.locator('textarea[name="projectDescription"]').fill("Synthetic referral laptop repair");
   await page.getByRole("button", { name: "Create booking" }).click();
@@ -24,8 +25,16 @@ test("manual referral booking becomes a customer and supports switching financia
   await page.getByRole("link", { name: "Add customer" }).click();
   await expect(page).toHaveURL(/\/admin\/customers\?booking=/);
   await expect(page.locator('input[name="name"]')).toHaveValue("Synthetic Referral Walk-in Test");
-  await expect(page.locator('input[name="phone"]')).toHaveValue("0819949301");
+  await expect(page.locator('input[name="phone"]')).toHaveValue(phone);
+  const bookingId = bookingUrl.split("/").at(-1);
+  const responsePromise = page.waitForResponse(response =>
+    response.url().endsWith("/api/admin/customers") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Add customer", exact: true }).click();
+  const response = await responsePromise;
+  expect(response.status()).toBe(201);
+  const sent = response.request().postDataJSON();
+  expect(sent.bookingId).toBe(bookingId);
+  expect((await response.json()).linkedBookingId).toBe(bookingId);
   await expect(page).toHaveURL(/\/admin\/customers\/[^/]+$/);
 
   await page.goto(bookingUrl);
