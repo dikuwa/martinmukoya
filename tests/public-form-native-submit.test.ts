@@ -25,7 +25,7 @@ for (const path of forms) {
 
     for (const node of formsFound) {
       const method = node.attributes.properties.find(
-        (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.text === "method"
+        (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.getText(ast) === "method"
       );
       assert.ok(method?.initializer && ts.isStringLiteral(method.initializer));
       assert.equal(method.initializer.text.toLowerCase(), "post");
@@ -43,12 +43,12 @@ for (const path of forms) {
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
         if (node.tagName.getText(ast) === "Button") {
           const type = node.attributes.properties.find(
-            (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.text === "type"
+            (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.getText(ast) === "type"
           );
           if (type?.initializer && ts.isStringLiteral(type.initializer) && type.initializer.text === "submit") {
             submitButtons++;
             const disabled = node.attributes.properties.find(
-              (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.text === "disabled"
+              (attr): attr is ts.JsxAttribute => ts.isJsxAttribute(attr) && attr.name.getText(ast) === "disabled"
             );
             assert.ok(disabled?.initializer);
             assert.match(disabled.initializer.getText(ast), /!hydrated/);
