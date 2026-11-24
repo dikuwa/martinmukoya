@@ -67,6 +67,7 @@ test("duplicate customer submissions and concurrent lead conversion preserve one
   expect(await customers.find(response => response.status() === 409)!.json()).toMatchObject({
     existingId: customer.id,
   });
+  expect(await query('SELECT id FROM "Contact" WHERE LOWER(email) = LOWER($1)', [email])).toEqual([{ id: customer.id }]);
 
   const lead = await page.request.post("/api/admin/leads", { data: {
     name: "Synthetic PostgreSQL lead", email: email.toUpperCase(),
@@ -79,7 +80,7 @@ test("duplicate customer submissions and concurrent lead conversion preserve one
   expect(bookings.map(response => response.status())).toEqual([201, 201]);
   const [first, second] = await Promise.all(bookings.map(response => response.json()));
   expect(second.id).toBe(first.id);
-  expect((await query<{ id: string; "contactId": string; "siteId": string }>('SELECT id, "contactId", "siteId" FROM "Booking" WHERE "leadId" = $1', [leadId]))[0]).toMatchObject({ id: first.id, contactId: customer.id, siteId: site.id });
+  expect(await query('SELECT id, "contactId", "siteId" FROM "Booking" WHERE "leadId" = $1', [leadId])).toEqual([{ id: first.id, contactId: customer.id, siteId: site.id }]);
   expect(Number((await query<{ count: string }>('SELECT COUNT(*)::text AS count FROM "Contact" WHERE LOWER(email) = LOWER($1)', [email]))[0].count)).toBe(1);
 });
 
