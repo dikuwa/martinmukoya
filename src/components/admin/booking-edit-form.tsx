@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 
 const field = "h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-4 text-sm outline-none focus:border-[color:var(--primary)]";
 
-export function BookingEditForm({ booking, sites, customers }: { booking: { id: string; kind: string; contactId: string | null; siteId: string; customerName: string; customerEmail: string | null; customerPhone: string | null; company: string | null; budgetRange: string | null; projectDescription: string; leadId: string | null; contractAmount: { toString(): string } | string | number | null }; sites: Array<{ id: string; name: string }>; customers: Array<{ id: string; name: string; email: string | null }> }) {
+export function BookingEditForm({ booking, sites, customers }: { booking: { id: string; kind: string; contactId: string | null; siteId: string; source: string; customerName: string; customerEmail: string | null; customerPhone: string | null; company: string | null; budgetRange: string | null; projectDescription: string; leadId: string | null; contractAmount: { toString(): string } | string | number | null }; sites: Array<{ id: string; name: string }>; customers: Array<{ id: string; name: string; email: string | null }> }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
@@ -46,6 +46,25 @@ export function BookingEditForm({ booking, sites, customers }: { booking: { id: 
           options={[{ value: "", label: "Keep current link" }, ...customers.map(customer => ({
             value: customer.id, label: [customer.name, customer.email].filter(Boolean).join(" · "),
           }))]} className={field}/>
+      </label>
+      <label className="grid gap-2 text-sm font-bold">How this booking arrived
+        <DashboardSelect
+          name="source"
+          defaultValue={booking.source}
+          options={[
+            { value: "unspecified", label: "Not recorded" },
+            { value: "walk-in", label: "Walk-in" },
+            { value: "referral", label: "Referral" },
+            { value: "phone", label: "Phone call" },
+            { value: "WhatsApp", label: "WhatsApp" },
+            { value: "email", label: "Email" },
+            { value: "website", label: "Website enquiry" },
+            { value: "manual", label: "Manual / existing client" },
+            { value: "other", label: "Other" },
+            ...(!["unspecified", "walk-in", "referral", "phone", "WhatsApp", "email", "website", "manual", "other"].includes(booking.source) ? [{ value: booking.source, label: booking.source }] : []),
+          ]}
+          className={field}
+        />
       </label>
       {booking.kind === "SERVICE" && <label className="flex items-center gap-2 text-sm font-bold md:col-span-2">
         <input type="checkbox" name="promoteToProject"/> Promote this quick service to a project

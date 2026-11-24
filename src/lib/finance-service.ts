@@ -86,7 +86,7 @@ export async function ensureBookingFromLead(leadId: string, userId?: string) {
       number: bookingNumber(), siteId: lead.siteId, leadId: lead.id, contactId,
       customerName: lead.name, customerEmail: lead.email, customerPhone: lead.phone,
       company: lead.company, projectDescription: lead.projectGoal || lead.message,
-      budgetRange: lead.budgetRange, createdById: userId,
+      budgetRange: lead.budgetRange, source: lead.source || "website", createdById: userId,
     } });
   });
 }

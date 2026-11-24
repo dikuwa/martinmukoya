@@ -14,6 +14,7 @@ export const bookingCreateSchema = z.object({
   customerName: z.string().trim().min(2), customerEmail: optionalEmail,
   customerPhone: optionalText, company: optionalText, projectDescription: z.string().trim().min(3), budgetRange: optionalText,
   contractAmount: optionalMoney,
+  source: z.string().trim().min(1).max(60).optional(),
 });
 
 export const documentDraftSchema = z.object({

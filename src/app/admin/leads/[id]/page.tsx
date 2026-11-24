@@ -133,6 +133,9 @@ export default async function LeadDetailPage({ params }: PageProps) {
             </a>
           </Button>
           <Button asChild size="sm" variant="secondary">
+            <Link href={`/admin/customers?lead=${lead.id}`}>Add customer</Link>
+          </Button>
+          <Button asChild size="sm" variant="secondary">
             <Link href={lead.financialBooking ? `/admin/documents?booking=${lead.financialBooking.id}` : `/admin/documents?lead=${lead.id}`}>
               Create document
             </Link>

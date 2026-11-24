@@ -12,7 +12,13 @@ type Customer = {
   town: string | null; notes: string | null; status: string;
 };
 const field = "h-10 w-full rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm";
-export function CustomerForm({ customer }: { customer?: Customer }) {
+type CustomerPrefill = Pick<Customer, "name" | "email" | "phone" | "whatsAppNumber" | "company">;
+export function CustomerForm({ customer, initial, bookingId, leadId }: {
+  customer?: Customer;
+  initial?: CustomerPrefill | null;
+  bookingId?: string;
+  leadId?: string;
+}) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [existing, setExisting] = useState("");
@@ -20,7 +26,11 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
     event.preventDefault();
     setSaving(true); setExisting("");
     try {
-      const body = Object.fromEntries(new FormData(event.currentTarget).entries());
+      const body = {
+        ...Object.fromEntries(new FormData(event.currentTarget).entries()),
+        ...(!customer && bookingId ? { bookingId } : {}),
+        ...(!customer && leadId ? { leadId } : {}),
+      };
       const response = await fetch(customer ? `/api/admin/customers/${customer.id}` : "/api/admin/customers", {
         method: customer ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
@@ -44,7 +54,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
     <div className="grid gap-3 sm:grid-cols-2">{inputs.map(([name,label]) =>
       <label key={name} className="grid gap-1 text-sm font-medium">{label}
         <input className={field} name={name} type={name === "email" ? "email" : "text"}
-          defaultValue={customer?.[name] || ""} required={name === "name"}/>
+          defaultValue={customer?.[name] || initial?.[name as keyof CustomerPrefill] || ""} required={name === "name"}/>
       </label>)}
       <label className="grid gap-1 text-sm font-medium">Stage
         <DashboardSelect name="status" defaultValue={customer?.status || "CUSTOMER"} className={field}
@@ -54,7 +64,7 @@ export function CustomerForm({ customer }: { customer?: Customer }) {
     <label className="grid gap-1 text-sm font-medium">Notes
       <textarea name="notes" defaultValue={customer?.notes || ""} rows={3} className={field + " h-auto py-2"}/>
     </label>
-    {existing && <p role="alert" className="text-sm">This contact may already exist. <a className="underline" href={`/admin/customers/${existing}`}>Open existing customer</a></p>}
+    {existing && <p role="alert" className="text-sm">This customer already exists. <a className="font-semibold underline" href={`/admin/customers/${existing}`}>Open existing customer</a> instead of creating a duplicate.</p>}
     <div><Button disabled={saving}>{saving ? "Saving…" : customer ? "Save changes" : "Add customer"}</Button></div>
   </form>;
 }
