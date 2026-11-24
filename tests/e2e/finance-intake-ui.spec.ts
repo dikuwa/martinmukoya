@@ -75,3 +75,15 @@ test("manual referral booking becomes a customer and supports switching financia
   await page.reload();
   await expect(page.getByText(/Outstanding balance: N\$250\.00/)).toBeVisible();
 });
+
+test("lead editor dropdown remains interactive inside a modal dialog", async ({ page }) => {
+  await loginAsAdmin(page, "/admin/business-documents/new");
+  await page.getByRole("button", { name: "Create new lead" }).click();
+  const dialog = page.getByRole("dialog", { name: "Create new lead" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "EMAIL", exact: true }).first().click();
+  await expect(dialog.getByRole("option", { name: "PHONE", exact: true })).toBeVisible();
+  await dialog.getByRole("option", { name: "PHONE", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "PHONE", exact: true })).toBeVisible();
+  await expect(dialog).toBeVisible();
+});
