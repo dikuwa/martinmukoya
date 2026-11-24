@@ -73,5 +73,15 @@ test.describe("Admin responsive layout", () => {
         fullPage: true,
       });
     });
+
+    test(`financial settings fit at ${vp.label} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize(vp);
+      await loginAsAdmin(page, "/admin/documents/settings");
+
+      await expect(page.locator("h1")).toBeVisible({ timeout: 20000 });
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(scrollWidth).toBeLessThanOrEqual(vp.width + 5);
+      await expect(page.locator('button[aria-haspopup="listbox"]').first()).toHaveAccessibleName();
+    });
   }
 });

@@ -82,7 +82,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
         ))}
       </section>
       <section className="grid gap-4 border-t border-[color:var(--border-subtle)] pt-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div>
             <h2 className="font-display text-xl font-black">Accepted payment methods</h2>
             <p className="text-sm text-[color:var(--text-muted)]">Add, remove, and reorder the methods printed on documents.</p>
@@ -92,7 +92,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
           </Button>
         </div>
         {methods.map((method, index) => (
-          <div key={index} className="flex gap-2">
+          <div key={index} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2">
             <input
               aria-label={`Payment method ${index + 1}`}
               value={method}

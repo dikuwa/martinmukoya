@@ -49,7 +49,7 @@ export default function FinanceSettingsPage() {
             value={selectedSite ?? ""}
             onChange={e => setSelectedSite(e.target.value === "" ? null : e.target.value)}
             options={siteOptions}
-            className="w-[300px]"
+            className="w-full sm:w-[300px]"
           />
         }
       />
