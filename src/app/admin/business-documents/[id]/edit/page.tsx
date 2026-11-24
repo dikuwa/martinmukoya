@@ -8,7 +8,8 @@ import { requireAdmin } from "@/lib/auth-guard";
 type Props = { params: Promise<{ id: string }> };
 
 export default async function EditBusinessDocumentPage({ params }: Props) {
-  const { session } = await requireAdmin();
+  const { session, error } = await requireAdmin();
+  if (error) notFound();
   const id = (await params).id;
   const doc = await db.businessDocument.findUnique({
     where: { id },

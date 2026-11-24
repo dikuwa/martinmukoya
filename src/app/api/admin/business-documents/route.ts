@@ -14,6 +14,7 @@ const createSchema = z.object({
   leadId: z.string().trim().optional().nullable(),
   projectId: z.string().trim().optional().nullable(),
   financialDocumentId: z.string().trim().optional().nullable(),
+  siteId: z.string().trim().min(1).optional().nullable(),
   serviceId: z.string().optional(),
   templateId: z.string().trim().optional().nullable(),
   companyName: z.string().trim().max(200).optional(),
@@ -82,10 +83,11 @@ export async function POST(request: Request) {
     const templateId = input.templateId || undefined;
     const leadId = input.leadId || undefined;
     const projectId = input.projectId || undefined;
-    const [template, lead, project, firstSite] = await Promise.all([
+    const [template, lead, project, selectedSite, firstSite] = await Promise.all([
       templateId ? db.businessDocumentTemplate.findUnique({ where: { id: templateId } }) : null,
       leadId ? db.lead.findUnique({ where: { id: leadId } }) : null,
       projectId ? db.project.findUnique({ where: { id: projectId } }) : null,
+      input.siteId ? db.site.findFirst({ where: { OR: [{ id: input.siteId }, { slug: input.siteId }] } }) : null,
       db.site.findFirst({ orderBy: { createdAt: "asc" } })
     ]);
     if (templateId && !template) return Response.json({ error: "The selected template no longer exists." }, { status: 400 });
@@ -94,6 +96,7 @@ export async function POST(request: Request) {
     }
     if (leadId && !lead) return Response.json({ error: "The selected lead no longer exists." }, { status: 400 });
     if (projectId && !project) return Response.json({ error: "The selected project no longer exists." }, { status: 400 });
+    if (input.siteId && !selectedSite) return Response.json({ error: "The selected document identity no longer exists." }, { status: 400 });
     const templateSnapshot = template ? {
       id: template.id,
       name: template.name,
@@ -113,7 +116,7 @@ export async function POST(request: Request) {
       leadId,
       projectId,
       financialDocumentId: input.financialDocumentId || undefined,
-      siteId: lead?.siteId || firstSite?.id,
+      siteId: selectedSite?.id || lead?.siteId || firstSite?.id,
       templateVersion: template ? 1 : undefined,
       templateSnapshot,
       userId: session.user.id

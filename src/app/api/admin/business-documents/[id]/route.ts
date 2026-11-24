@@ -15,6 +15,7 @@ const updateSchema = z.object({
   leadId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   financialDocumentId: z.string().optional().nullable(),
+  siteId: z.string().trim().min(1).optional().nullable(),
   serviceId: z.string().optional(),
   templateId: z.string().optional().nullable(),
   companyName: z.string().trim().max(200).optional(),
@@ -66,6 +67,11 @@ export async function PATCH(request: Request, context: Context) {
     if (existing.status !== "DRAFT") return Response.json({ error: "Only draft documents can be edited." }, { status: 409 });
     const input = await request.json();
     const parsed = updateSchema.parse(input);
+    if (parsed.siteId) {
+      const site = await db.site.findFirst({ where: { OR: [{ id: parsed.siteId }, { slug: parsed.siteId }] }, select: { id: true } });
+      if (!site) return Response.json({ error: "The selected document identity no longer exists." }, { status: 400 });
+      parsed.siteId = site.id;
+    }
     const result = await updateBusinessDocument(id, { ...parsed, userId: session.user.id });
     return ok(result);
   } catch (error) {

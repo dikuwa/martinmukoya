@@ -7,6 +7,7 @@ import { BusinessDocumentActions } from "@/components/admin/business-document-ac
 import { BusinessDocumentPreview } from "@/components/documents/business-document-preview";
 import { getIssuerSnapshot } from "@/lib/finance-service";
 import { Card } from "@/components/ui/card";
+import { requireAdmin } from "@/lib/auth-guard";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -20,6 +21,8 @@ const docTypeLabels: Record<string, string> = {
 };
 
 export default async function BusinessDocumentPage({ params }: Props) {
+  const { error } = await requireAdmin();
+  if (error) notFound();
   const id = (await params).id;
   const doc = await db.businessDocument.findUnique({
     where: { id },

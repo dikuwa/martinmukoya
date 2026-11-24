@@ -225,6 +225,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         leadId: selectedLead || null,
         projectId: selectedProject || null,
         financialDocumentId: selectedFinancialDocument || null,
+        siteId: selectedIdentity || null,
         companyName: companyName.trim() || undefined,
         recipientName: recipientName.trim() || undefined,
         recipientEmail: recipientEmail.trim() || undefined,

@@ -2,10 +2,12 @@ import { db } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { BusinessDocumentComposer } from "@/components/admin/business-document-composer";
 import { getIssuerSnapshot } from "@/lib/finance-service";
+import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export default async function NewBusinessDocumentPage() {
-  const { session } = await requireAdmin();
+  const { session, error } = await requireAdmin();
+  if (error) notFound();
   const [templates, leads, projects, financialDocuments, sites, issuer] = await Promise.all([
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
