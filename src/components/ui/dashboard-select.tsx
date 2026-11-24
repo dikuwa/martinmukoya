@@ -231,7 +231,10 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
               )}
             </div>
           </div>,
-          document.body,
+          // Radix dialogs enforce an interaction/focus boundary. Keep the
+          // popup inside the active dialog when one exists, otherwise use body.
+          // Fixed positioning prevents card and scrolling-panel clipping.
+          triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? document.body,
         )}
       </div>
     );
