@@ -89,7 +89,7 @@ export function FinancialPdf({document,baseUrl}:{document:PdfDoc;baseUrl:string}
             <Text style={s.muted}>{document.customerEmail}</Text>
           </View>
           <View style={[s.third,{textAlign:"center"}]}>
-            <Text style={s.muted}>PROJECT</Text>
+            <Text style={s.muted}>{document.booking.kind === "SERVICE" ? "SERVICE" : "PROJECT"}</Text>
             <Text>{document.booking.projectDescription}</Text>
             <Text style={s.muted}>{document.booking.number}</Text>
           </View>

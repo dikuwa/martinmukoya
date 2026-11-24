@@ -27,6 +27,8 @@ const adminNav: AdminNavItem[] = [
   { href: "/admin/about", label: "About", icon: UserRound, martinOnly: true, group: "Content" },
   { href: "/admin/blog", label: "Blog", icon: Newspaper, group: "Content" },
   { href: "/admin/leads", label: "Leads", icon: Users, countKey: "leads", group: "Content" },
+  { href: "/admin/customers", label: "Customers", icon: Users, group: "Finance & documents" },
+  { href: "/admin/services", label: "Services", icon: FolderKanban, group: "Finance & documents" },
   { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck, group: "Content" },
   { href: "/admin/documents", label: "Financial", icon: FileText, group: "Finance & documents" },
   { href: "/admin/business-documents", label: "Business docs", icon: FileText, group: "Finance & documents" },

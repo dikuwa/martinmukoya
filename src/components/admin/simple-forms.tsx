@@ -150,7 +150,7 @@ export function BlogPostForm({ initialData }: { initialData?: Partial<BlogPost> 
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
         <Field label="Title" error={form.formState.errors.title?.message}><input {...form.register("title")} className={inputClass} /></Field>
         <Field label="Slug" error={form.formState.errors.slug?.message}><input {...form.register("slug")} className={inputClass} placeholder="better-lead-capture" /></Field>
@@ -260,7 +260,7 @@ export function TestimonialForm({ initialData }: { initialData?: Partial<Testimo
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Client name" error={form.formState.errors.clientName?.message}><input {...form.register("clientName")} className={inputClass} /></Field>
         <Field label="Role"><input {...form.register("role")} className={inputClass} /></Field>
@@ -323,7 +323,7 @@ export function FAQForm({ initialData }: { initialData?: Partial<FAQ> & { sites?
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Question" error={form.formState.errors.question?.message}><input {...form.register("question")} className={inputClass} /></Field>
       <Field label="Answer" error={form.formState.errors.answer?.message}><textarea {...form.register("answer")} className={textareaClass} /></Field>
       <div className="grid gap-5 md:grid-cols-2">
@@ -363,7 +363,7 @@ export function LeadStatusForm({ lead }: { lead: Lead }) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
         <DashboardSelect
           {...form.register("status")}
@@ -396,7 +396,7 @@ export function ContactMessageStatusForm({ message }: { message: ContactMessage 
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Status">
         <DashboardSelect
           {...form.register("status")}
@@ -430,7 +430,7 @@ export function ChatSessionStatusForm({ session }: { session: ChatSession }) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Summary">
         <textarea {...form.register("summary")} className={textareaClass} placeholder="Short note for follow-up context" />
       </Field>
@@ -491,7 +491,7 @@ export function SiteSettingForm({ setting }: { setting: SiteSetting & { site?: {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <p className="font-display text-2xl font-black text-[color:var(--text-strong)]">{setting.key}</p>
       <p className="text-sm font-semibold text-[color:var(--text-muted)]">Site: {setting.site?.name ?? "Global"}</p>
       {isAvailability ? (
@@ -566,7 +566,7 @@ export function SiteSettingCreateForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className={formShellClass}>
       <Field label="Setting key" error={form.formState.errors.key?.message}>
         <input {...form.register("key")} className={inputClass} placeholder="homepage.hero" />
       </Field>

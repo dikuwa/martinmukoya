@@ -63,6 +63,25 @@ export function calculateDocumentTotals(input: {
   };
 }
 
+/**
+ * Validate a single payment before any financial transaction or rounding.
+ * Payment and receipt columns store two decimal places, so fractions of cents
+ * must be rejected rather than rounded into a different recorded amount.
+ */
+export function parsePaymentAmount(value: string | number): number {
+  const raw = String(value).trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(raw)) {
+    throw new Error("Payment must be a positive amount with at most two decimal places.");
+  }
+  const [whole, fraction = ""] = raw.split(".");
+  const cents = BigInt(whole) * BigInt(100) + BigInt(fraction.padEnd(2, "0"));
+  // Keep the conversion to JavaScript numbers safe for existing balance checks.
+  if (cents <= BigInt(0) || cents > BigInt(99999999999)) {
+    throw new Error("Payment amount must be between 0.01 and 999999999.99.");
+  }
+  return Number(cents) / 100;
+}
+
 export function formatNad(value: string | number) {
   return `N$${new Intl.NumberFormat("en-NA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))}`;
 }

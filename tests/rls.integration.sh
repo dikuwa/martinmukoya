@@ -15,8 +15,9 @@ node --input-type=module - <<'JS' | psql_test >/dev/null
 import fs from 'node:fs';
 const schema=fs.readFileSync('prisma/schema.prisma','utf8');
 const sql=fs.readFileSync('prisma/migrations/20261117000000_secure_public_tables/migration.sql','utf8');
+const financeSql=fs.readFileSync('prisma/migrations/20261120000000_customer_finance_workflows/migration.sql','utf8');
 const models=[...schema.matchAll(/^model (\w+) \{/gm)].map(m=>m[1]);
-for(const name of models) if(!sql.includes(`'${name}'`)) throw new Error(`Unprotected Prisma model ${name}`);
+for(const name of models) if(!sql.includes(`'${name}'`) && !financeSql.includes(`'${name}'`)) throw new Error(`Unprotected Prisma model ${name}`);
 const names=[...sql.matchAll(/'([A-Za-z_][A-Za-z_0-9]*)'/g)].map(m=>m[1]).filter(n=>models.includes(n)||n.startsWith('_'));
 console.log('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE trusted LOGIN BYPASSRLS; CREATE ROLE inherited_api;');
 for(const name of new Set(names)) console.log(`CREATE TABLE public."${name}" (id int PRIMARY KEY, secret text); INSERT INTO public."${name}" VALUES (1, 'synthetic'); GRANT ALL ON public."${name}" TO PUBLIC, anon, authenticated, trusted; GRANT SELECT(secret) ON public."${name}" TO anon;`);

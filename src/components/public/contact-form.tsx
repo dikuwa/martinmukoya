@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Check, ChevronDown, MessageCircle, Send } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
@@ -33,6 +33,8 @@ const preferredContactOptions = [
 
 export function ContactForm({ site }: { site: PublicSiteConfig }) {
   const [submitted, setSubmitted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const pageCopy = site.pages.contact;
   const formStarted = useRef(false);
   const submitMessage = useMutation({
@@ -145,7 +147,7 @@ export function ContactForm({ site }: { site: PublicSiteConfig }) {
   }
 
   return (
-    <form className="grid gap-4" onFocusCapture={trackFormStart} onSubmit={form.handleSubmit(onSubmit)}>
+    <form method="post" className="grid gap-4" onFocusCapture={trackFormStart} onSubmit={form.handleSubmit(onSubmit)}>
       <input {...form.register("website")} className="hidden" tabIndex={-1} autoComplete="off" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" error={form.formState.errors.name?.message}>
@@ -177,7 +179,7 @@ export function ContactForm({ site }: { site: PublicSiteConfig }) {
       <Field label="Message" error={form.formState.errors.message?.message}>
         <textarea {...form.register("message")} className={`${inputClass} min-h-36 resize-y py-3`} placeholder="Tell me what you want to build, fix, or improve..." />
       </Field>
-      <Button className="justify-self-start" type="submit" disabled={form.formState.isSubmitting || submitMessage.isPending}>
+      <Button className="justify-self-start" type="submit" disabled={!hydrated || form.formState.isSubmitting || submitMessage.isPending}>
         {form.formState.isSubmitting || submitMessage.isPending ? "Sending..." : "Send Message"} <Send size={16} />
       </Button>
     </form>

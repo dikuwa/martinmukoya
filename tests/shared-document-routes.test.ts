@@ -24,6 +24,7 @@ function loadRoute(path: string, share: unknown, file?: string) {
  vm.runInNewContext(source, { exports, Response, URL, Uint8Array, console, require: (name: string) => {
   if (name === "next/server") return { NextResponse: Response };
   if (name === "@/lib/db") return { db: transactionalDb };
+  if (name === "@/lib/payment-transaction") return { runPaymentTransaction: transactionalDb.$transaction };
   if (name === "@/lib/auth-guard") return { requireAdmin: async () => ({}) };
   if (name === "@/lib/api") return { ok: (data: unknown) => Response.json(data), serverError: () => Response.json({}, { status: 500 }) };
   if (name === "@/lib/shared-document-access") return access;

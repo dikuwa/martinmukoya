@@ -365,6 +365,10 @@ model Contact {
   whatsAppConfirmed Boolean @default(false)
   company         String?
   notes           String?
+  address         String?
+  town            String?
+  status          String   @default("CUSTOMER")
+  bookings        Booking[]
   createdById     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -376,6 +380,9 @@ model Contact {
 }
 
 model Booking {
+  contactId          String?
+  contact            Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  kind               String         @default("PROJECT")
   id                 String        @id @default(cuid())
   number             String        @unique
   siteId             String
@@ -387,6 +394,7 @@ model Booking {
   projectDescription String
   budgetRange        String?
   contractAmount     Decimal?      @db.Decimal(12, 2)
+  source             String        @default("unspecified")
   status             BookingStatus @default(ACTIVE)
   createdById        String?
   createdAt          DateTime      @default(now())
@@ -398,6 +406,7 @@ model Booking {
   payments           Payment[]
 
   @@index([siteId, createdAt])
+  @@index([contactId])
   @@index([status, createdAt])
   @@index([customerName])
 }
@@ -449,6 +458,7 @@ model FinancialDocument {
   createdBy             User?          @relation("DocumentCreator", fields: [createdById], references: [id], onDelete: SetNull)
   lineItems             DocumentLineItem[]
   payments              Payment[]      @relation("InvoicePayments")
+  reminders             InvoiceReminder[]
   receiptForPayment     Payment?       @relation("PaymentReceipt")
   sharedDocument        SharedDocument?
   businessDocuments     BusinessDocument[]
@@ -497,6 +507,27 @@ model Payment {
   @@index([siteId, paidAt])
   @@index([bookingId, paidAt])
   @@index([invoiceId])
+}
+
+model ServiceCatalogItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @default(0) @db.Decimal(12, 2)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InvoiceReminder {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     FinancialDocument @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  channel     String
+  destination String?
+  message     String
+  createdAt   DateTime @default(now())
+  @@index([invoiceId, createdAt])
 }
 
 model ContactMessage {

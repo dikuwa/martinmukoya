@@ -43,7 +43,7 @@ export function LiveChatPanel({ initial }: { initial: Chat }) {
       </div>)}
       <div ref={bottom} />
     </div>
-    <form className="flex gap-2 border-t border-[color:var(--border-subtle)] p-4" onSubmit={e => { e.preventDefault(); act("message"); }}>
+    <form method="post" className="flex gap-2 border-t border-[color:var(--border-subtle)] p-4" onSubmit={e => { e.preventDefault(); act("message"); }}>
       <input className="min-w-0 flex-1 rounded-xl border border-[color:var(--border-subtle)] bg-transparent px-4" value={draft} onChange={e => setDraft(e.target.value)} placeholder={chat.mode === "HUMAN" ? "Reply to visitor…" : "Join the chat to reply"} disabled={chat.mode !== "HUMAN" || busy} />
       <Button disabled={chat.mode !== "HUMAN" || busy || !draft.trim()}>Send</Button>
     </form>
