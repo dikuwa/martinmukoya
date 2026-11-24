@@ -40,6 +40,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         projectDescription: input.projectDescription,
         budgetRange: input.budgetRange,
         contractAmount: input.contractAmount != null && input.contractAmount !== "" ? String(input.contractAmount) : null,
+        source: input.source || undefined,
       } }));
     });
   } catch (error) {
