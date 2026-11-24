@@ -16,8 +16,7 @@ export async function POST(_request: Request, context: Context) {
       if (!payment || payment.reversedAt) throw new Error("Payment is already reversed or missing.");
 
       const reversedAt = new Date();
-      const reversed = await tx.payment.updateMany({ where: { id, reversedAt: null }, data: { reversedAt } });
-      if (!reversed.count) throw new Error("Payment is already reversed or missing.");
+      await tx.payment.update({ where: { id }, data: { reversedAt } });
       if (payment.receiptDocumentId) {
         await tx.sharedDocument.updateMany({
           where: { financialDocumentId: payment.receiptDocumentId },
