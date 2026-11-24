@@ -57,10 +57,11 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
       const availableAbove = rectangle.top - gap - 8;
       const above = availableBelow < 160 && availableAbove > availableBelow;
       const maxHeight = Math.max(100, Math.min(288, above ? availableAbove : availableBelow));
+      const width = Math.min(Math.max(rectangle.width, 180), window.innerWidth - 16);
       setPosition({
         top: above ? Math.max(8, rectangle.top - maxHeight - gap) : rectangle.bottom + gap,
-        left: Math.max(8, Math.min(rectangle.left, window.innerWidth - 220)),
-        width: Math.min(Math.max(rectangle.width, 180), window.innerWidth - 16),
+        left: Math.max(8, Math.min(rectangle.left, window.innerWidth - width - 8)),
+        width,
         maxHeight,
       });
     }, []);
