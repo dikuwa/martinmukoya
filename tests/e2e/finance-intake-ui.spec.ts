@@ -60,7 +60,10 @@ test("manual referral booking becomes a customer and supports switching financia
   await page.getByRole("button", { name: "Create document" }).click();
   await expect(page).toHaveURL(/\/admin\/documents\/[^/]+$/);
   const invoiceId = page.url().split("/").at(-1);
+  const issueResponse = page.waitForResponse(response =>
+    response.url().endsWith(`/api/admin/documents/${invoiceId}/issue`) && response.request().method() === "POST");
   await page.getByRole("button", { name: "Issue document" }).click();
+  expect((await issueResponse).ok()).toBe(true);
 
   await page.goto(`/admin/documents?invoice=${invoiceId}`);
   await page.getByRole("button", { name: "Choose an unpaid invoice or project" }).click();
