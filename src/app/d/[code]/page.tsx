@@ -9,7 +9,7 @@ import { BusinessDocumentPreview } from "@/components/documents/business-documen
 import { PublicBusinessDocument } from "@/components/public/public-business-document";
 import { PublicFinancialDocumentActions } from "@/components/public/public-financial-document-actions";
 import { trackSharedDocumentView } from "@/lib/business-document-service";
-import { getIssuerSnapshot } from "@/lib/finance-service";
+import { businessDocumentIssuer } from "@/lib/business-document-service";
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -66,7 +66,7 @@ export default async function SharedDocumentPage({ params }: Props) {
     });
     if (!document) notFound();
 
-    const issuer = await getIssuerSnapshot(document.siteId ?? null);
+    const issuer = await businessDocumentIssuer(document);
 
     const previewDoc = {
       id: document.id,

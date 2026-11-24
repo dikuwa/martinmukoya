@@ -1,4 +1,4 @@
-import { ok, serverError } from "@/lib/api";
+import { notFound, ok, serverError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { computeOutstanding, sumActivePayments } from "@/lib/financial";
 import { runPaymentTransaction } from "@/lib/payment-transaction";
@@ -11,9 +11,10 @@ export async function POST(_request: Request, context: Context) {
     if (error) return error;
     const { id } = await context.params;
 
-    return ok(await runPaymentTransaction(async tx => {
+    return await runPaymentTransaction(async tx => {
       const payment = await tx.payment.findUnique({ where: { id } });
-      if (!payment || payment.reversedAt) throw new Error("Payment is already reversed or missing.");
+      if (!payment) return notFound("Payment not found.");
+      if (payment.reversedAt) return ok({ error: "Payment is already reversed." }, { status: 409 });
 
       const reversedAt = new Date();
       await tx.payment.update({ where: { id }, data: { reversedAt } });
@@ -38,8 +39,8 @@ export async function POST(_request: Request, context: Context) {
           await tx.financialDocument.update({ where: { id: invoice.id }, data: { status } });
         }
       }
-      return { reversed: true };
-    }));
+      return ok({ reversed: true });
+    });
   } catch (error) {
     return serverError(error);
   }

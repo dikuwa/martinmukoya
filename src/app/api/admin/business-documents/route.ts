@@ -2,6 +2,7 @@ import { ok, created, serverError, parseJson } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { InvalidDocumentLinks, resolveBusinessDocumentLinks } from "@/lib/business-document-links";
 import { createBusinessDocument } from "@/lib/business-document-service";
 import { trackServerEvent } from "@/lib/analytics";
 import { BusinessDocumentStatus, BusinessDocumentType, Prisma } from "@/generated/prisma/client";
@@ -80,46 +81,9 @@ export async function POST(request: Request) {
     const { session, error } = await requireAdmin();
     if (error) return error;
     const input = await parseJson(request, createSchema);
-    const templateId = input.templateId || undefined;
-    const leadId = input.leadId || undefined;
-    const projectId = input.projectId || undefined;
-    const [template, lead, project, selectedSite, firstSite] = await Promise.all([
-      templateId ? db.businessDocumentTemplate.findUnique({ where: { id: templateId } }) : null,
-      leadId ? db.lead.findUnique({ where: { id: leadId } }) : null,
-      projectId ? db.project.findUnique({ where: { id: projectId } }) : null,
-      input.siteId ? db.site.findFirst({ where: { OR: [{ id: input.siteId }, { slug: input.siteId }] } }) : null,
-      db.site.findFirst({ orderBy: { createdAt: "asc" } })
-    ]);
-    if (templateId && !template) return Response.json({ error: "The selected template no longer exists." }, { status: 400 });
-    if (template && template.documentCategory !== input.documentType) {
-      return Response.json({ error: "The selected template is not compatible with this document type." }, { status: 400 });
-    }
-    if (leadId && !lead) return Response.json({ error: "The selected lead no longer exists." }, { status: 400 });
-    if (projectId && !project) return Response.json({ error: "The selected project no longer exists." }, { status: 400 });
-    if (input.siteId && !selectedSite) return Response.json({ error: "The selected document identity no longer exists." }, { status: 400 });
-    const templateSnapshot = template ? {
-      id: template.id,
-      name: template.name,
-      documentCategory: template.documentCategory,
-      defaultTitle: template.defaultTitle,
-      defaultSubject: template.defaultSubject,
-      defaultBodyMarkdown: template.defaultBodyMarkdown,
-      signatureRequired: template.signatureRequired,
-      senderName: template.senderName,
-      senderRole: template.senderRole,
-      updatedAt: template.updatedAt.toISOString()
-    } : undefined;
+    const links = await resolveBusinessDocumentLinks(input);
     const doc = await createBusinessDocument({
-      ...input,
-      contactId: input.contactId || undefined,
-      templateId,
-      leadId,
-      projectId,
-      financialDocumentId: input.financialDocumentId || undefined,
-      siteId: selectedSite?.id || lead?.siteId || firstSite?.id,
-      templateVersion: template ? 1 : undefined,
-      templateSnapshot,
-      userId: session.user.id
+      ...input, ...links, contactId: input.contactId || undefined, userId: session.user.id,
     });
     void trackServerEvent({
       eventType: "business_document_created",
@@ -128,6 +92,7 @@ export async function POST(request: Request) {
     }).catch(() => undefined);
     return created(doc);
   } catch (error) {
+    if (error instanceof InvalidDocumentLinks) return Response.json({ error: error.message }, { status: 400 });
     if (error instanceof z.ZodError) return Response.json({ error: error.issues[0]?.message || "Validation failed", issues: error.issues }, { status: 400 });
     const errorId = crypto.randomUUID();
     console.error("business_document.create failed", { errorId, error });

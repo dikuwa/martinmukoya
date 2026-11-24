@@ -65,18 +65,14 @@ test.describe("Seeded business document", () => {
     console.log(`PDF: ${JSON.stringify(pdfResult)}`);
   });
 
-  test("shares existing document and opens public view", async ({ page }) => {
+  test("shares existing document and prints the public view", async ({ page }, testInfo) => {
     await loginAsAdmin(page, docUrl);
 
     // Wait for page to load
     await expect(page.locator("article").first()).toBeVisible({ timeout: 15000 });
 
-    // Create (or reuse) a share link via the API.
-    // SharedDocument.businessDocumentId has a @unique constraint, so the
-    // POST may return 409 if a share already exists from a previous run.
+    // The API returns the existing share link when this fixture is retried.
     const shareResult = await page.evaluate(async () => {
-      let shortCode: string | null = null;
-
       // Only issued documents can be shared publicly.
       const documentResponse = await fetch("/api/admin/business-documents/e2e-test-biz-doc");
       if (!documentResponse.ok) throw new Error(`Document API returned ${documentResponse.status}`);
@@ -85,28 +81,14 @@ test.describe("Seeded business document", () => {
         if (!issued.ok) throw new Error(`Issue API returned ${issued.status}: ${await issued.text()}`);
       }
 
-      // Try creating a new share link
       const res = await fetch("/api/admin/shared-documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId: "e2e-test-biz-doc", documentType: "business" }),
       });
 
-      if (res.ok) {
-        const data = await res.json() as { shortCode: string };
-        shortCode = data.shortCode;
-      } else if (res.status === 409) {
-        // Share already exists — fetch it from the public view via a fallback
-        // The sidebar should show the existing share code on the page
-        const sidebarText = document.body.innerText;
-        const match = sidebarText.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (match) shortCode = match[1];
-      }
-
-      if (!shortCode) {
-        throw new Error(`Could not create or find share link (API returned ${res.status})`);
-      }
-      return { shortCode };
+      if (!res.ok) throw new Error(`Share API returned ${res.status}: ${await res.text()}`);
+      return await res.json() as { shortCode: string };
     });
 
     expect(shareResult.shortCode).toBeDefined();
@@ -128,5 +110,19 @@ test.describe("Seeded business document", () => {
 
     await page.screenshot({ path: "test-results/e2e/seeded-doc-shared.png" });
     expect(consoleErrors, `Public shared document browser errors: ${JSON.stringify(consoleErrors)}`).toEqual([]);
+
+    const print = page.getByRole("button", { name: "Print", exact: true });
+    await expect(print).toBeVisible();
+    await page.emulateMedia({ media: "print" });
+    await expect(print).toBeHidden();
+    await expect(publicArticle).toBeVisible();
+    await expect(publicArticle).toContainText("E2E Test Client");
+    const printed = await page.pdf({
+      path: testInfo.outputPath("shared-proposal-print.pdf"),
+      preferCSSPageSize: true,
+      printBackground: true,
+    });
+    expect(printed.subarray(0, 4).toString()).toBe("%PDF");
+    expect(printed.length).toBeGreaterThan(500);
   });
 });

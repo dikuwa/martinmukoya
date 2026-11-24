@@ -10,6 +10,11 @@ export async function POST(request: Request) {
     const { session, error } = await requireAdmin(); if (error) return error;
     const input = await parseJson(request, bookingCreateSchema);
     const site = await db.site.findUnique({ where: { id: input.siteId } }); if (!site) throw new Error("Site not found.");
+    if (input.leadId) {
+      const lead = await db.lead.findUnique({ where: { id: input.leadId }, select: { siteId: true } });
+      if (!lead) return Response.json({ error: "Lead not found." }, { status: 404 });
+      if (lead.siteId !== site.id) return Response.json({ error: "The booking and lead must belong to the same site." }, { status: 409 });
+    }
     const booking = await db.booking.create({ data: { ...input, source: input.source || "walk-in", leadId: input.leadId || null, number: bookingNumber(), createdById: session.user.id } });
     return created(booking);
   } catch (error) { if (error instanceof z.ZodError) return validationError(error); return serverError(error); }

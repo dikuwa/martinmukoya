@@ -17,7 +17,11 @@ export const defaultDocumentSettings = {
   acceptanceEnabled: true
 };
 
-export async function getDocumentSettings() {
-  const settings = await db.documentSettings.findFirst({ orderBy: { updatedAt: "desc" } });
-  return settings ?? defaultDocumentSettings;
+export async function getDocumentSettings(siteId: string | null) {
+  const site = siteId ? await db.site.findUnique({ where: { id: siteId }, select: { slug: true } }) : null;
+  const scoped = siteId ? await db.documentSettings.findUnique({ where: { siteId } }) : null;
+  if (scoped) return scoped;
+  const global = await db.documentSettings.findFirst({ where: { siteId: null }, orderBy: { updatedAt: "desc" } }) ?? defaultDocumentSettings;
+  // Personal documents use the personal issuer's signer unless explicitly overridden.
+  return site?.slug === "martin-mukoya" ? { ...global, defaultSenderName: "", defaultSenderRole: "" } : global;
 }

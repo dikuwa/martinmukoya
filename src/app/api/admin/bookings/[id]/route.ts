@@ -19,6 +19,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         _count: { select: { documents: true, payments: true } },
       } });
       if (!existing) return notFound("Booking not found.");
+      if (input.leadId) {
+        const lead = await tx.lead.findUnique({ where: { id: input.leadId }, select: { siteId: true } });
+        if (!lead) return notFound("Lead not found.");
+        if (lead.siteId !== input.siteId) return ok({ error: "The booking and lead must belong to the same site." }, { status: 409 });
+      }
       if (existing.siteId !== input.siteId && (existing.lead || existing._count.documents || existing._count.payments)) {
         return ok({ error: "The site is fixed for projects linked to a lead or financial records." }, { status: 409 });
       }

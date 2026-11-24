@@ -22,7 +22,7 @@ const signatureModeOptions = [
   { value: "image", label: "Uploaded signature image" }
 ];
 
-export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
+export function FinanceSettingsForm({ initial, site }: { initial: IssuerSnapshot; site: string | null }) {
   const [saving, setSaving] = useState(false);
   const [methods, setMethods] = useState(initial.paymentMethods.length ? initial.paymentMethods : [""]);
   const [signatureMode, setSignatureMode] = useState<"text" | "image">(initial.signatureMode || "text");
@@ -45,7 +45,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
     setSaving(true);
     const form = new FormData(formElement);
     const data = Object.fromEntries(form);
-    const response = await fetch("/api/admin/finance-settings", {
+    const response = await fetch(`/api/admin/finance-settings?site=${encodeURIComponent(site ?? "")}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...data, paymentMethods: methods.map(item => item.trim()).filter(Boolean), signatureMode, signatureImage, showSignature })
@@ -53,7 +53,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
     const payload = await response.json();
     setSaving(false);
     if (!response.ok) return toast.error(payload.error || "Settings could not be saved");
-    toast.success("Financial identity saved and applied to all existing documents");
+    toast.success("Financial identity saved for new documents.");
   }
 
   return (

@@ -15,6 +15,10 @@ export async function POST(request: Request) {
     const { error } = await requireAdmin();
     if (error) return error;
     const input = await parseJson(request, manualLeadSchema);
+    if (input.linkedProjectId && !await db.project.findFirst({
+      where: { id: input.linkedProjectId, OR: [{ sites: { none: {} } }, { sites: { some: { id: input.siteId } } }] },
+      select: { id: true },
+    })) return ok({ error: "The selected project does not belong to the lead identity." }, { status: 400 });
     const email = (input.email || "").toLowerCase();
     const phone = digits(input.phone);
     const whatsApp = digits(input.whatsAppNumber);
@@ -23,7 +27,7 @@ export async function POST(request: Request) {
     if (phone) duplicateFilters.push({ phone: { contains: phone.slice(-7) } });
     if (whatsApp) duplicateFilters.push({ whatsAppNumber: { contains: whatsApp.slice(-7) } });
     const duplicates = duplicateFilters.length
-      ? await db.lead.findMany({ where: { OR: duplicateFilters }, take: 5, orderBy: { createdAt: "desc" } })
+      ? await db.lead.findMany({ where: { siteId: input.siteId, OR: duplicateFilters }, take: 5, orderBy: { createdAt: "desc" } })
       : [];
     if (duplicates.length && !input.createAnyway) {
       return ok({ error: "A lead with similar contact information already exists.", code: "DUPLICATE_LEAD", duplicates }, { status: 409 });

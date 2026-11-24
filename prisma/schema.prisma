@@ -496,6 +496,7 @@ model Payment {
   notes             String?
   reversedAt        DateTime?
   recordedById      String?
+  idempotencyKey    String?           @unique
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   site              Site              @relation(fields: [siteId], references: [id], onDelete: Restrict)
@@ -716,6 +717,7 @@ model BusinessDocument {
   templateId        String?
   templateVersion   Int?
   templateSnapshot  Json?
+  issuerSnapshot    Json?
   revisionOfId      String?
 
   companyName       String?

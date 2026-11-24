@@ -2,13 +2,13 @@ import "server-only";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { BusinessDocumentPdf } from "@/lib/pdf/business-document";
 import { db } from "@/lib/db";
-import { getIssuerSnapshot } from "@/lib/finance-service";
+import { businessDocumentIssuer } from "@/lib/business-document-service";
 
 export async function renderBusinessDocumentPdf(documentId: string, baseUrl: string): Promise<Buffer> {
   const doc = await db.businessDocument.findUnique({ where: { id: documentId } });
   if (!doc) throw new Error("Document not found");
 
-  const issuer = await getIssuerSnapshot(doc.siteId ?? null);
+  const issuer = await businessDocumentIssuer(doc);
 
   return renderToBuffer(
     <BusinessDocumentPdf

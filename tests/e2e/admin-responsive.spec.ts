@@ -81,7 +81,8 @@ test.describe("Admin responsive layout", () => {
       await expect(page.locator("h1")).toBeVisible({ timeout: 20000 });
       const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(scrollWidth).toBeLessThanOrEqual(vp.width + 5);
-      await expect(page.locator('button[aria-haspopup="listbox"]').first()).toHaveAccessibleName();
+      const identitySelect = page.locator('button[aria-haspopup="listbox"]').filter({ hasText: "Global (shared)" });
+      await expect(identitySelect).toHaveAccessibleName("Business identity");
     });
   }
 });

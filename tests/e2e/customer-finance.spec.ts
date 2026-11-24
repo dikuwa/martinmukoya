@@ -1,19 +1,23 @@
+import { randomInt, randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "./admin-auth";
 
-test.use({ channel: "chrome" });
 test.setTimeout(180_000);
 test("customer, service, invoice, partial payment and reminder", async ({ page }) => {
+  const email = `synthetic-client-${randomUUID()}@example.invalid`;
+  const phone = String(randomInt(1_000_000, 10_000_000));
   await loginAsAdmin(page, "/admin/customers");
   await expect(page.locator("html")).toHaveClass(/\blight\b/);
   await page.locator('input[name="name"]').fill("Synthetic Browser Client");
-  await page.locator('input[name="email"]').fill("synthetic-client@example.invalid");
-  await page.locator('input[name="phone"]').fill("+264811111111");
+  await page.locator('input[name="email"]').fill(email);
+  await page.locator('input[name="phone"]').fill(`+26481${phone}`);
+  const customerCreated = page.waitForResponse(response => response.url().endsWith("/api/admin/customers") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Add customer" }).click();
+  expect((await customerCreated).status()).toBe(201);
   await expect(page).toHaveURL(/\/admin\/customers\/[^/]+/);
   const customerPath = new URL(page.url()).pathname;
   const duplicate = await page.request.post("/api/admin/customers", {
-    data: { name: "Different label", phone: "081 111 1111" },
+    data: { name: "Different label", phone: `081 ${phone.slice(0, 3)} ${phone.slice(3)}` },
   });
   expect(duplicate.status()).toBe(409);
   expect((await duplicate.json()).existingId).toBe(customerPath.split("/").at(-1));
@@ -100,7 +104,7 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
   await page.goto(customerPath);
   await expect(page.getByRole("link", { name: "Edit project" })).toBeVisible();
   const lead = await page.request.post("/api/admin/leads", { data: {
-    name: "Synthetic returning lead", email: "SYNTHETIC-CLIENT@example.invalid",
+    name: "Synthetic returning lead", email: email.toUpperCase(),
     siteId: job.siteId, projectGoal: "Synthetic repeat enquiry",
   } });
   expect(lead.status()).toBe(201);
@@ -116,34 +120,38 @@ test("customer, service, invoice, partial payment and reminder", async ({ page }
 
 
 test("catalogue edit, archive and restore on a mobile dark viewport", async ({ page }) => {
+  const fixtureId = randomUUID();
+  const serviceName = `Synthetic catalogue service ${fixtureId}`;
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem("theme", "dark"));
   await loginAsAdmin(page, "/admin/services");
   await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   const add = page.locator("form").filter({ has: page.getByRole("heading", { name: "Add a reusable service" }) });
-  await add.getByRole("textbox", { name: "Service name" }).fill("Synthetic catalogue service");
+  await add.getByRole("textbox", { name: "Service name" }).fill(serviceName);
   await add.getByRole("spinbutton", { name: "Default price (N$)" }).fill("125");
   await add.getByRole("button", { name: "Add service" }).click();
-  await page.getByText("Synthetic catalogue service ·", { exact: false }).click();
-  const edit = page.locator("details").filter({ hasText: "Synthetic catalogue service" });
+  const edit = page.locator("details").filter({ hasText: serviceName });
+  await edit.locator("summary").click();
   await edit.getByRole("spinbutton", { name: "Default price (N$)" }).fill("150");
+  const serviceSaved = page.waitForResponse(response => new URL(response.url()).pathname.startsWith("/api/admin/service-catalog/") && response.request().method() === "PATCH");
   await edit.getByRole("button", { name: "Save service" }).click();
+  expect((await serviceSaved).ok()).toBe(true);
   await expect(edit.locator("summary")).toContainText("150.00");
   await edit.getByRole("button", { name: "Archive service" }).click();
   await expect(edit.locator("summary")).toContainText("Archived");
   const available = await page.request.get("/api/admin/service-catalog");
-  expect((await available.json()).some((item: { name: string }) => item.name === "Synthetic catalogue service")).toBe(false);
+  expect((await available.json()).some((item: { name: string }) => item.name === serviceName)).toBe(false);
   await edit.getByRole("button", { name: "Restore service" }).click();
   await expect(edit.locator("summary")).not.toContainText("Archived");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
   const customer = await page.request.post("/api/admin/customers", {
-    data: { name: "Synthetic personal issuer client", email: "personal-issuer@example.invalid" },
+    data: { name: "Synthetic personal issuer client", email: `personal-issuer-${fixtureId}@example.invalid` },
   });
   expect(customer.status()).toBe(201);
   await page.goto(`/admin/customers/${(await customer.json()).id}`);
   await page.getByRole("button", { name: "Custom service" }).click();
-  await page.getByRole("option", { name: "Synthetic catalogue service" }).click();
+  await page.getByRole("option", { name: serviceName, exact: true }).click();
   await expect(page.getByRole("spinbutton", { name: "Price (N$)" })).toHaveValue("150");
   await page.getByRole("button", { name: "FlexTech Media", exact: true }).click();
   await page.getByRole("option", { name: "Martin Mukoya", exact: true }).click();

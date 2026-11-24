@@ -56,10 +56,11 @@ export function documentNumber(type: "QUOTE" | "INVOICE" | "RECEIPT") {
 export async function ensureBookingFromLead(leadId: string, userId?: string) {
   try {
     return await runPaymentTransaction(async tx => {
-    const existing = await tx.booking.findUnique({ where: { leadId } });
-    if (existing?.contactId) return existing;
     const lead = await tx.lead.findUnique({ where: { id: leadId } });
     if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
+    const existing = await tx.booking.findUnique({ where: { leadId } });
+    if (existing && existing.siteId !== lead.siteId) throw new Error("The booking and lead must belong to the same site.");
+    if (existing?.contactId) return existing;
 
     const details = {
       email: lead.emailValid ? lead.email : null,
@@ -92,8 +93,8 @@ export async function ensureBookingFromLead(leadId: string, userId?: string) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const booking = await db.booking.findUnique({ where: { leadId } });
-      if (booking) return booking;
+      const booking = await db.booking.findUnique({ where: { leadId }, include: { lead: { select: { siteId: true } } } });
+      if (booking && booking.siteId === booking.lead?.siteId) return booking;
     }
     throw error;
   }
@@ -159,10 +160,14 @@ export async function declineFinancialDocument(id: string) {
   });
 }
 
-export async function recordPayment(input: { invoiceId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
+export async function recordPayment(input: { invoiceId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; idempotencyKey?: string; userId?: string }) {
   const amount = parsePaymentAmount(input.amount);
   
   return runPaymentTransaction(async (tx) => {
+    if (input.idempotencyKey) {
+      const existing = await tx.payment.findUnique({ where: { idempotencyKey: input.idempotencyKey }, include: { receiptDocument: true, invoice: true, booking: true } });
+      if (existing) return existing;
+    }
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
     if (!invoiceTx || invoiceTx.type !== "INVOICE" || !["ISSUED", "PARTIALLY_PAID"].includes(invoiceTx.status)) throw new Error("Select an outstanding issued invoice.");
     const paid = sumActivePayments(invoiceTx.payments);
@@ -181,6 +186,7 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
       number: paymentNumber(), siteId: invoiceTx.siteId, bookingId: invoiceTx.bookingId, invoiceId: invoiceTx.id,
       receiptDocumentId: receipt.id, amount: amount.toFixed(2), method: input.method,
       paidAt: input.paidAt ? new Date(input.paidAt) : new Date(), reference: input.reference, notes: input.notes, recordedById: input.userId,
+      idempotencyKey: input.idempotencyKey,
     }, include: { receiptDocument: true, invoice: true, booking: true } });
     const fullyPaid = paymentSettlesInvoice(invoiceTx.total, paid, amount);
     const balanceNote = fullyPaid
@@ -193,13 +199,17 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
   });
 }
 
-export async function recordBookingDeposit(input: { bookingId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
+export async function recordBookingDeposit(input: { bookingId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; idempotencyKey?: string; userId?: string }) {
   const amount = parsePaymentAmount(input.amount);
 
   const booking = await db.booking.findUnique({ where: { id: input.bookingId } });
   if (!booking) throw new Error("Project not found.");
   const issuer = await getIssuerSnapshot(booking.siteId);
   return runPaymentTransaction(async (tx) => {
+    if (input.idempotencyKey) {
+      const existing = await tx.payment.findUnique({ where: { idempotencyKey: input.idempotencyKey }, include: { receiptDocument: true, booking: true } });
+      if (existing) return existing;
+    }
     const currentBooking = await tx.booking.findUnique({ where: { id: booking.id } });
     if (!currentBooking) throw new Error("Project not found.");
     const contractAmount = currentBooking.contractAmount;
@@ -224,6 +234,7 @@ export async function recordBookingDeposit(input: { bookingId: string; amount: s
       number: paymentNumber(), siteId: booking.siteId, bookingId: booking.id, receiptDocumentId: receipt.id,
       amount: amount.toFixed(2), method: input.method, paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
       reference: input.reference, notes: input.notes, recordedById: input.userId,
+      idempotencyKey: input.idempotencyKey,
     }, include: { receiptDocument: true, booking: true } });
   });
 }
