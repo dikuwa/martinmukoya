@@ -60,7 +60,7 @@ export async function POST(request: Request) {
           data: { contactId: customer.id },
         });
       }
-      return created(customer);
+      return created({ ...customer, linkedBookingId: booking?.id ?? null });
     });
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);
