@@ -14,7 +14,7 @@ type Source = { key: string; kind: "booking" | "lead"; id: string; label: string
 type Invoice = { id: string; label: string; balance: number };
 type Line = { description: string; category: string; quantity: string; unitPrice: string };
 const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none transition-colors focus:border-[color:var(--primary)]";
-const field = "grid min-w-0 gap-2 overflow-hidden text-sm font-bold";
+const field = "grid min-w-0 gap-2 text-sm font-semibold";
 
 const documentTypeOptions = [
   { value: "QUOTE", label: "Quotation" },
@@ -91,12 +91,14 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
     <Card as="form" padding="sm" className="grid min-w-0 gap-6 sm:p-5 lg:p-6" id="new-document" onSubmit={submit}>
       <div>
         <h2 className="font-display text-xl font-black">Create document</h2>
-        <p className="text-sm text-[color:var(--text-muted)]">Select a lead or booking, then set the actual scope and price.</p>
+        <p className="text-sm text-[color:var(--text-muted)]">Find a lead or booking, then confirm the scope and price. Search to switch sources.</p>
       </div>
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <label className={field}>Source
           <DashboardSelect
             value={sourceKey}
+            searchable
+            aria-label="Choose a lead or booking"
             onChange={e => {
               setSourceKey(e.target.value);
               const next = sources.find(item => item.key === e.target.value);
@@ -218,16 +220,18 @@ export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices:
   }
 
   return (
-    <Card as="form" padding="sm" className="grid min-w-0 gap-4 overflow-hidden sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
+    <Card as="form" padding="sm" className="grid min-w-0 gap-4 sm:p-5 lg:sticky lg:top-5" onSubmit={submit}>
       <div>
         <h2 id="record-payment" className="font-display text-xl font-black">Record payment</h2>
         <p className="text-sm text-[color:var(--text-muted)]">A receipt is issued automatically.</p>
       </div>
       {target ? (
         <>
-          <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Invoice or project
+          <label className="grid min-w-0 gap-2 text-sm font-semibold">Invoice or project
             <DashboardSelect
               value={`${target.kind}:${target.id}`}
+              searchable
+              aria-label="Choose an unpaid invoice or project"
               onChange={e => setTargetKey(e.target.value)}
               options={targets.map(item => ({ label: item.label, value: `${item.kind}:${item.id}` }))}
               className={input}
@@ -239,13 +243,13 @@ export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices:
             </p>
           ) : (
             <>
-              <p className="rounded-xl bg-[color:var(--surface-soft)] p-3 text-sm font-bold">
+              <p className="rounded-xl bg-[color:var(--surface-soft)] p-3 text-sm font-semibold">
                 Outstanding balance: <span className="text-[color:var(--text-strong)]">{formatNad(target.balance)}</span>
               </p>
-              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Amount (N$)
-                <input name="amount" required type="number" min="0.01" max={target.balance} step="0.01" className={input} disabled={isZeroBalance} />
+              <label className="grid min-w-0 gap-2 text-sm font-semibold">Amount (N$)
+                <input key={`${target.kind}:${target.id}:${target.balance}`} name="amount" defaultValue={Math.max(0, target.balance).toFixed(2)} required type="number" min="0.01" max={target.balance} step="0.01" className={input} disabled={isZeroBalance} />
               </label>
-              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Method
+              <label className="grid min-w-0 gap-2 text-sm font-semibold">Method
                 <DashboardSelect
                   name="method"
                   options={paymentMethodOptions}
@@ -253,17 +257,17 @@ export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices:
                   disabled={isZeroBalance}
                 />
               </label>
-              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Reference
-                <input name="reference" className={input} disabled={isZeroBalance} />
+              <label className="grid min-w-0 gap-2 text-sm font-semibold">Reference (optional)
+                <input name="reference" placeholder="Bank or transaction reference" className={input} disabled={isZeroBalance} />
               </label>
-              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Payment date
+              <label className="grid min-w-0 gap-2 text-sm font-semibold">Payment date
                 <DashboardDatePicker
                   name="paidAt"
                   className={input}
                   disabled={isZeroBalance}
                 />
               </label>
-              <label className="grid min-w-0 gap-2 overflow-hidden text-sm font-bold">Notes
+              <label className="grid min-w-0 gap-2 text-sm font-semibold">Notes
                 <textarea name="notes" className={`${input} min-h-20 py-3`} disabled={isZeroBalance} />
               </label>
               <Button disabled={saving || isZeroBalance} className="rounded-xl bg-[color:var(--primary)] px-5 py-3 text-sm font-bold text-white">
