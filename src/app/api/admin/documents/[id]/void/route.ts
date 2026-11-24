@@ -21,6 +21,21 @@ export async function POST(_request: Request, context: Context) {
       if (document.payments.length) {
         return Response.json({ error: "Reverse recorded payments before voiding this invoice." }, { status: 409 });
       }
+      // Receipt payments are linked via Payment.receiptDocumentId, not
+      // FinancialDocument.payments (which covers invoice payments). Never
+      // invalidate proof of an active payment without reversing that payment.
+      if (document.type === "RECEIPT") {
+        const activeReceiptPayment = await tx.payment.findFirst({
+          where: { receiptDocumentId: id, reversedAt: null },
+          select: { id: true },
+        });
+        if (activeReceiptPayment) {
+          return Response.json(
+            { error: "Reverse the recorded payment before voiding its receipt." },
+            { status: 409 },
+          );
+        }
+      }
 
       const voidedAt = new Date();
       await tx.sharedDocument.updateMany({
