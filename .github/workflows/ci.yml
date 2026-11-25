@@ -93,6 +93,9 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       DATABASE_URL: postgresql://test:test@127.0.0.1:5432/migration_assurance
+      DATABASE_ENV: ci
+      DATABASE_EXPECTED_HOST: 127.0.0.1
+      DATABASE_EXPECTED_NAME: migration_assurance
     services:
       postgres:
         image: postgres:16
