@@ -497,6 +497,7 @@ model Payment {
   reversedAt        DateTime?
   recordedById      String?
   idempotencyKey    String?           @unique
+  idempotencyFingerprint String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   site              Site              @relation(fields: [siteId], references: [id], onDelete: Restrict)

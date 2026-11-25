@@ -27,6 +27,7 @@ function loadRoute(path: string, share: unknown, file?: string) {
   if (name === "@/lib/payment-transaction") return { runPaymentTransaction: transactionalDb.$transaction };
   if (name === "@/lib/auth-guard") return { requireAdmin: async () => ({}) };
   if (name === "@/lib/api") return { ok: (data: unknown) => Response.json(data), serverError: () => Response.json({}, { status: 500 }) };
+  if (name === "@/lib/document-acceptance") return { AcceptanceConflict: class extends Error {}, acceptDocument: async () => { calls.push("accept"); } };
   if (name === "@/lib/shared-document-access") return access;
   if (name === "@/lib/rate-limit") return { getClientIp: () => "test", rateLimit: async () => ({ success: true }) };
   if (name === "@react-pdf/renderer") return { renderToBuffer: async () => new Uint8Array([1]) };

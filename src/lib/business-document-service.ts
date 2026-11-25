@@ -220,25 +220,10 @@ export async function trackSharedDocumentDownload(shortCode: string) {
   });
 }
 
-export async function acceptBusinessDocument(id: string, input: { name: string; comment?: string; ip?: string; userAgent?: string }, userId?: string) {
-  const doc = await db.businessDocument.update({
-    where: { id },
-    data: {
-      status: "ACCEPTED",
-      acceptedAt: new Date(),
-      auditLog: { create: { action: "ACCEPTED", detail: `Accepted by ${input.name}`, userId } }
-    }
-  });
-  await db.sharedDocument.updateMany({
-    where: { businessDocumentId: id },
-    data: { acceptedAt: new Date(), acceptedName: input.name, acceptedComment: input.comment, acceptedIp: input.ip, acceptedUserAgent: input.userAgent }
-  });
-  return doc;
-}
 
 export async function declineBusinessDocument(id: string, reason?: string, comment?: string, userId?: string) {
   return db.businessDocument.update({
-    where: { id },
+    where: { id, status: { not: "ACCEPTED" }, acceptedAt: null },
     data: {
       status: "DECLINED",
       declinedReason: reason,

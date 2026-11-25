@@ -82,6 +82,9 @@ export async function POST(request: Request, context: Context) {
 
     return NextResponse.json({ declined: true, message: "Document declined. We'll review your feedback." });
   } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2025") {
+      return NextResponse.json({ error: "This document is no longer available for response." }, { status: 409 });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message || "Validation failed" }, { status: 400 });
     }

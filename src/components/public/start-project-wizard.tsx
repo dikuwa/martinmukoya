@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { useFormHydrated } from "./use-form-hydrated";
 
 const budgets = [
   "Under N$15,000",
@@ -80,8 +81,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useFormHydrated();
   const cardRef = useRef<HTMLFormElement | null>(null);
   const formStarted = useRef(false);
   const previousStepRef = useRef(step);
@@ -314,7 +314,10 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
               {site.finalCta.secondary} <MessageCircle size={18} />
             </a>
           </Button>
-          <Button type="button" variant="secondary" size="lg" onClick={() => setSubmitted(false)}>
+          <Button type="button" variant="secondary" size="lg" onClick={() => {
+            setStep(1);
+            setSubmitted(false);
+          }}>
             Start another request
           </Button>
         </div>

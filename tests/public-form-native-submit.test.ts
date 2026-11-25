@@ -1,7 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
+import { useFormHydrated } from "../src/components/public/use-form-hydrated";
+
+test("server rendering keeps native submit disabled", () => {
+  function SubmitButton() {
+    return createElement("button", { disabled: !useFormHydrated(), type: "submit" }, "Send");
+  }
+
+  assert.match(renderToStaticMarkup(createElement(SubmitButton)), /<button[^>]* disabled=""/);
+});
 
 const forms = [
   "src/components/public/contact-form.tsx",
@@ -35,8 +46,7 @@ for (const path of forms) {
   test(`${path} keeps native submit unavailable before hydration`, () => {
     const source = readFileSync(path, "utf8");
     const ast = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-    assert.match(source, /const \[hydrated, setHydrated\] = useState\(false\)/);
-    assert.match(source, /useEffect\(\(\) => setHydrated\(true\), \[\]\)/);
+    assert.match(source, /const hydrated = useFormHydrated\(\)/);
     let submitButtons = 0;
 
     function walk(node: ts.Node) {

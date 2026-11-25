@@ -88,18 +88,68 @@ test("concurrent payment retries with one idempotency key create one payment", a
   const [site] = await query<{ id: string }>('SELECT id FROM "Site" WHERE slug = $1', ["flextech-media"]);
   const fixture = `Synthetic idempotent invoice ${randomUUID()}`;
   const booking = await page.request.post("/api/admin/bookings", { data: { siteId: site.id, customerName: fixture, projectDescription: fixture } });
+  expect(booking.status()).toBe(201);
   const bookingId = (await booking.json()).id;
   const draft = await page.request.post("/api/admin/documents", { data: { bookingId, customerName: fixture, type: "INVOICE", lines: [{ description: "Synthetic service", quantity: 1, unitPrice: "100" }] } });
+  expect(draft.status()).toBe(201);
   const invoiceId = (await draft.json()).id;
   await expect(await page.request.post(`/api/admin/documents/${invoiceId}/issue`)).toBeOK();
   const idempotencyKey = `e2e-${randomUUID()}`;
-  const submit = () => page.request.post("/api/admin/payments", {
+  const payload = { invoiceId, amount: "60", method: "CASH", paidAt: "2026-11-01T08:00:00Z", reference: "fixture-reference", notes: "fixture-notes" };
+  const submit = (data: Partial<typeof payload> & { idempotencyKey?: string } = {}) => page.request.post("/api/admin/payments", {
     headers: { "Idempotency-Key": idempotencyKey },
-    data: { invoiceId, amount: "60", method: "CASH" },
+    data: { ...payload, ...data },
   });
-  const responses = await Promise.all([submit(), submit()]);
+  const responses = await Promise.all([submit(), submit({ amount: "60.00", paidAt: "2026-11-01T10:00:00+02:00", idempotencyKey })]);
   expect(responses.map(response => response.status()).sort()).toEqual([201, 201]);
   const payments = await Promise.all(responses.map(response => response.json()));
-  expect(payments[0].id).toBe(payments[1].id);
-  expect(Number((await query<{ count: string }>('SELECT COUNT(*)::text AS count FROM "Payment" WHERE "idempotencyKey" = $1', [idempotencyKey]))[0].count)).toBe(1);
+  expect(payments[1]).toMatchObject({ id: payments[0].id, receiptDocument: { id: payments[0].receiptDocumentId } });
+  expect(payments[0]).not.toHaveProperty("idempotencyFingerprint");
+
+  for (const change of [{ amount: "61" }, { method: "CARD" }, { paidAt: undefined }, { reference: "changed" }, { notes: "changed" }]) {
+    const conflict = await submit(change);
+    expect(conflict.status()).toBe(409);
+    expect(await conflict.json()).toEqual({ error: "This idempotency key is already in use for another payment request." });
+  }
+  expect((await submit({ idempotencyKey: `e2e-${randomUUID()}` })).status()).toBe(400);
+  expect((await submit({ paidAt: "invalid" })).status()).toBe(400);
+  const depositWithInvoiceKey = await page.request.post("/api/admin/payments", {
+    data: { ...payload, invoiceId: undefined, bookingId, idempotencyKey },
+  });
+  expect(depositWithInvoiceKey.status()).toBe(409);
+  expect(await query('SELECT id FROM "Payment" WHERE "invoiceId" = $1', [invoiceId])).toEqual([{ id: payments[0].id }]);
+  expect(await query('SELECT id FROM "FinancialDocument" WHERE "bookingId" = $1 AND type = $2', [bookingId, "RECEIPT"])).toEqual([{ id: payments[0].receiptDocumentId }]);
+
+  await query('UPDATE "Payment" SET "idempotencyFingerprint" = NULL WHERE id = $1', [payments[0].id]);
+  expect((await submit()).status()).toBe(409);
+});
+
+test("concurrent deposits for different business identities cannot reuse a payment key", async ({ page }) => {
+  const sites = await query<{ id: string }>('SELECT id FROM "Site" WHERE slug IN ($1, $2)', ["flextech-media", "martin-mukoya"]);
+  expect(sites).toHaveLength(2);
+  const bookingIds = await Promise.all(sites.map(async ({ id: siteId }) => {
+    const fixture = `Synthetic deposit ${randomUUID()}`;
+    const booking = await page.request.post("/api/admin/bookings", {
+      data: { siteId, customerName: fixture, projectDescription: fixture, contractAmount: "100" },
+    });
+    expect(booking.status()).toBe(201);
+    return (await booking.json()).id as string;
+  }));
+  const idempotencyKey = `e2e-${randomUUID()}`;
+  const submit = (bookingId: string, paidAt?: string) => page.request.post("/api/admin/payments", {
+    data: { bookingId, amount: "60", method: "CASH", idempotencyKey, paidAt },
+  });
+  const responses = await Promise.all(bookingIds.map(id => submit(id)));
+  expect(responses.map(response => response.status()).sort()).toEqual([201, 409]);
+  const winner = responses.findIndex(response => response.status() === 201);
+  const payment = await responses[winner].json();
+  expect(payment).toMatchObject({ bookingId: bookingIds[winner], siteId: sites[winner].id });
+  expect(await responses[1 - winner].json()).toEqual({ error: "This idempotency key is already in use for another payment request." });
+
+  const replay = await submit(bookingIds[winner]);
+  expect(replay.status()).toBe(201);
+  expect(await replay.json()).toMatchObject({ id: payment.id, receiptDocument: { id: payment.receiptDocumentId } });
+  expect((await submit(bookingIds[winner], payment.paidAt)).status()).toBe(409);
+  expect(await query('SELECT id FROM "Payment" WHERE "bookingId" IN ($1, $2)', bookingIds)).toEqual([{ id: payment.id }]);
+  expect(await query('SELECT id FROM "FinancialDocument" WHERE "bookingId" IN ($1, $2) AND type = $3', [...bookingIds, "RECEIPT"])).toEqual([{ id: payment.receiptDocumentId }]);
 });

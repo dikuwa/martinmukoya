@@ -2,8 +2,7 @@ import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { acceptBusinessDocument } from "@/lib/business-document-service";
-import { acceptFinancialDocument } from "@/lib/finance-service";
+import { acceptDocument, AcceptanceConflict } from "@/lib/document-acceptance";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ code: string }> };
@@ -36,73 +35,19 @@ export async function POST(request: Request, context: Context) {
     const parsed = acceptSchema.parse(body);
     const userAgent = request.headers.get("user-agent") || undefined;
 
-    // Financial document (QUOTE) acceptance
-    if (share.financialDocument) {
-      const doc = share.financialDocument;
-      if (doc.type !== "QUOTE") {
-        return NextResponse.json({ error: "Acceptance is only available for quotes." }, { status: 400 });
-      }
-      if (doc.status === "ACCEPTED" || doc.acceptedAt) {
-        return NextResponse.json({ error: "Quote has already been accepted." }, { status: 409 });
-      }
-      if (doc.status === "DECLINED" || doc.declinedAt) {
-        return NextResponse.json({ error: "Quote has already been declined." }, { status: 409 });
-      }
-      if (!["ISSUED"].includes(doc.status)) {
-        return NextResponse.json({ error: "This quote is no longer available for acceptance." }, { status: 409 });
-      }
-
-      await acceptFinancialDocument(doc.id, { name: parsed.name });
-
-      // Create notification for admin
-      await db.notification.create({
-        data: {
-          siteId: doc.siteId,
-          type: "quote_accepted",
-          sourceId: doc.id,
-          title: `Quote ${doc.number || "draft"} accepted`,
-          detail: `Accepted by ${parsed.name}`,
-          href: `/admin/documents/${doc.id}`,
-        },
-      }).catch(() => undefined);
-
-      // Update shared document tracking
-      await db.sharedDocument.update({
-        where: { id: share.id },
-        data: {
-          acceptedAt: new Date(),
-          acceptedName: parsed.name,
-          acceptedComment: parsed.comment,
-          acceptedIp: ip,
-          acceptedUserAgent: userAgent,
-        },
-      });
-
-      return NextResponse.json({ accepted: true, message: "Quote accepted. Thank you." });
+    const financial = share.documentType === "financial";
+    if (financial && share.financialDocument?.type !== "QUOTE") {
+      return NextResponse.json({ error: "Acceptance is only available for quotes." }, { status: 400 });
     }
-
-    // Business document acceptance
-    if (!share.businessDocument) {
-      return NextResponse.json({ error: "Document not found." }, { status: 404 });
-    }
-
-    if (share.businessDocument.status === "ACCEPTED" || share.acceptedAt) {
-      return NextResponse.json({ error: "Document has already been accepted." }, { status: 409 });
-    }
-
-    if (share.businessDocument.status === "DECLINED" || share.declinedAt) {
-      return NextResponse.json({ error: "Document has already been declined." }, { status: 409 });
-    }
-
-    await acceptBusinessDocument(share.businessDocument.id, {
-      name: parsed.name,
-      comment: parsed.comment,
-      ip,
-      userAgent,
-    });
-
-    return NextResponse.json({ accepted: true, message: "Document accepted. Thank you." });
+    const documentId = financial ? share.financialDocumentId : share.businessDocumentId;
+    if (!documentId) return NextResponse.json({ error: "Document not found." }, { status: 404 });
+    const target = financial
+      ? { kind: "financial" as const, id: documentId, shortCode: code }
+      : { kind: "business" as const, id: documentId, shortCode: code };
+    await acceptDocument(target, { ...parsed, ip, userAgent });
+    return NextResponse.json({ accepted: true, message: financial ? "Quote accepted. Thank you." : "Document accepted. Thank you." });
   } catch (error) {
+    if (error instanceof AcceptanceConflict) return NextResponse.json({ error: error.message }, { status: 409 });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message || "Validation failed" }, { status: 400 });
     }

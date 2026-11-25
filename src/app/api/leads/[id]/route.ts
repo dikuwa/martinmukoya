@@ -28,10 +28,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (error) return error;
 
     const { id } = await context.params;
-    const data = await parseJson(request, leadUpdateSchema);
+    const { siteId: requestedSiteId, siteSlug, ...data } = await parseJson(request, leadUpdateSchema);
+    const siteReference = requestedSiteId ?? siteSlug;
+    if (siteReference === "") return ok({ error: "Select a valid site." }, { status: 400 });
     const existing = await db.lead.findUnique({ where: { id }, select: { siteId: true, linkedProjectId: true } });
     if (!existing) return notFound("Lead not found");
-    const siteReference = data.siteId || data.siteSlug;
     let siteId = existing.siteId;
     if (siteReference) {
       const site = await db.site.findFirst({ where: { OR: [{ id: siteReference }, { slug: siteReference }] }, select: { id: true } });
@@ -50,7 +51,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     }
     const updateData = { ...data, ...(siteReference ? { siteId } : {}) };
-    delete updateData.siteSlug;
     const lead = await db.lead.update({ where: { id }, data: updateData });
     await invalidateTag(tags.leads);
     await invalidateTag(tags.dashboard);

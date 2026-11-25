@@ -36,6 +36,7 @@ export const documentDraftSchema = z.object({
 export const paymentCreateSchema = z.object({
   invoiceId: z.string().min(1).optional(), bookingId: z.string().min(1).optional(),
   amount: paymentAmount, method: z.enum(["CASH", "BANK_TRANSFER", "CARD", "OTHER"]),
-  paidAt: optionalText, reference: optionalText, notes: optionalText,
+  paidAt: optionalText.refine(value => !value || Number.isFinite(Date.parse(value)), "Enter a valid payment date."),
+  reference: optionalText, notes: optionalText,
   idempotencyKey: z.string().trim().min(1).max(200).optional(),
 });
