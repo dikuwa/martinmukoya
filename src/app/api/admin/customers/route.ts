@@ -67,7 +67,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);
     if (duplicateDetails && isTransactionConflict(error)) {
-      const matches = await matchingCustomers(db as never, duplicateDetails);
+      // A serializable loser can reach this handler before the winner's commit is visible.
+      // Read through the same retrying transaction path before surfacing a server error.
+      const matches = await runPaymentTransaction(tx => matchingCustomers(tx, duplicateDetails!));
       if (matches.length) return ok({ error: "A customer with these contact details exists.", existingId: matches.length === 1 ? matches[0].id : undefined }, { status: 409 });
     }
     return serverError(error);
