@@ -27,7 +27,8 @@ test("rejects production Supabase during staging or CI migration", () => {
 
 test("Prisma config validates migration commands without overriding explicit credentials", () => {
   const config = readFileSync("prisma.config.ts", "utf8");
-  assert.match(config, /process\.argv\.includes\("migrate"\)/);
+  assert.match(config, /prismaArgs\.includes\("migrate"\)/);
+  assert.match(config, /\["execute", "push", "reset"\]/);
   assert.match(config, /validateMigrationTarget\(/);
   assert.doesNotMatch(config, /override:\s*true/);
   assert.throws(() => validateMigrationTarget({
@@ -35,4 +36,15 @@ test("Prisma config validates migration commands without overriding explicit cre
     expectedHost: "127.0.0.1",
     expectedDatabase: "wrong",
   }), /DATABASE_ENV/);
+});
+
+test("rejects conflicting effective target metadata", () => {
+  assert.throws(
+    () => validateMigrationTarget({ ...staging, environment: "staging", expectedHost: "127.0.0.1" }),
+    /expected migration target/,
+  );
+  assert.throws(
+    () => validateMigrationTarget({ ...staging, environment: "staging", databaseUrl: "postgresql://role:secret@aws-0-eu-west-1.pooler.supabase.com:5432/postgres", expectedHost: "aws-0-eu-west-1.pooler.supabase.com", expectedDatabase: "postgres" }),
+    /production Supabase/,
+  );
 });

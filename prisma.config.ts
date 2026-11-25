@@ -7,8 +7,11 @@ import { validateMigrationTarget } from "./scripts/migration-target";
 dotenv.config({ path: ".env.local" });
 
 const databaseUrl = env("DATABASE_URL");
-const isMigrationCommand = process.argv.includes("migrate");
-if (isMigrationCommand) {
+const prismaArgs = process.argv.slice(2);
+const isSchemaMutationCommand =
+  prismaArgs.includes("migrate") ||
+  (prismaArgs.includes("db") && ["execute", "push", "reset"].some((command) => prismaArgs.includes(command)));
+if (isSchemaMutationCommand) {
   validateMigrationTarget({
     databaseUrl,
     environment: process.env.DATABASE_ENV,
