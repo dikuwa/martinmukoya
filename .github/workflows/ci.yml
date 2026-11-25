@@ -9,6 +9,9 @@ on:
 env:
   # Synthetic credentials target only the disposable services below, including postinstall.
   DATABASE_URL: postgresql://test:test@localhost:5432/test
+  DATABASE_ENV: ci
+  DATABASE_EXPECTED_HOST: localhost
+  DATABASE_EXPECTED_NAME: test
   UPSTASH_REDIS_URL: http://localhost:8079
   UPSTASH_REDIS_TOKEN: ci-redis-token
   BETTER_AUTH_SECRET: ci-synthetic-auth-secret-at-least-32-characters
