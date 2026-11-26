@@ -18,12 +18,12 @@ test("financial registers expose readable dates, filters and invoice history", a
     await invoiceLink.click();
     await expect(page.getByRole("heading", { name: "Financial history" })).toBeVisible();
     await expect(page.getByText("Invoice total")).toBeVisible();
-    await expect(page.getByText("Outstanding")).toBeVisible();
+    await expect(page.getByText("Outstanding", { exact: true })).toBeVisible();
     await expect(page.getByText("Transactions")).toBeVisible();
   }
 });
 
 test("legacy admin login redirects to the canonical sign-in route", async ({ page }) => {
   await page.goto("/admin/login");
-  await expect(page).toHaveURL(/\/auth\/sign-in$/);
+  await expect(page).toHaveURL(/\/auth\/sign-in\?redirect=%2Fadmin$/);
 });
