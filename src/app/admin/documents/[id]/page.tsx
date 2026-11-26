@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { InvoiceReminderActions } from "@/components/admin/invoice-reminder-actions";
 import { sharedDocumentIsPublic } from "@/lib/shared-document-access";
 import { invoiceReminderDetails, reminderRecipients } from "@/lib/reminder";
+import { computeOutstanding, formatNad, sumActivePayments } from "@/lib/financial";
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const document = await db.financialDocument.findUnique({
@@ -14,9 +15,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
     include: {
       booking: { include: { contact: true, lead: true } },
       lineItems: { orderBy: { sortOrder: "asc" } },
-      payments: true,
+      payments: { orderBy: { paidAt: "asc" }, include: { receiptDocument: true } },
       receiptForPayment: true,
       sharedDocument: true,
+      revisions: { orderBy: { createdAt: "desc" }, select: { id: true, number: true, status: true, createdAt: true } },
     },
   });
   if (!document) notFound();
@@ -31,6 +33,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
     : null;
   const recipients = reminderRecipients(document);
   const reminderLink = document.sharedDocument && sharedDocumentIsPublic({ ...document.sharedDocument, financialDocument: document }) ? shortLink : null;
+  const paid = sumActivePayments(document.payments);
+  const outstanding = computeOutstanding(document.total, paid);
+  const paymentStatus = document.status === "PAID" || outstanding === 0 ? "Paid" : document.status === "PARTIALLY_PAID" ? "Partially paid" : document.status === "VOID" ? "Voided" : "Awaiting payment";
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -93,6 +98,27 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
               {document.declinedAt && <><dt className="text-[color:var(--text-faint)] text-xs">Declined</dt><dd>{new Date(document.declinedAt).toLocaleDateString("en-GB")}</dd></>}
             </dl>
           </Card>
+
+          {document.type === "INVOICE" && <Card padding="md">
+            <h3 className="font-bold text-sm mb-3">Financial history</h3>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div><dt className="text-xs text-[color:var(--text-faint)]">Invoice total</dt><dd className="font-semibold">{formatNad(String(document.total))}</dd></div>
+              <div><dt className="text-xs text-[color:var(--text-faint)]">Received</dt><dd className="font-semibold">{formatNad(paid)}</dd></div>
+              <div><dt className="text-xs text-[color:var(--text-faint)]">Outstanding</dt><dd className="font-semibold">{formatNad(outstanding)}</dd></div>
+              <div><dt className="text-xs text-[color:var(--text-faint)]">Status</dt><dd className="font-semibold">{paymentStatus}</dd></div>
+            </dl>
+            <div className="mt-4 border-t border-[color:var(--border-subtle)] pt-3">
+              <p className="text-xs font-semibold text-[color:var(--text-muted)]">Transactions</p>
+              <div className="mt-2 grid gap-2">
+                {document.payments.map(payment => <div key={payment.id} className="flex items-start justify-between gap-3 text-xs">
+                  <span>{new Date(payment.paidAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · {payment.method === "BANK_TRANSFER" ? "Bank transfer" : payment.method}{payment.reversedAt ? " · Reversed" : ""}</span>
+                  <span className="font-semibold tabular-nums">{formatNad(String(payment.amount))}</span>
+                </div>)}
+                {!document.payments.length && <p className="text-xs text-[color:var(--text-muted)]">No payments recorded.</p>}
+                {document.revisions.map(revision => <Link key={revision.id} href={`/admin/documents/${revision.id}`} className="text-xs text-[color:var(--primary)]">Revision {revision.number || "Draft"} · {revision.status}</Link>)}
+              </div>
+            </div>
+          </Card>}
 
           {document.sharedDocument && (
             <Card padding="md">
