@@ -1,9 +1,11 @@
-import "dotenv/config";
 import dotenv from "dotenv";
 import { hashPassword } from "better-auth/crypto";
 import { UserRole } from "../src/generated/prisma/client";
+import { validateMigrationTarget } from "../scripts/migration-target";
 
-dotenv.config({ path: ".env.local", override: true });
+const explicitTarget = { databaseUrl: process.env.DATABASE_URL, environment: process.env.DATABASE_ENV, expectedHost: process.env.DATABASE_EXPECTED_HOST, expectedDatabase: process.env.DATABASE_EXPECTED_NAME, productionApproved: process.env.DATABASE_PRODUCTION_MIGRATION_APPROVED };
+dotenv.config({ path: ".env.local" });
+validateMigrationTarget(explicitTarget);
 
 async function main() {
   const { auth } = await import("../src/lib/auth");

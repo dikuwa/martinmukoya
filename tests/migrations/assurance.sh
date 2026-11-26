@@ -8,7 +8,7 @@ if [[ -e .env.local || -L .env.local || ! ${DATABASE_URL:-} =~ ^postgresql://[a-
   exit 1
 fi
 sql() { psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 "$@"; }
-prisma() { ./node_modules/.bin/prisma "$@"; }
+prisma() { ./node_modules/.bin/tsx scripts/guarded-prisma.ts "$@"; }
 if [[ $(sql -Atc "SELECT count(*) FROM pg_class WHERE relnamespace = 'public'::regnamespace") != 0 ]]; then
   echo 'The migration assurance database must start empty.' >&2
   exit 1
