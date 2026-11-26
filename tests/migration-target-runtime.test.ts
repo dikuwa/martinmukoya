@@ -56,7 +56,17 @@ test("explicit process credentials mutate the intended disposable PostgreSQL dat
   assert.ok(databaseUrl, "CI must provide a disposable PostgreSQL service when initdb is unavailable");
   const target = new URL(databaseUrl);
   const expectedHost = target.hostname;
-  const expectedDatabase = target.pathname.slice(1);
+  let targetDatabase = target.pathname.slice(1);
+  let adminDatabaseUrl: string | undefined;
+  if (!hasLocalPostgres) {
+    targetDatabase = `migration_runtime_${process.pid}`;
+    const adminUrl = new URL(databaseUrl);
+    adminDatabaseUrl = adminUrl.toString();
+    adminUrl.pathname = "/postgres";
+    execFileSync("psql", [adminUrl.toString(), "-v", "ON_ERROR_STOP=1", "-c", `CREATE DATABASE "${targetDatabase}"`], { stdio: "ignore" });
+    target.pathname = `/${targetDatabase}`;
+  }
+  const targetUrl = target.toString();
   const fixture = join(root, "fixture");
   try {
     if (hasLocalPostgres) {
@@ -82,15 +92,19 @@ model RuntimeProbe {
     const result = spawnSync(tsx, [wrapper, "db", "push"], {
       cwd: fixture,
       encoding: "utf8",
-      env: { ...process.env, DATABASE_URL: databaseUrl, DATABASE_ENV: "ci", DATABASE_EXPECTED_HOST: expectedHost, DATABASE_EXPECTED_NAME: expectedDatabase },
+      env: { ...process.env, DATABASE_URL: targetUrl, DATABASE_ENV: "ci", DATABASE_EXPECTED_HOST: expectedHost, DATABASE_EXPECTED_NAME: targetDatabase },
       timeout: 30_000,
     });
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-    const relation = execFileSync("psql", [databaseUrl, "-Atc", `SELECT to_regclass('public."RuntimeProbe"')`], { encoding: "utf8" }).trim();
+    const relation = execFileSync("psql", [targetUrl, "-Atc", `SELECT to_regclass('public."RuntimeProbe"')`], { encoding: "utf8" }).trim();
     assert.equal(relation, '"RuntimeProbe"');
   } finally {
     if (hasLocalPostgres) {
       try { execFileSync("pg_ctl", ["-D", data, "-m", "immediate", "-w", "stop"], { stdio: "ignore" }); } catch { /* already stopped or never started */ }
+    } else if (adminDatabaseUrl) {
+      const adminUrl = new URL(adminDatabaseUrl);
+      adminUrl.pathname = "/postgres";
+      try { execFileSync("psql", [adminUrl.toString(), "-v", "ON_ERROR_STOP=1", "-c", `DROP DATABASE IF EXISTS "${targetDatabase}"`], { stdio: "ignore" }); } catch { /* best-effort cleanup of disposable CI database */ }
     }
     rmSync(root, { recursive: true, force: true });
   }
