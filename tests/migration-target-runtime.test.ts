@@ -47,7 +47,7 @@ test("CLI URL, db, and alternate-config overrides fail before Prisma starts", ()
 });
 
 test("missing process metadata does not inherit target identity from .env.local", () => {
-  const output = run(["db", "push", "--schema", "schema.prisma"], { DATABASE_URL: safeUrl });
+  const output = run(["db", "push", "--schema", "schema.prisma"], { DATABASE_URL: safeUrl, DATABASE_ENV: undefined, DATABASE_EXPECTED_HOST: undefined, DATABASE_EXPECTED_NAME: undefined });
   assert.match(output, /DATABASE_ENV/);
 });
 
@@ -55,7 +55,7 @@ test("non-Prisma seed entry point also fails closed without explicit target meta
   const result = spawnSync(tsx, [join(repo, "scripts/seed-customer-finance-e2e.ts")], {
     cwd: mkdtempSync(join(tmpdir(), "seed-target-")),
     encoding: "utf8",
-    env: { ...process.env, DATABASE_URL: safeUrl },
+    env: { ...process.env, DATABASE_URL: safeUrl, DATABASE_ENV: undefined, DATABASE_EXPECTED_HOST: undefined, DATABASE_EXPECTED_NAME: undefined },
     timeout: 20_000,
   });
   assert.match(`${result.stdout ?? ""}\n${result.stderr ?? ""}`, /DATABASE_ENV/);
