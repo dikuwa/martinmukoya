@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { test } from "node:test";
 
 const repo = resolve(".");
@@ -43,6 +43,46 @@ test("CLI URL, db, and alternate-config overrides fail before Prisma starts", ()
     const output = run(args, safeEnv);
     assert.match(output, /Datasource override/);
     assert.doesNotMatch(output, /P1001|127\.0\.0\.1:1/);
+  }
+});
+
+test("explicit process credentials mutate the intended disposable PostgreSQL database despite conflicting .env.local", () => {
+  const root = mkdtempSync(join(tmpdir(), "migration-postgres-"));
+  const data = join(root, "data");
+  const port = "55483";
+  const fixture = join(root, "fixture");
+  const databaseUrl = `postgresql://postgres@127.0.0.1:${port}/postgres?application_name=target-test`;
+  try {
+    execFileSync("initdb", ["-D", data, "-U", "postgres", "-A", "trust", "--locale=C", "--encoding=UTF8", "--no-instructions"], { stdio: "ignore" });
+    execFileSync("pg_ctl", ["-D", data, "-l", join(root, "postgres.log"), "-o", `-h 127.0.0.1 -p ${port}`, "-w", "start"], { stdio: "ignore" });
+    mkdirSync(join(fixture, "prisma"), { recursive: true });
+    mkdirSync(join(fixture, "scripts"), { recursive: true });
+    symlinkSync(join(repo, "node_modules"), join(fixture, "node_modules"), "dir");
+    copyFileSync(join(repo, "prisma.config.ts"), join(fixture, "prisma.config.ts"));
+    copyFileSync(join(repo, "scripts/migration-target.ts"), join(fixture, "scripts/migration-target.ts"));
+    writeFileSync(join(fixture, ".env.local"), "DATABASE_URL=postgresql://stale@127.0.0.1:55484/postgres\nDATABASE_ENV=ci\nDATABASE_EXPECTED_HOST=127.0.0.1\nDATABASE_EXPECTED_NAME=postgres\n");
+    writeFileSync(join(fixture, "prisma/schema.prisma"), `datasource db {
+  provider = "postgresql"
+}
+generator client {
+  provider = "prisma-client-js"
+}
+model RuntimeProbe {
+  id String @id
+}
+`);
+    const result = spawnSync(tsx, [wrapper, "db", "push"], {
+      cwd: fixture,
+      encoding: "utf8",
+      env: { ...process.env, DATABASE_URL: databaseUrl, DATABASE_ENV: "ci", DATABASE_EXPECTED_HOST: "127.0.0.1", DATABASE_EXPECTED_NAME: "postgres" },
+      timeout: 30_000,
+    });
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const relation = execFileSync("psql", [databaseUrl, "-Atc", `SELECT to_regclass('public."RuntimeProbe"')`], { encoding: "utf8" }).trim();
+    assert.equal(relation, '"RuntimeProbe"');
+  } finally {
+    try { execFileSync("pg_ctl", ["-D", data, "-m", "immediate", "-w", "stop"], { stdio: "ignore" }); } catch { /* already stopped or never started */ }
+    rmSync(root, { recursive: true, force: true });
   }
 });
 

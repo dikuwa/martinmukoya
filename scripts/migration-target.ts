@@ -1,5 +1,17 @@
 const PRODUCTION_SUPABASE_PROJECT = "ujuxpamgzerbksmqbxqj";
 const ENVIRONMENTS = new Set(["ci", "staging", "production"]);
+const REVIEWED_CONNECTION_PARAMETERS = new Set([
+  "application_name",
+  "channel_binding",
+  "connect_timeout",
+  "connection_limit",
+  "pgbouncer",
+  "pool_timeout",
+  "schema",
+  "sslaccept",
+  "sslmode",
+  "sslrootcert",
+]);
 
 export type MigrationTargetEnvironment = "ci" | "staging" | "production";
 
@@ -16,6 +28,11 @@ function parseDatabaseUrl(databaseUrl: string): URL {
   const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
   if (!parsed.hostname || !parsed.username || !databaseName || databaseName.includes("/")) {
     throw new Error("DATABASE_URL must include an unambiguous PostgreSQL host and database name.");
+  }
+  for (const parameter of parsed.searchParams.keys()) {
+    if (!REVIEWED_CONNECTION_PARAMETERS.has(parameter.toLowerCase())) {
+      throw new Error(`DATABASE_URL parameter ${parameter} is not reviewed and may redirect the database destination.`);
+    }
   }
   return parsed;
 }

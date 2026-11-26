@@ -32,6 +32,13 @@ test("rejects direct production Supabase and encoded identities outside producti
   }
 });
 
+test("permits only reviewed connection parameters and rejects destination overrides", () => {
+  for (const parameter of ["host", "port", "dbname", "database", "user", "username", "password", "service", "options"]) {
+    assert.throws(() => validateMigrationTarget({ ...staging, databaseUrl: `${staging.databaseUrl}?${parameter}=production` }), /not reviewed/);
+  }
+  assert.doesNotThrow(() => validateMigrationTarget({ ...staging, databaseUrl: `${staging.databaseUrl}?sslmode=require&pgbouncer=true&connect_timeout=5&application_name=ci` }));
+});
+
 test("Prisma config validates migration commands without overriding explicit credentials", () => {
   const config = readFileSync("prisma.config.ts", "utf8");
   assert.match(config, /prismaArgs\.includes\("migrate"\)/);
