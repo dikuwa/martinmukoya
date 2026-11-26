@@ -3,13 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Check, ChevronDown, MessageCircle, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics-client";
 import type { PublicSiteConfig } from "@/lib/public-site-config";
+import { useFormHydrated } from "./use-form-hydrated";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Enter your name."),
@@ -33,8 +34,7 @@ const preferredContactOptions = [
 
 export function ContactForm({ site }: { site: PublicSiteConfig }) {
   const [submitted, setSubmitted] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useFormHydrated();
   const pageCopy = site.pages.contact;
   const formStarted = useRef(false);
   const submitMessage = useMutation({

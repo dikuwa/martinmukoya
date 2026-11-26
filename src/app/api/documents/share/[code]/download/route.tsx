@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { trackSharedDocumentDownload } from "@/lib/business-document-service";
 import { FinancialPdf } from "@/lib/pdf/financial-document";
 import { BusinessDocumentPdf } from "@/lib/pdf/business-document";
-import { getIssuerSnapshot } from "@/lib/finance-service";
+import { businessDocumentIssuer } from "@/lib/business-document-service";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ code: string }> };
@@ -49,7 +49,7 @@ export async function GET(request: Request, context: Context) {
       const doc = await db.businessDocument.findUnique({ where: { id: share.businessDocumentId } });
       if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-      const issuer = await getIssuerSnapshot(doc.siteId ?? null);
+      const issuer = await businessDocumentIssuer(doc);
       const buffer = await renderToBuffer(
         <BusinessDocumentPdf
           title={doc.title}

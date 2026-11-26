@@ -2,7 +2,7 @@ import { created, ok, parseJson, serverError, validationError } from "@/lib/api"
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { matchingCustomers } from "@/lib/customer-identity";
-import { runPaymentTransaction } from "@/lib/payment-transaction";
+import { isTransactionConflict, runPaymentTransaction } from "@/lib/payment-transaction";
 import { customerSchema } from "@/lib/validation/customer";
 import { z } from "zod";
 
@@ -23,6 +23,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  let duplicateDetails: { email?: string | null; phone?: string | null; whatsAppNumber?: string | null } | undefined;
   try {
     const { session, error } = await requireAdmin(); if (error) return error;
     const input = await parseJson(request, customerSchema.and(z.object({
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
       leadId: z.string().min(1).optional(),
     })));
     const { bookingId, leadId, ...details } = input;
+    duplicateDetails = details;
     return await runPaymentTransaction(async tx => {
       const booking = bookingId
         ? await tx.booking.findUnique({ where: { id: bookingId } })
@@ -64,6 +66,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);
+    if (duplicateDetails && isTransactionConflict(error)) {
+      // A serializable loser can reach this handler before the winner's commit is visible.
+      // Read through the same retrying transaction path before surfacing a server error.
+      const matches = await runPaymentTransaction(tx => matchingCustomers(tx, duplicateDetails!));
+      if (matches.length) return ok({ error: "A customer with these contact details exists.", existingId: matches.length === 1 ? matches[0].id : undefined }, { status: 409 });
+    }
     return serverError(error);
   }
 }

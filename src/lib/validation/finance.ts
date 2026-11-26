@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { parsePaymentAmount } from "../financial";
 
+export function normalizeFinanceSiteReference(site: string | null | undefined) {
+  const value = site?.trim();
+  if (!value || value === "global") return null;
+  if (value === "personal" || value === "martin-mukoya") return "personal";
+  return value;
+}
+
 const optionalText = z.string().trim().optional().nullable();
 const optionalEmail = z.preprocess((value) => value === "" ? null : value, z.string().trim().email().optional().nullable());
 const money = z.union([z.string(), z.number()]);
@@ -29,5 +36,7 @@ export const documentDraftSchema = z.object({
 export const paymentCreateSchema = z.object({
   invoiceId: z.string().min(1).optional(), bookingId: z.string().min(1).optional(),
   amount: paymentAmount, method: z.enum(["CASH", "BANK_TRANSFER", "CARD", "OTHER"]),
-  paidAt: optionalText, reference: optionalText, notes: optionalText,
+  paidAt: optionalText.refine(value => !value || Number.isFinite(Date.parse(value)), "Enter a valid payment date."),
+  reference: optionalText, notes: optionalText,
+  idempotencyKey: z.string().trim().min(1).max(200).optional(),
 });

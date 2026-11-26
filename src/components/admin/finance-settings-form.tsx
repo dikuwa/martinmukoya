@@ -22,7 +22,7 @@ const signatureModeOptions = [
   { value: "image", label: "Uploaded signature image" }
 ];
 
-export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
+export function FinanceSettingsForm({ initial, site }: { initial: IssuerSnapshot; site: string | null }) {
   const [saving, setSaving] = useState(false);
   const [methods, setMethods] = useState(initial.paymentMethods.length ? initial.paymentMethods : [""]);
   const [signatureMode, setSignatureMode] = useState<"text" | "image">(initial.signatureMode || "text");
@@ -45,7 +45,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
     setSaving(true);
     const form = new FormData(formElement);
     const data = Object.fromEntries(form);
-    const response = await fetch("/api/admin/finance-settings", {
+    const response = await fetch(`/api/admin/finance-settings?site=${encodeURIComponent(site ?? "")}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...data, paymentMethods: methods.map(item => item.trim()).filter(Boolean), signatureMode, signatureImage, showSignature })
@@ -53,7 +53,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
     const payload = await response.json();
     setSaving(false);
     if (!response.ok) return toast.error(payload.error || "Settings could not be saved");
-    toast.success("Financial identity saved and applied to all existing documents");
+    toast.success("Financial identity saved for new documents.");
   }
 
   return (
@@ -82,7 +82,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
         ))}
       </section>
       <section className="grid gap-4 border-t border-[color:var(--border-subtle)] pt-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div>
             <h2 className="font-display text-xl font-black">Accepted payment methods</h2>
             <p className="text-sm text-[color:var(--text-muted)]">Add, remove, and reorder the methods printed on documents.</p>
@@ -92,7 +92,7 @@ export function FinanceSettingsForm({ initial }: { initial: IssuerSnapshot }) {
           </Button>
         </div>
         {methods.map((method, index) => (
-          <div key={index} className="flex gap-2">
+          <div key={index} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2">
             <input
               aria-label={`Payment method ${index + 1}`}
               value={method}

@@ -16,11 +16,13 @@
  * Projects, BlogPosts, Testimonials, FAQs, SiteSettings, Sites, and the
  * admin User are NOT deleted — those are foundational content.
  */
-import "dotenv/config";
 import dotenv from "dotenv";
 import { getDb } from "../src/lib/db";
+import { validateMigrationTarget } from "./migration-target";
 
-dotenv.config({ path: ".env.local", override: true });
+const explicitTarget = { databaseUrl: process.env.DATABASE_URL, environment: process.env.DATABASE_ENV, expectedHost: process.env.DATABASE_EXPECTED_HOST, expectedDatabase: process.env.DATABASE_EXPECTED_NAME, productionApproved: process.env.DATABASE_PRODUCTION_MIGRATION_APPROVED };
+dotenv.config({ path: ".env.local" });
+validateMigrationTarget(explicitTarget);
 
 const db = getDb();
 

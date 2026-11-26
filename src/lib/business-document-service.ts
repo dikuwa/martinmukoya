@@ -6,20 +6,30 @@ import { db } from "@/lib/db";
 import { getIssuerSnapshot } from "@/lib/finance-service";
 import { BusinessDocumentType, Prisma } from "@/generated/prisma/client";
 import { getDocumentSettings } from "@/lib/document-settings";
+import { resolveBusinessDocumentLinks } from "@/lib/business-document-links";
+import type { IssuerSnapshot } from "@/lib/issuer-constants";
+
+type BusinessIssuer = Pick<IssuerSnapshot, "name" | "logo" | "phone" | "email" | "address" | "companyDetails" | "registration" | "signerName" | "signerTitle" | "signatureMode" | "signatureImage" | "showSignature">;
+
+export async function businessDocumentIssuer(doc: { issuerSnapshot: Prisma.JsonValue; siteId: string | null }): Promise<BusinessIssuer> {
+  if (doc.issuerSnapshot) return doc.issuerSnapshot as BusinessIssuer;
+  const { name, logo, phone, email, address, companyDetails, registration, signerName, signerTitle, signatureMode, signatureImage, showSignature } = await getIssuerSnapshot(doc.siteId);
+  return { name, logo, phone, email, address, companyDetails, registration, signerName, signerTitle, signatureMode, signatureImage, showSignature };
+}
 
 export type BusinessDocInput = {
   documentType: BusinessDocumentType;
   title: string;
   subject?: string;
-  siteId?: string;
+  siteId?: string | null;
   contactId?: string | null;
   leadId?: string | null;
   projectId?: string | null;
   financialDocumentId?: string | null;
   serviceId?: string;
   templateId?: string | null;
-  templateVersion?: number;
-  templateSnapshot?: Prisma.InputJsonObject;
+  templateVersion?: number | null;
+  templateSnapshot?: Prisma.InputJsonObject | typeof Prisma.DbNull;
   companyName?: string;
   recipientName?: string;
   recipientEmail?: string;
@@ -56,7 +66,7 @@ function slugify(text: string): string {
 
 export async function createBusinessDocument(input: BusinessDocInput) {
   const issuer = await getIssuerSnapshot(input.siteId ?? null);
-  const settings = await getDocumentSettings();
+  const settings = await getDocumentSettings(input.siteId ?? null);
   const slug = slugify(input.title) + "-" + shortCode().slice(0, 4);
   return db.businessDocument.create({
     data: {
@@ -104,7 +114,7 @@ export async function createBusinessDocument(input: BusinessDocInput) {
   });
 }
 
-export async function updateBusinessDocument(id: string, input: Partial<BusinessDocInput> & Record<string, unknown>) {
+export async function updateBusinessDocument(id: string, input: Partial<BusinessDocInput>, updatedAt: Date) {
   const data: Prisma.BusinessDocumentUncheckedUpdateInput = {};
   for (const [key, value] of Object.entries(input)) {
     if (key === "userId" || key === "issueDate" || key === "expiryDate" || key === "reviewDate") continue;
@@ -115,12 +125,9 @@ export async function updateBusinessDocument(id: string, input: Partial<Business
   if (input.expiryDate !== undefined) data.expiryDate = input.expiryDate ? new Date(input.expiryDate) : null;
   if (input.reviewDate !== undefined) data.reviewDate = input.reviewDate ? new Date(input.reviewDate) : null;
 
-  await db.businessDocumentAuditLog.create({
-    data: { documentId: id, action: "EDITED", userId: input.userId }
-  });
   return db.businessDocument.update({
-    where: { id },
-    data,
+    where: { id, status: "DRAFT", updatedAt },
+    data: { ...data, auditLog: { create: { action: "EDITED", userId: input.userId } } },
     include: { auditLog: { orderBy: { createdAt: "desc" }, take: 5 } }
   });
 }
@@ -128,9 +135,13 @@ export async function updateBusinessDocument(id: string, input: Partial<Business
 export async function issueBusinessDocument(id: string, userId?: string) {
   const doc = await db.businessDocument.findUnique({ where: { id } });
   if (!doc || doc.status !== "DRAFT") throw new Error("Only draft documents can be issued.");
+  const { siteId } = await resolveBusinessDocumentLinks({}, doc);
+  const issuerSnapshot = await businessDocumentIssuer({ siteId, issuerSnapshot: null });
   const result = await db.businessDocument.update({
-    where: { id },
+    where: { id, status: "DRAFT", updatedAt: doc.updatedAt },
     data: {
+      siteId,
+      issuerSnapshot,
       status: "ISSUED",
       issueDate: new Date(),
       documentNumber: doc.documentNumber || docNumber(doc.documentType),
@@ -209,25 +220,10 @@ export async function trackSharedDocumentDownload(shortCode: string) {
   });
 }
 
-export async function acceptBusinessDocument(id: string, input: { name: string; comment?: string; ip?: string; userAgent?: string }, userId?: string) {
-  const doc = await db.businessDocument.update({
-    where: { id },
-    data: {
-      status: "ACCEPTED",
-      acceptedAt: new Date(),
-      auditLog: { create: { action: "ACCEPTED", detail: `Accepted by ${input.name}`, userId } }
-    }
-  });
-  await db.sharedDocument.updateMany({
-    where: { businessDocumentId: id },
-    data: { acceptedAt: new Date(), acceptedName: input.name, acceptedComment: input.comment, acceptedIp: input.ip, acceptedUserAgent: input.userAgent }
-  });
-  return doc;
-}
 
 export async function declineBusinessDocument(id: string, reason?: string, comment?: string, userId?: string) {
   return db.businessDocument.update({
-    where: { id },
+    where: { id, status: { not: "ACCEPTED" }, acceptedAt: null },
     data: {
       status: "DECLINED",
       declinedReason: reason,
@@ -241,8 +237,9 @@ export async function declineBusinessDocument(id: string, reason?: string, comme
 export async function reviseBusinessDocument(id: string, userId?: string) {
   const source = await db.businessDocument.findUnique({ where: { id }, include: { publicShare: true } });
   if (!source || source.status === "DRAFT") throw new Error("Only issued documents can be revised.");
-  await db.businessDocument.update({ where: { id }, data: { status: "SUPERSEDED" } });
-  return db.businessDocument.create({
+  const [, revision] = await db.$transaction([
+    db.businessDocument.update({ where: { id, updatedAt: source.updatedAt }, data: { status: "SUPERSEDED" } }),
+    db.businessDocument.create({
     data: {
       documentType: source.documentType,
       title: `Revision of ${source.title}`,
@@ -253,6 +250,9 @@ export async function reviseBusinessDocument(id: string, userId?: string) {
       projectId: source.projectId,
       serviceId: source.serviceId,
       templateId: source.templateId,
+      financialDocumentId: source.financialDocumentId,
+      templateVersion: source.templateVersion,
+      templateSnapshot: source.templateSnapshot ?? Prisma.DbNull,
       revisionOfId: source.id,
       companyName: source.companyName,
       recipientName: source.recipientName,
@@ -269,7 +269,9 @@ export async function reviseBusinessDocument(id: string, userId?: string) {
       createdById: userId,
       auditLog: { create: { action: "REVISED", userId } }
     }
-  });
+    }),
+  ]);
+  return revision;
 }
 
 export function getWhatsAppNumber(phone?: string, whatsApp?: string, phoneIsWhatsApp?: boolean): string | null {

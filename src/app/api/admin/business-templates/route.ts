@@ -6,7 +6,7 @@ import { BusinessDocumentType } from "@/generated/prisma/client";
 
 const templateSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  documentCategory: z.string().min(1),
+  documentCategory: z.enum(BusinessDocumentType),
   defaultTitle: z.string().trim().max(300).optional(),
   defaultSubject: z.string().trim().max(500).optional(),
   defaultBodyMarkdown: z.string().default(""),
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     if (error) return error;
     const input = await parseJson(request, templateSchema);
     const template = await db.businessDocumentTemplate.create({
-      data: { ...input,   documentCategory: input.documentCategory as BusinessDocumentType, createdById: session.user.id },
+      data: { ...input, documentCategory: input.documentCategory as BusinessDocumentType, createdById: session.user.id },
     });
     return created(template);
   } catch (error) {

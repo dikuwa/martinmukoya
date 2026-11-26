@@ -1,9 +1,9 @@
 import { ok, parseJson, serverError, validationError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
-import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
-import type { Prisma } from "@/generated/prisma/client";
+import { getIssuerSnapshot } from "@/lib/finance-service";
 import { z } from "zod";
+import { normalizeFinanceSiteReference } from "@/lib/validation/finance";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -22,52 +22,27 @@ const schema = z.object({
   paymentMethods: z.array(z.string().trim().min(1)).max(12),
   paymentInstructions: z.string(),
   signerName: z.string().min(1),
-  signerTitle: z.string().min(1),
+  signerTitle: z.string(),
   signatureMode: z.enum(["text", "image"]),
   signatureImage: z.string(),
   showSignature: z.boolean(),
 });
 
-function getSiteId(site: string | null): string | null {
-  if (!site || site === "global") return null;
-  if (site === "personal" || site === "martin-mukoya") return "personal";
-  return site;
+async function selectedSiteId(request: Request) {
+  const reference = normalizeFinanceSiteReference(new URL(request.url).searchParams.get("site"));
+  if (!reference) return null;
+  const slug = reference === "personal" ? "martin-mukoya" : reference;
+  const site = await db.site.findFirst({ where: { OR: [{ id: reference }, { slug }] }, select: { id: true } });
+  return site?.id;
 }
 
 export async function GET(request: Request) {
   try {
     const { error } = await requireAdmin();
     if (error) return error;
-
-    const url = new URL(request.url);
-    const site = url.searchParams.get("site");
-    const siteId = getSiteId(site);
-
-    const isPersonal = siteId === "personal";
-    const baseIssuer = isPersonal ? personalIssuer : defaultIssuer;
-
-    const settings = await db.siteSetting.findMany({
-      where: {
-        OR: [
-          { siteId: null, key: { startsWith: "finance." } },
-          ...(siteId && siteId !== "personal" ? [{ siteId, key: { startsWith: "finance." } }] : []),
-        ],
-      },
-    });
-
-    const values = Object.fromEntries(settings.map((setting) => [setting.key.slice(8), setting.value]));
-
-    let paymentMethods = baseIssuer.paymentMethods;
-    if (typeof values.paymentMethods === "string") {
-      try {
-        const parsed = JSON.parse(values.paymentMethods);
-        if (Array.isArray(parsed)) paymentMethods = parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-      } catch { }
-    }
-    const showSignature = values.showSignature === undefined ? baseIssuer.showSignature : values.showSignature === "true";
-
-    const issuer = { ...baseIssuer, ...values, paymentMethods, showSignature } as IssuerSnapshot;
-    return ok({ issuer });
+    const siteId = await selectedSiteId(request);
+    if (siteId === undefined) return Response.json({ error: "Site not found." }, { status: 400 });
+    return ok({ issuer: await getIssuerSnapshot(siteId) });
   } catch (error) {
     return serverError(error);
   }
@@ -77,17 +52,9 @@ export async function POST(request: Request) {
   try {
     const { error } = await requireAdmin();
     if (error) return error;
-
-    const url = new URL(request.url);
-    const site = url.searchParams.get("site");
-    const siteId = getSiteId(site);
-
+    const siteId = await selectedSiteId(request);
+    if (siteId === undefined) return Response.json({ error: "Site not found." }, { status: 400 });
     const data = await parseJson(request, schema);
-    const snapshot: IssuerSnapshot = {
-      ...(siteId === "personal" ? personalIssuer : defaultIssuer),
-      ...data,
-    };
-
     await db.$transaction(async (tx) => {
       for (const [key, value] of Object.entries(data)) {
         const settingKey = `finance.${key}`;
@@ -96,14 +63,8 @@ export async function POST(request: Request) {
         if (existing) await tx.siteSetting.update({ where: { id: existing.id }, data: { value: storedValue } });
         else await tx.siteSetting.create({ data: { siteId, key: settingKey, value: storedValue } });
       }
-      const whereSiteId = siteId ?? undefined;
-      await tx.financialDocument.updateMany({
-        where: { siteId: whereSiteId },
-        data: { issuerSnapshot: snapshot as Prisma.InputJsonValue },
-      });
     });
-
-    return ok({ saved: true, allDocumentsUpdated: true });
+    return ok({ saved: true, allDocumentsUpdated: false });
   } catch (error) {
     if (error instanceof z.ZodError) return validationError(error);
     return serverError(error);

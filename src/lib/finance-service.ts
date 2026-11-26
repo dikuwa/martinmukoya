@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { matchingCustomers } from "@/lib/customer-identity";
 import { db } from "@/lib/db";
+import { paymentIdempotency, runIdempotentPayment, type PaymentInput } from "@/lib/payment-idempotency";
 import { PaymentBalanceConflict, runPaymentTransaction } from "@/lib/payment-transaction";
 import { calculateDocumentTotals, computeOutstanding, parsePaymentAmount, paymentSettlesInvoice, sumActivePayments, type FinancialLineInput } from "@/lib/financial";
 import { defaultIssuer, personalIssuer, type IssuerSnapshot } from "@/lib/issuer-constants";
@@ -54,11 +55,13 @@ export function documentNumber(type: "QUOTE" | "INVOICE" | "RECEIPT") {
 }
 
 export async function ensureBookingFromLead(leadId: string, userId?: string) {
-  return runPaymentTransaction(async tx => {
-    const existing = await tx.booking.findUnique({ where: { leadId } });
-    if (existing?.contactId) return existing;
+  try {
+    return await runPaymentTransaction(async tx => {
     const lead = await tx.lead.findUnique({ where: { id: leadId } });
     if (!lead?.siteId) throw new Error("Lead must belong to a site before creating financial documents.");
+    const existing = await tx.booking.findUnique({ where: { leadId } });
+    if (existing && existing.siteId !== lead.siteId) throw new Error("The booking and lead must belong to the same site.");
+    if (existing?.contactId) return existing;
 
     const details = {
       email: lead.emailValid ? lead.email : null,
@@ -88,7 +91,14 @@ export async function ensureBookingFromLead(leadId: string, userId?: string) {
       company: lead.company, projectDescription: lead.projectGoal || lead.message,
       budgetRange: lead.budgetRange, source: lead.source || "website", createdById: userId,
     } });
-  });
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const booking = await db.booking.findUnique({ where: { leadId }, include: { lead: { select: { siteId: true } } } });
+      if (booking && booking.siteId === booking.lead?.siteId) return booking;
+    }
+    throw error;
+  }
 }
 
 export async function createDraft(input: {
@@ -125,18 +135,6 @@ export async function issueDocument(id: string) {
   });
 }
 
-export async function acceptFinancialDocument(id: string, input: { name: string }) {
-  return db.$transaction(async (tx) => {
-    const doc = await tx.financialDocument.findUnique({ where: { id } });
-    if (!doc) throw new Error("Document not found.");
-    if (doc.type !== "QUOTE") throw new Error("Only quotes can be accepted.");
-    if (!["ISSUED"].includes(doc.status)) throw new Error("This quote is no longer available for acceptance.");
-    return tx.financialDocument.update({
-      where: { id },
-      data: { status: "ACCEPTED", acceptedAt: new Date(), acceptedName: input.name },
-    });
-  });
-}
 
 export async function declineFinancialDocument(id: string) {
   return db.$transaction(async (tx) => {
@@ -145,16 +143,19 @@ export async function declineFinancialDocument(id: string) {
     if (doc.type !== "QUOTE") throw new Error("Only quotes can be declined.");
     if (!["ISSUED"].includes(doc.status)) throw new Error("This quote is no longer available for response.");
     return tx.financialDocument.update({
-      where: { id },
+      where: { id, status: "ISSUED", acceptedAt: null },
       data: { status: "DECLINED", declinedAt: new Date() },
     });
   });
 }
 
-export async function recordPayment(input: { invoiceId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
+export async function recordPayment(input: PaymentInput & { invoiceId: string }) {
   const amount = parsePaymentAmount(input.amount);
-  
-  return runPaymentTransaction(async (tx) => {
+  const paidAt = input.paidAt ? new Date(input.paidAt) : undefined;
+  const idempotency = paymentIdempotency(input, ["invoice", input.invoiceId], amount, paidAt);
+  const include = { receiptDocument: true, invoice: true, booking: true } as const;
+  return runIdempotentPayment(idempotency, (client, idempotencyKey) =>
+    client.payment.findUnique({ where: { idempotencyKey }, include }), async tx => {
     const invoiceTx = await tx.financialDocument.findUnique({ where: { id: input.invoiceId }, include: { booking: true, payments: { where: { reversedAt: null } } } });
     if (!invoiceTx || invoiceTx.type !== "INVOICE" || !["ISSUED", "PARTIALLY_PAID"].includes(invoiceTx.status)) throw new Error("Select an outstanding issued invoice.");
     const paid = sumActivePayments(invoiceTx.payments);
@@ -172,8 +173,8 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
     const payment = await tx.payment.create({ data: {
       number: paymentNumber(), siteId: invoiceTx.siteId, bookingId: invoiceTx.bookingId, invoiceId: invoiceTx.id,
       receiptDocumentId: receipt.id, amount: amount.toFixed(2), method: input.method,
-      paidAt: input.paidAt ? new Date(input.paidAt) : new Date(), reference: input.reference, notes: input.notes, recordedById: input.userId,
-    }, include: { receiptDocument: true, invoice: true, booking: true } });
+      paidAt: paidAt ?? new Date(), reference: input.reference, notes: input.notes, recordedById: input.userId, ...idempotency,
+    }, include });
     const fullyPaid = paymentSettlesInvoice(invoiceTx.total, paid, amount);
     const balanceNote = fullyPaid
       ? "Paid in full."
@@ -185,13 +186,17 @@ export async function recordPayment(input: { invoiceId: string; amount: string |
   });
 }
 
-export async function recordBookingDeposit(input: { bookingId: string; amount: string | number; method: "CASH" | "BANK_TRANSFER" | "CARD" | "OTHER"; paidAt?: string | null; reference?: string | null; notes?: string | null; userId?: string }) {
+export async function recordBookingDeposit(input: PaymentInput & { bookingId: string }) {
   const amount = parsePaymentAmount(input.amount);
+  const paidAt = input.paidAt ? new Date(input.paidAt) : undefined;
+  const idempotency = paymentIdempotency(input, ["booking", input.bookingId], amount, paidAt);
+  const include = { receiptDocument: true, booking: true } as const;
 
   const booking = await db.booking.findUnique({ where: { id: input.bookingId } });
-  if (!booking) throw new Error("Project not found.");
-  const issuer = await getIssuerSnapshot(booking.siteId);
-  return runPaymentTransaction(async (tx) => {
+  const issuer = booking && await getIssuerSnapshot(booking.siteId);
+  return runIdempotentPayment(idempotency, (client, idempotencyKey) =>
+    client.payment.findUnique({ where: { idempotencyKey }, include }), async tx => {
+    if (!booking || !issuer) throw new Error("Project not found.");
     const currentBooking = await tx.booking.findUnique({ where: { id: booking.id } });
     if (!currentBooking) throw new Error("Project not found.");
     const contractAmount = currentBooking.contractAmount;
@@ -214,8 +219,9 @@ export async function recordBookingDeposit(input: { bookingId: string; amount: s
     } });
     return tx.payment.create({ data: {
       number: paymentNumber(), siteId: booking.siteId, bookingId: booking.id, receiptDocumentId: receipt.id,
-      amount: amount.toFixed(2), method: input.method, paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
+      amount: amount.toFixed(2), method: input.method, paidAt: paidAt ?? new Date(),
       reference: input.reference, notes: input.notes, recordedById: input.userId,
-    }, include: { receiptDocument: true, booking: true } });
+      ...idempotency,
+    }, include });
   });
 }

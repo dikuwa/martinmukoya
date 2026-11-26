@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/lib/db";
@@ -6,6 +7,7 @@ import { Plus, ExternalLink, FileText } from "lucide-react";
 import type { Prisma, BusinessDocumentType, BusinessDocumentStatus } from "@/generated/prisma/client";
 import { Card } from "@/components/ui/card";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
+import { requireAdmin } from "@/lib/auth-guard";
 
 type Props = { searchParams: Promise<{ type?: string; status?: string; search?: string }> };
 
@@ -29,6 +31,8 @@ const statusColors: Record<string, string> = {
 const filterClass = "h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm";
 
 export default async function BusinessDocumentsPage({ searchParams }: Props) {
+  const { error } = await requireAdmin();
+  if (error) notFound();
   const params = await searchParams;
   const type = params.type || "";
   const status = params.status || "";

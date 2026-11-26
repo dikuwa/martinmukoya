@@ -13,7 +13,7 @@ function getPgPool() {
       : configuredUrl;
     const pool = new Pool({
       connectionString,
-      max: 1,
+      max: process.env.E2E_CONCURRENT_TRANSACTIONS === "true" ? 4 : 1,
       idleTimeoutMillis: 5_000,
       connectionTimeoutMillis: 10_000,
       allowExitOnIdle: true

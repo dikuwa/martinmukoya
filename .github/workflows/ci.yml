@@ -9,6 +9,9 @@ on:
 env:
   # Synthetic credentials target only the disposable services below, including postinstall.
   DATABASE_URL: postgresql://test:test@localhost:5432/test
+  DATABASE_ENV: ci
+  DATABASE_EXPECTED_HOST: localhost
+  DATABASE_EXPECTED_NAME: test
   UPSTASH_REDIS_URL: http://localhost:8079
   UPSTASH_REDIS_TOKEN: ci-redis-token
   BETTER_AUTH_SECRET: ci-synthetic-auth-secret-at-least-32-characters
@@ -77,6 +80,9 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Run unit tests
         run: pnpm test
 
@@ -86,10 +92,46 @@ jobs:
       - name: Build Next.js app
         run: pnpm build
 
+  migration-assurance:
+    runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: postgresql://test:test@127.0.0.1:5432/migration_assurance
+      DATABASE_ENV: ci
+      DATABASE_EXPECTED_HOST: 127.0.0.1
+      DATABASE_EXPECTED_NAME: migration_assurance
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: migration_assurance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d migration_assurance"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify migrations on populated PostgreSQL
+        run: bash tests/migrations/assurance.sh
+
   # ── E2E tests (Playwright) ──
   # Runs in parallel with the build job — doesn't depend on build artifacts
   e2e:
     runs-on: ubuntu-24.04
+    env:
+      E2E_CONCURRENT_TRANSACTIONS: "true"
 
     services:
       postgres:
@@ -171,22 +213,22 @@ jobs:
           if [ "$ready" != true ]; then cat /tmp/next-dev.log; exit 1; fi
 
       - name: Run E2E tests
-        run: npx playwright test --reporter=list
+        run: pnpm exec playwright test
 
       - name: Print server diagnostics
         if: failure()
         run: cat /tmp/next-dev.log || true
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: e2e-screenshots
+          name: e2e-browser-evidence
           path: test-results/
           retention-days: 7

@@ -25,7 +25,7 @@ export async function GET() {
     const { error } = await requireAdmin();
     if (error) return error;
 
-    const settings = await db.documentSettings.findFirst();
+    const settings = await db.documentSettings.findFirst({ where: { siteId: null }, orderBy: { updatedAt: "desc" } });
     return NextResponse.json(settings || defaultDocumentSettings);
   } catch (error) {
     console.error("[document-settings] GET error:", error);
@@ -40,23 +40,10 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const parsed = settingsSchema.parse(body);
-    const existing = await db.documentSettings.findFirst();
-
-    const result = await db.$transaction(async (tx) => {
-      if (existing) await tx.documentSettings.update({ where: { id: existing.id }, data: parsed });
-      else await tx.documentSettings.create({ data: parsed });
-      return tx.businessDocument.updateMany({
-        data: {
-          senderName: parsed.defaultSenderName,
-          senderRole: parsed.defaultSenderRole,
-          aiTone: parsed.aiDefaultTone,
-          aiStyle: parsed.aiDefaultStyle,
-          aiLength: parsed.aiDefaultLength
-        }
-      });
-    });
-
-    return NextResponse.json({ saved: true, documentsUpdated: result.count });
+    const existing = await db.documentSettings.findFirst({ where: { siteId: null }, orderBy: { updatedAt: "desc" } });
+    if (existing) await db.documentSettings.update({ where: { id: existing.id }, data: parsed });
+    else await db.documentSettings.create({ data: parsed });
+    return NextResponse.json({ saved: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message || "Validation failed" }, { status: 400 });

@@ -53,6 +53,11 @@ test("settlement is exact to the cent", () => {
   assert.equal(paymentSettlesInvoice("1000.00", "333.33", "666.66"), false);
 });
 
+test("overpayment leaves no negative outstanding balance", () => {
+  assert.equal(computeOutstanding("1000.00", "1000.01"), 0);
+  assert.equal(paymentSettlesInvoice("1000.00", "0.00", "1000.01"), false);
+});
+
 // Booking-level contract: deposits reduce one outstanding project balance.
 
 test("a deposit against a project contract reduces the project outstanding", () => {

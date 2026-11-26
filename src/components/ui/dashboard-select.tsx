@@ -136,7 +136,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
           ref={triggerRef}
           id={id}
           type="button"
-          aria-label={ariaLabel}
+          aria-label={ariaLabel ?? selectedOption?.label ?? placeholder ?? name ?? "Select option"}
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={open ? `${id}-listbox` : undefined}
@@ -167,7 +167,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
             ref={menuRef}
             id={`${id}-listbox`}
             role="listbox"
-            aria-label={ariaLabel ?? placeholder ?? name ?? "Select an option"}
+            aria-label={ariaLabel ?? selectedOption?.label ?? placeholder ?? name ?? "Select an option"}
             onKeyDown={event => {
               if (event.key === "Escape") {
                 event.preventDefault();

@@ -5,8 +5,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { BusinessDocumentActions } from "@/components/admin/business-document-actions";
 import { BusinessDocumentPreview } from "@/components/documents/business-document-preview";
-import { getIssuerSnapshot } from "@/lib/finance-service";
+import { businessDocumentIssuer } from "@/lib/business-document-service";
 import { Card } from "@/components/ui/card";
+import { requireAdmin } from "@/lib/auth-guard";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -20,6 +21,8 @@ const docTypeLabels: Record<string, string> = {
 };
 
 export default async function BusinessDocumentPage({ params }: Props) {
+  const { error } = await requireAdmin();
+  if (error) notFound();
   const id = (await params).id;
   const doc = await db.businessDocument.findUnique({
     where: { id },
@@ -32,7 +35,7 @@ export default async function BusinessDocumentPage({ params }: Props) {
   });
   if (!doc) notFound();
 
-  const issuer = await getIssuerSnapshot(doc.siteId ?? null);
+  const issuer = await businessDocumentIssuer(doc);
   const shortLink = doc.publicShare ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/d/${doc.publicShare.shortCode}` : null;
 
   const previewDoc = {

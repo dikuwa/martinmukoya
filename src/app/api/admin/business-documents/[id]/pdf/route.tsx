@@ -2,7 +2,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { BusinessDocumentPdf } from "@/lib/pdf/business-document";
-import { getIssuerSnapshot } from "@/lib/finance-service";
+import { businessDocumentIssuer } from "@/lib/business-document-service";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -16,7 +16,7 @@ export async function GET(request: Request, context: Context) {
     const doc = await db.businessDocument.findUnique({ where: { id: (await context.params).id } });
     if (!doc) return Response.json({ error: "Document not found" }, { status: 404 });
 
-    const issuer = await getIssuerSnapshot(doc.siteId ?? null);
+    const issuer = await businessDocumentIssuer(doc);
     const baseUrl = new URL(request.url).origin;
 
     const buffer = await renderToBuffer(

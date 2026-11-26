@@ -71,3 +71,15 @@ test("maps real project fields without inventing unavailable project facts", () 
   assert.equal(context.target_audience, "");
   assert.equal(context.project_scope, "");
 });
+
+test("uses the selected issuer identity for template placeholders", () => {
+  const context = buildDocumentTemplateContext({
+    values: { title: "Proposal" },
+    business: { name: "Martin Mukoya", email: "martin@example.com", phone: "000", address: "Windhoek" },
+    currentUser: { name: "Martin Mukoya", roleTitle: "Director" },
+  });
+  assert.equal(context.business_name, "Martin Mukoya");
+  assert.equal(context.business_email, "martin@example.com");
+  assert.equal(context.sender_name, "Martin Mukoya");
+  assert.equal(context.sender_role, "Director");
+});

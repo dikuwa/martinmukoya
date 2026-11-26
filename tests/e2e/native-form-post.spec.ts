@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.use({ channel: "chrome", javaScriptEnabled: false });
+test.use({ javaScriptEnabled: false });
 test.setTimeout(process.env.HOSTED_STAGING_TEST === "1" ? 180_000 : 30_000);
 
 test("sign-in cannot expose credentials through a native GET fallback", async ({ page }) => {

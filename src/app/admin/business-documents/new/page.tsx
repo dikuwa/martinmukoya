@@ -2,18 +2,30 @@ import { db } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { BusinessDocumentComposer } from "@/components/admin/business-document-composer";
 import { getIssuerSnapshot } from "@/lib/finance-service";
+import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export default async function NewBusinessDocumentPage() {
-  const { session } = await requireAdmin();
+  const { session, error } = await requireAdmin();
+  if (error) notFound();
   const [templates, leads, projects, financialDocuments, sites, issuer] = await Promise.all([
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
-    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true } }),
-    db.site.findMany({ orderBy: { name: "asc" } }),
+    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true, siteId: true } }),
+    db.site.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
     getIssuerSnapshot(),
   ]);
+  const identities = await Promise.all(sites.map(async (site) => {
+    const siteIssuer = await getIssuerSnapshot(site.id);
+    return {
+      id: site.id,
+      slug: site.slug,
+      name: site.name,
+      business: { name: siteIssuer.name, email: siteIssuer.email, phone: siteIssuer.phone, address: siteIssuer.address },
+      currentUser: { name: session?.user.name || siteIssuer.signerName, roleTitle: siteIssuer.signerTitle },
+    };
+  }));
 
   return (
     <div className="grid gap-8">
@@ -21,6 +33,7 @@ export default async function NewBusinessDocumentPage() {
       <BusinessDocumentComposer templates={templates} leads={leads} projects={projects} financialDocuments={financialDocuments} sites={sites}
         business={{ name: issuer.name, email: issuer.email, phone: issuer.phone, address: issuer.address }}
         currentUser={{ name: session?.user.name || issuer.signerName, roleTitle: issuer.signerTitle }}
+        identities={identities}
         generatedIssueDate={new Date().toISOString().slice(0, 10)} />
     </div>
   );

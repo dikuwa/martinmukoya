@@ -1,6 +1,7 @@
 import { ok, serverError } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { InvalidDocumentLinks, resolveBusinessDocumentLinks } from "@/lib/business-document-links";
 import { updateBusinessDocument } from "@/lib/business-document-service";
 import { z } from "zod";
 import { BusinessDocumentType } from "@/generated/prisma/client";
@@ -15,6 +16,7 @@ const updateSchema = z.object({
   leadId: z.string().optional().nullable(),
   projectId: z.string().optional().nullable(),
   financialDocumentId: z.string().optional().nullable(),
+  siteId: z.string().trim().min(1).optional().nullable(),
   serviceId: z.string().optional(),
   templateId: z.string().optional().nullable(),
   companyName: z.string().trim().max(200).optional(),
@@ -66,9 +68,11 @@ export async function PATCH(request: Request, context: Context) {
     if (existing.status !== "DRAFT") return Response.json({ error: "Only draft documents can be edited." }, { status: 409 });
     const input = await request.json();
     const parsed = updateSchema.parse(input);
-    const result = await updateBusinessDocument(id, { ...parsed, userId: session.user.id });
+    const links = await resolveBusinessDocumentLinks(parsed, existing);
+    const result = await updateBusinessDocument(id, { ...parsed, ...links, userId: session.user.id }, existing.updatedAt);
     return ok(result);
   } catch (error) {
+    if (error instanceof InvalidDocumentLinks) return Response.json({ error: error.message }, { status: 400 });
     if (error instanceof z.ZodError) {
       return Response.json({ error: error.issues[0]?.message || "Validation failed" }, { status: 400 });
     }
