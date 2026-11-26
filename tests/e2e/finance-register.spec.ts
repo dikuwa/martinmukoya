@@ -25,5 +25,5 @@ test("financial registers expose readable dates, filters and invoice history", a
 
 test("legacy admin login redirects to the canonical sign-in route", async ({ page }) => {
   await page.goto("/admin/login");
-  await expect(page).toHaveURL(/\/auth\/sign-in\?redirect=%2Fadmin$/);
+  await expect(page).toHaveURL(/\/auth\/sign-in\?redirect=\/admin$/);
 });
