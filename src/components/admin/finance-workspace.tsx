@@ -283,6 +283,6 @@ export function PaymentPanel({ invoices, projects, initialInvoice }: { invoices:
   );
 }
 
-export function RegisterLink({ href, primary, secondary, trailing }: { href: string; primary: string; secondary: string; trailing: string }) {
-  return <Link href={href} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-[color:var(--border-subtle)] px-4 py-3 text-sm last:border-0 hover:bg-[color:var(--surface-soft)]"><span className="min-w-0"><strong className="block truncate">{primary}</strong><small className="mt-0.5 block break-words text-[color:var(--text-muted)]">{secondary}</small></span><span className="whitespace-nowrap font-semibold tabular-nums">{trailing}</span></Link>;
+export function RegisterLink({ href, primary, secondary, date, status, trailing }: { href: string; primary: string; secondary: string; date?: string; status?: string; trailing: string }) {
+  return <Link href={href} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-[color:var(--border-subtle)] px-4 py-3 text-sm last:border-0 hover:bg-[color:var(--surface-soft)]"><span className="min-w-0"><strong className="block truncate">{primary}</strong><small className="mt-0.5 block break-words text-[color:var(--text-muted)]">{secondary}</small>{date ? <small className="mt-1 block text-xs text-[color:var(--text-faint)]">{date}</small> : null}</span><span className="grid justify-items-end gap-1 text-right"><span className="whitespace-nowrap font-semibold tabular-nums">{trailing}</span>{status ? <small className="text-xs text-[color:var(--text-muted)]">{status}</small> : null}</span></Link>;
 }
