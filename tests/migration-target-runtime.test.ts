@@ -49,12 +49,20 @@ test("CLI URL, db, and alternate-config overrides fail before Prisma starts", ()
 test("explicit process credentials mutate the intended disposable PostgreSQL database despite conflicting .env.local", () => {
   const root = mkdtempSync(join(tmpdir(), "migration-postgres-"));
   const data = join(root, "data");
-  const port = "55483";
+  const hasLocalPostgres = spawnSync("initdb", ["--version"], { stdio: "ignore" }).status === 0;
+  const databaseUrl = hasLocalPostgres
+    ? "postgresql://postgres@127.0.0.1:55483/postgres?application_name=target-test"
+    : process.env.DATABASE_URL;
+  assert.ok(databaseUrl, "CI must provide a disposable PostgreSQL service when initdb is unavailable");
+  const target = new URL(databaseUrl);
+  const expectedHost = target.hostname;
+  const expectedDatabase = target.pathname.slice(1);
   const fixture = join(root, "fixture");
-  const databaseUrl = `postgresql://postgres@127.0.0.1:${port}/postgres?application_name=target-test`;
   try {
-    execFileSync("initdb", ["-D", data, "-U", "postgres", "-A", "trust", "--locale=C", "--encoding=UTF8", "--no-instructions"], { stdio: "ignore" });
-    execFileSync("pg_ctl", ["-D", data, "-l", join(root, "postgres.log"), "-o", `-h 127.0.0.1 -p ${port}`, "-w", "start"], { stdio: "ignore" });
+    if (hasLocalPostgres) {
+      execFileSync("initdb", ["-D", data, "-U", "postgres", "-A", "trust", "--locale=C", "--encoding=UTF8", "--no-instructions"], { stdio: "ignore" });
+      execFileSync("pg_ctl", ["-D", data, "-l", join(root, "postgres.log"), "-o", "-h 127.0.0.1 -p 55483", "-w", "start"], { stdio: "ignore" });
+    }
     mkdirSync(join(fixture, "prisma"), { recursive: true });
     mkdirSync(join(fixture, "scripts"), { recursive: true });
     symlinkSync(join(repo, "node_modules"), join(fixture, "node_modules"), "dir");
@@ -74,14 +82,16 @@ model RuntimeProbe {
     const result = spawnSync(tsx, [wrapper, "db", "push"], {
       cwd: fixture,
       encoding: "utf8",
-      env: { ...process.env, DATABASE_URL: databaseUrl, DATABASE_ENV: "ci", DATABASE_EXPECTED_HOST: "127.0.0.1", DATABASE_EXPECTED_NAME: "postgres" },
+      env: { ...process.env, DATABASE_URL: databaseUrl, DATABASE_ENV: "ci", DATABASE_EXPECTED_HOST: expectedHost, DATABASE_EXPECTED_NAME: expectedDatabase },
       timeout: 30_000,
     });
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const relation = execFileSync("psql", [databaseUrl, "-Atc", `SELECT to_regclass('public."RuntimeProbe"')`], { encoding: "utf8" }).trim();
     assert.equal(relation, '"RuntimeProbe"');
   } finally {
-    try { execFileSync("pg_ctl", ["-D", data, "-m", "immediate", "-w", "stop"], { stdio: "ignore" }); } catch { /* already stopped or never started */ }
+    if (hasLocalPostgres) {
+      try { execFileSync("pg_ctl", ["-D", data, "-m", "immediate", "-w", "stop"], { stdio: "ignore" }); } catch { /* already stopped or never started */ }
+    }
     rmSync(root, { recursive: true, force: true });
   }
 });
