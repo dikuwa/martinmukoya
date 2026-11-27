@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { formatNad } from "@/lib/financial";
 import { Card } from "@/components/ui/card";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
+import { LiveSearchInput } from "@/components/admin/live-search-input";
 
 const readableStatus: Record<string, string> = { DRAFT: "Draft", ISSUED: "Issued", ACCEPTED: "Accepted", PARTIALLY_PAID: "Partially paid", PAID: "Paid", SUPERSEDED: "Superseded", VOID: "Voided", REVERSED: "Reversed", ACTIVE: "Active" };
 const readableType: Record<string, string> = { QUOTE: "Quotation", INVOICE: "Invoice", RECEIPT: "Receipt" };
@@ -43,6 +44,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
   const filterClass = "h-10 min-w-0 w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm outline-none focus:border-[color:var(--primary)]";
   return <div className="mx-auto grid w-full min-w-0 max-w-[1600px] gap-6 lg:gap-8">
     <PageHeader title="Documents and payments" description="Create quotations and invoices for either business identity, then record payments and issue receipts." actions={<Button asChild variant="secondary"><Link href="/admin/documents/settings">Financial identity</Link></Button>} />
+    <LiveSearchInput name="search" defaultValue={params.search} placeholder="Live search documents and payments…" aria-label="Live search documents and payments" className="h-10 w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm" />
     <div className="grid gap-3 sm:grid-cols-3">
       <Card padding="md"><p className="text-xs text-[color:var(--text-muted)]">Open invoices</p><p className="mt-2 text-2xl font-semibold">{invoices.filter(i => i.balance > 0).length}</p></Card>
       <Card padding="md"><p className="text-xs text-[color:var(--text-muted)]">Outstanding balance</p><p className="mt-2 text-2xl font-semibold">{formatNad(outstandingTotal)}</p></Card>

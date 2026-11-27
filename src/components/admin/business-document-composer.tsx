@@ -56,7 +56,7 @@ function formatDateOnly(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string; siteId?: string | null };
+type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string; customerEmail?: string | null; customerPhone?: string | null; customerCompany?: string | null; siteId?: string | null };
 
 type InitialDoc = {
   id?: string;
@@ -158,7 +158,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [contentMarkdown, setContentMarkdown] = useState(initial?.contentMarkdown || "");
   const [internalNotes, setInternalNotes] = useState(initial?.internalNotes || "");
   const [expiryDate, setExpiryDate] = useState(initial?.expiryDate ? initial.expiryDate.slice(0, 10) : "");
-  const [issueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : generatedIssueDate);
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : generatedIssueDate);
   const [reviewDate] = useState(initial?.reviewDate ? initial.reviewDate.slice(0, 10) : "");
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
@@ -416,7 +416,17 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           Link to quote/invoice <span className="text-[color:var(--text-faint)] font-normal">(optional cross-reference)</span>
           <DashboardSelect
             value={selectedFinancialDocument}
-            onChange={e => setSelectedFinancialDocument(e.target.value)}
+            onChange={e => {
+              const next = e.target.value;
+              setSelectedFinancialDocument(next);
+              const financial = financialDocuments.find(item => item.id === next);
+              if (financial && !recipientHasValues) {
+                setRecipientName(financial.customerName);
+                setRecipientEmail(financial.customerEmail || "");
+                setRecipientPhone(financial.customerPhone || "");
+                setCompanyName(financial.customerCompany || "");
+              }
+            }}
             options={[{ label: "None", value: "" }, ...availableFinancialDocuments.map((fd) => ({ label: `${fd.number || "Draft"} — ${fd.type} — ${fd.customerName} — N$${Number(String(fd.total)).toFixed(2)}`, value: fd.id }))]}
             className={inputClass}
           />
@@ -489,6 +499,10 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         <label className="grid gap-2 text-sm font-bold">
           WhatsApp number <span className="text-[color:var(--text-faint)] font-normal">(if different)</span>
           <input value={recipientWhatsApp} onChange={e => setRecipientWhatsApp(e.target.value)} className={inputClass} />
+        </label>
+        <label className="grid gap-2 text-sm font-bold">
+          Provider date
+          <DashboardDatePicker value={issueDate ? new Date(`${issueDate}T00:00:00`) : undefined} onChange={date => setIssueDate(date ? formatDateOnly(date) : "")} className={inputClass} />
         </label>
         <label className="grid gap-2 text-sm font-bold">
           Expiry / review date

@@ -12,7 +12,7 @@ export default async function NewBusinessDocumentPage() {
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
-    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true, siteId: true } }),
+    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true, customerEmail: true, customerPhone: true, customerCompany: true, siteId: true } }),
     db.site.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
     db.contact.findMany({ orderBy: { name: "asc" }, take: 200, select: { id: true, name: true, email: true, phone: true, company: true } }),
     getIssuerSnapshot(),

@@ -110,7 +110,7 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead, defa
           <DashboardSelect
             value={sourceKey}
             searchable
-            aria-label="Choose a customer, lead or booking"
+            aria-label="Choose a lead or booking"
             onChange={e => {
               setSourceKey(e.target.value);
               const next = sources.find(item => item.key === e.target.value);

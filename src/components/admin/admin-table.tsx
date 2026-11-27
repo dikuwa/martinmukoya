@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export { SelectFilter } from "@/components/admin/select-filter";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { LiveSearchInput } from "@/components/admin/live-search-input";
 import type { ReactNode } from "react";
 
 type Column<T> = {
@@ -88,7 +89,7 @@ export function AdminFilters({
     <form className="flex flex-col gap-3 rounded-[var(--radius)] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow-xs)] md:flex-row md:items-end">
       <div className="relative flex-1">
         <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-        <input
+        <LiveSearchInput
           name="search"
           defaultValue={search}
           placeholder="Search records..."

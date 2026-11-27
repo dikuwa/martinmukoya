@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { CustomerForm } from "@/components/admin/customer-form";
 import { Card } from "@/components/ui/card";
+import { LiveSearchInput } from "@/components/admin/live-search-input";
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; lead?: string; booking?: string }> }) {
   const { q, lead: leadId, booking: bookingId } = await searchParams;
@@ -39,7 +40,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     <PageHeader title="Customers" description="Keep client contacts independently of projects and invoices."/>
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,23rem)]">
       <Card className="min-w-0 p-4">
-        <form method="get" className="mb-4"><input aria-label="Search customers" name="q" defaultValue={q}
+        <form method="get" className="mb-4"><LiveSearchInput aria-label="Search customers" name="q" defaultValue={q}
           placeholder="Search customers…" className="h-10 w-full rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm"/></form>
         <div className="divide-y divide-[color:var(--border-subtle)]">
           {customers.map(c => <Link key={c.id} href={`/admin/customers/${c.id}`}
