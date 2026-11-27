@@ -442,7 +442,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           <ManualLeadForm sites={sites.filter(site => site.id === selectedIdentity).map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); const previous = selectedLead; setSelectedLead(lead.id); if (recipientHasValues) { setPendingLeadPreviousId(previous); setPendingLead(lead); } else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) setPendingLead(null); }}>
+      <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) { setSelectedLead(pendingLeadPreviousId); setPendingLead(null); setPendingLeadPreviousId(""); } }}>
         <AlertDialogContent>
           <AlertDialogTitle>Replace recipient details?</AlertDialogTitle>
           <AlertDialogDescription>You already entered recipient information. Replace it with details from {pendingLead?.name}?</AlertDialogDescription>
