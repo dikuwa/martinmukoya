@@ -18,6 +18,7 @@ const s = StyleSheet.create({
   footer: { marginTop: 24, paddingTop: 10, borderTop: "1 solid #ded9cf", flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
   companyDetails: { width: "55%", color: "#777", fontSize: 7.5, lineHeight: 1.25 },
   signatureWrap: { width: 155, textAlign: "right" },
+  signatureImage: { marginLeft: "auto", width: 108, height: 32, objectFit: "contain", transform: "rotate(-3deg)", marginBottom: -2 },
   pageNumber: { position: "absolute", bottom: 20, right: 38, fontSize: 7, color: "#999" },
   divider: { borderTop: "1 solid #ded9cf", marginVertical: 10 },
   sectionHeading: { fontSize: 11, fontWeight: 700, marginTop: 12, marginBottom: 6, color: "#333" },
@@ -46,6 +47,10 @@ type BusinessDocPdfProps = {
   issuerDetails?: string;
   issuerPhone?: string;
   issuerEmail?: string;
+  issuerSignatureMode?: "text" | "image";
+  issuerSignatureImage?: string;
+  issuerShowSignature?: boolean;
+  issuerSignerName?: string;
 };
 
 const docTypeLabels: Record<string, string> = {
@@ -108,6 +113,10 @@ export function BusinessDocumentPdf({
   issuerDetails,
   issuerPhone,
   issuerEmail,
+  issuerSignatureMode = "text",
+  issuerSignatureImage,
+  issuerShowSignature = true,
+  issuerSignerName,
 }: BusinessDocPdfProps) {
   const lines = contentMarkdown.split("\n");
   const typeLabel = docTypeLabels[documentType] || documentType;
@@ -124,11 +133,13 @@ export function BusinessDocumentPdf({
         <View style={s.between}>
           <View>
             {issuerLogo && (
+              // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt prop
               <Image
                 src={issuerLogo.startsWith("http") ? issuerLogo : `${baseUrl}${issuerLogo}`}
                 style={{ width: 130, height: 45, objectFit: "contain" }}
               />
             )}
+            {!issuerLogo && issuerName && <Text style={{ fontSize: 14, fontWeight: 700 }}>{issuerName}</Text>}
           </View>
           <View style={{ textAlign: "right" }}>
             <Text style={[s.muted, { fontSize: 7, fontWeight: 700, marginBottom: 2 }]}>CONTACT</Text>
@@ -174,10 +185,13 @@ export function BusinessDocumentPdf({
         <View>{lines.map((line, i) => parseLine(line, i))}</View>
 
         {/* Signature */}
-        {senderName && (
+        {issuerShowSignature && senderName && (
           <View style={{ marginTop: 24, borderTop: "1 solid #ded9cf", paddingTop: 10 }}>
             <View style={s.signatureWrap}>
-              <Text style={s.signature}>{senderName}</Text>
+              {issuerSignatureMode === "image" && issuerSignatureImage ? (
+                // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt prop
+                <Image src={issuerSignatureImage.startsWith("http") ? issuerSignatureImage : `${baseUrl}${issuerSignatureImage}`} style={s.signatureImage} />
+              ) : <Text style={s.signature}>{senderName || issuerSignerName}</Text>}
             </View>
             <Text style={[{ textAlign: "right", fontWeight: 700, fontSize: 8 }]}>{senderName}</Text>
             {senderRole && <Text style={[s.muted, { textAlign: "right" }]}>{senderRole}</Text>}

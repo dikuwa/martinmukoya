@@ -8,12 +8,13 @@ import { requireAdmin } from "@/lib/auth-guard";
 export default async function NewBusinessDocumentPage() {
   const { session, error } = await requireAdmin();
   if (error) notFound();
-  const [templates, leads, projects, financialDocuments, sites, issuer] = await Promise.all([
+  const [templates, leads, projects, financialDocuments, sites, contacts, issuer] = await Promise.all([
     db.businessDocumentTemplate.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
     db.lead.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.project.findMany({ where: { published: true }, orderBy: { createdAt: "desc" }, take: 100 }),
-    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true, siteId: true } }),
+    db.financialDocument.findMany({ where: { type: { in: ["QUOTE", "INVOICE"] }, status: { in: ["ISSUED", "ACCEPTED", "PARTIALLY_PAID"] } }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, number: true, type: true, total: true, customerName: true, customerEmail: true, customerPhone: true, customerCompany: true, siteId: true } }),
     db.site.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, slug: true } }),
+    db.contact.findMany({ orderBy: { name: "asc" }, take: 200, select: { id: true, name: true, email: true, phone: true, company: true } }),
     getIssuerSnapshot(),
   ]);
   const identities = await Promise.all(sites.map(async (site) => {
@@ -30,7 +31,7 @@ export default async function NewBusinessDocumentPage() {
   return (
     <div className="grid gap-8">
       <PageHeader title="New business document" description="Create a proposal, contract, letter, report, or any official document." />
-      <BusinessDocumentComposer templates={templates} leads={leads} projects={projects} financialDocuments={financialDocuments} sites={sites}
+      <BusinessDocumentComposer templates={templates} leads={leads} projects={projects} financialDocuments={financialDocuments} sites={sites} contacts={contacts}
         business={{ name: issuer.name, email: issuer.email, phone: issuer.phone, address: issuer.address }}
         currentUser={{ name: session?.user.name || issuer.signerName, roleTitle: issuer.signerTitle }}
         identities={identities}

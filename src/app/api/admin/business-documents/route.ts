@@ -44,12 +44,25 @@ export async function GET(request: Request) {
     const type = url.searchParams.get("type") || "";
     const status = url.searchParams.get("status") || "";
     const search = url.searchParams.get("search") || "";
-    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-    const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("pageSize") || "50")));
+    const pageValue = Number.parseInt(url.searchParams.get("page") || "1", 10);
+    const pageSizeValue = Number.parseInt(url.searchParams.get("pageSize") || "50", 10);
+    const page = Number.isFinite(pageValue) ? Math.max(1, pageValue) : 1;
+    const pageSize = Number.isFinite(pageSizeValue) ? Math.min(100, Math.max(1, pageSizeValue)) : 50;
+    const siteId = url.searchParams.get("site") || "";
+    const dateField = url.searchParams.get("dateField") === "issued" ? "issueDate" : "createdAt";
+    const fromValue = url.searchParams.get("from") || "";
+    const toValue = url.searchParams.get("to") || "";
+    const from = /^\d{4}-\d{2}-\d{2}$/.test(fromValue) ? new Date(`${fromValue}T00:00:00`) : undefined;
+    const to = /^\d{4}-\d{2}-\d{2}$/.test(toValue) ? new Date(`${toValue}T23:59:59.999`) : undefined;
 
     const where: Prisma.BusinessDocumentWhereInput = {};
+    if (siteId && siteId !== "all") where.siteId = siteId;
     if (Object.values(BusinessDocumentType).includes(type as BusinessDocumentType)) where.documentType = type as BusinessDocumentType;
     if (Object.values(BusinessDocumentStatus).includes(status as BusinessDocumentStatus)) where.status = status as BusinessDocumentStatus;
+    if (from || to) {
+      if (dateField === "issueDate") where.issueDate = { gte: from, lte: to };
+      else where.createdAt = { gte: from, lte: to };
+    }
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },

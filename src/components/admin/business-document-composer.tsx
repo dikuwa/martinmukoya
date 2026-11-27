@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Loader2, Save } from "lucide-react";
 import { BlogEditor } from "@/components/admin/blog-editor";
@@ -26,6 +26,7 @@ type Template = {
 type Lead = LeadOption & { phoneIsWhatsApp?: boolean; siteId?: string | null; };
 type Project = { id: string; title: string; slug: string; summary?: string; description?: string; outcome?: string | null; };
 type Site = { id: string; name: string };
+type Contact = { id: string; name: string; email?: string | null; phone?: string | null; company?: string | null };
 
 const docTypes = [
   { value: "PROPOSAL", label: "Project proposal" },
@@ -51,7 +52,11 @@ const docTypes = [
 
 import { inputClass } from "@/components/ui/input";
 
-type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string; siteId?: string | null };
+function formatDateOnly(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string; customerEmail?: string | null; customerPhone?: string | null; customerCompany?: string | null; siteId?: string | null };
 
 type InitialDoc = {
   id?: string;
@@ -97,6 +102,7 @@ type Props = {
   projects: Project[];
   financialDocuments: FinancialDoc[];
   sites: Site[];
+  contacts: Contact[];
   initial?: InitialDoc | null;
   business: { name: string; email: string; phone: string; address: string };
   currentUser: { name: string; roleTitle: string };
@@ -104,13 +110,14 @@ type Props = {
   generatedIssueDate: string;
 };
 
-export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, financialDocuments, sites, initial, business, currentUser, identities, generatedIssueDate }: Props) {
+export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, financialDocuments, sites, contacts, initial, business, currentUser, identities, generatedIssueDate }: Props) {
   const router = useRouter();
   const isEdit = !!initial?.id;
   const [saving, setSaving] = useState(false);
   const [leads, setLeads] = useState(initialLeads);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [pendingLead, setPendingLead] = useState<Lead | null>(null);
+  const [pendingLeadPreviousId, setPendingLeadPreviousId] = useState("");
   const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
   const [unresolvedForSave, setUnresolvedForSave] = useState<string[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
@@ -141,6 +148,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     [templates, documentType]
   );
   const [selectedLead, setSelectedLead] = useState(initial?.leadId || "");
+  const [selectedContact, setSelectedContact] = useState(initial?.contactId || "");
   const [selectedProject, setSelectedProject] = useState(initial?.projectId || "");
   const [selectedFinancialDocument, setSelectedFinancialDocument] = useState(initial?.financialDocumentId || "");
   const [companyName, setCompanyName] = useState(initial?.companyName || "");
@@ -151,11 +159,17 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [contentMarkdown, setContentMarkdown] = useState(initial?.contentMarkdown || "");
   const [internalNotes, setInternalNotes] = useState(initial?.internalNotes || "");
   const [expiryDate, setExpiryDate] = useState(initial?.expiryDate ? initial.expiryDate.slice(0, 10) : "");
-  const [issueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : generatedIssueDate);
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ? initial.issueDate.slice(0, 10) : generatedIssueDate);
   const [reviewDate] = useState(initial?.reviewDate ? initial.reviewDate.slice(0, 10) : "");
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
   const [senderRole, setSenderRole] = useState(initial?.senderRole || "");
+  const autoSender = useRef({ name: initial?.senderName || "", role: initial?.senderRole || "" });
+  useEffect(() => {
+    if (!senderName || senderName === autoSender.current.name) setSenderName(selectedCurrentUser.name);
+    if (!senderRole || senderRole === autoSender.current.role) setSenderRole(selectedCurrentUser.roleTitle);
+    autoSender.current = { name: selectedCurrentUser.name, role: selectedCurrentUser.roleTitle };
+  }, [selectedCurrentUser.name, selectedCurrentUser.roleTitle, senderName, senderRole]);
   const [tone, setTone] = useState(initial?.aiTone || "Professional");
   const [style, setStyle] = useState(initial?.aiStyle || "Structured");
   const [docLength, setDocLength] = useState(initial?.aiLength || "Medium");
@@ -227,6 +241,12 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     setRecipientWhatsApp(ld.whatsAppNumber || "");
     setCompanyName(ld.company || "");
   }, []);
+  const fillFromContact = useCallback((contact: Contact) => {
+    setRecipientName(contact.name);
+    setRecipientEmail(contact.email || "");
+    setRecipientPhone(contact.phone || "");
+    setCompanyName(contact.company || "");
+  }, []);
   const recipientHasValues = Boolean(recipientName || recipientEmail || recipientPhone || recipientWhatsApp || companyName);
 
   const handleSave = useCallback(async ({ allowUnresolved = false, navigate = true }: { allowUnresolved?: boolean; navigate?: boolean } = {}) => {
@@ -241,6 +261,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         title: title.trim(),
         subject: subject.trim() || undefined,
         templateId: selectedTemplate || null,
+        contactId: selectedContact || null,
         leadId: selectedLead || null,
         projectId: selectedProject || null,
         financialDocumentId: selectedFinancialDocument || null,
@@ -280,7 +301,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     } finally {
       setSaving(false);
     }
-  }, [title, subject, documentType, selectedIdentity, selectedTemplate, selectedLead, selectedProject, selectedFinancialDocument, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
+  }, [title, subject, documentType, selectedIdentity, selectedTemplate, selectedContact, selectedLead, selectedProject, selectedFinancialDocument, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
 
   return (
     <Card padding="lg" className="grid gap-6">
@@ -361,10 +382,19 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
       {/* Client info from lead */}
       <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
         <div className="grid gap-2 text-sm font-bold">
+          Existing customer <span className="text-[color:var(--text-faint)] font-normal">(optional; manual details are also supported)</span>
+          <DashboardSelect
+            value={selectedContact}
+            onChange={e => { setSelectedContact(e.target.value); const contact = contacts.find(item => item.id === e.target.value); if (contact) fillFromContact(contact); }}
+            options={[{ label: "None selected", value: "" }, ...contacts.map((contact) => ({ label: `${contact.name}${contact.company ? ` · ${contact.company}` : ""}${contact.email ? ` — ${contact.email}` : ""}`, value: contact.id }))]}
+            className={inputClass}
+          />
+        </div>
+        <div className="grid gap-2 text-sm font-bold">
           Link to lead <span className="text-[color:var(--text-faint)] font-normal">(auto-fills details)</span>
           <DashboardSelect
             value={selectedLead}
-            onChange={e => { setSelectedLead(e.target.value); const ld = leads.find((l) => l.id === e.target.value); if (ld) { if (recipientHasValues) setPendingLead(ld); else fillFromLead(ld); } }}
+            onChange={e => { const next = e.target.value; const previous = selectedLead; setSelectedLead(next); const ld = leads.find((l) => l.id === next); if (ld) { if (recipientHasValues) { setPendingLeadPreviousId(previous); setPendingLead(ld); } else fillFromLead(ld); } }}
             options={[{ label: "None selected", value: "" }, ...availableLeads.map((ld) => ({ label: `${ld.name}${ld.company ? ` · ${ld.company}` : ""} — ${ld.email || ld.phone || ld.whatsAppNumber || "No contact"}${ld.source ? ` · ${ld.source}` : ""}`, value: ld.id }))]}
             className={inputClass}
           />
@@ -387,7 +417,17 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           Link to quote/invoice <span className="text-[color:var(--text-faint)] font-normal">(optional cross-reference)</span>
           <DashboardSelect
             value={selectedFinancialDocument}
-            onChange={e => setSelectedFinancialDocument(e.target.value)}
+            onChange={e => {
+              const next = e.target.value;
+              setSelectedFinancialDocument(next);
+              const financial = financialDocuments.find(item => item.id === next);
+              if (financial && !recipientHasValues) {
+                setRecipientName(financial.customerName);
+                setRecipientEmail(financial.customerEmail || "");
+                setRecipientPhone(financial.customerPhone || "");
+                setCompanyName(financial.customerCompany || "");
+              }
+            }}
             options={[{ label: "None", value: "" }, ...availableFinancialDocuments.map((fd) => ({ label: `${fd.number || "Draft"} — ${fd.type} — ${fd.customerName} — N$${Number(String(fd.total)).toFixed(2)}`, value: fd.id }))]}
             className={inputClass}
           />
@@ -399,16 +439,16 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           <DialogHeader>
             <DialogTitle>Create new lead</DialogTitle>
           </DialogHeader>
-          <ManualLeadForm sites={sites.filter(site => site.id === selectedIdentity).map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
+          <ManualLeadForm sites={sites.filter(site => site.id === selectedIdentity).map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); const previous = selectedLead; setSelectedLead(lead.id); if (recipientHasValues) { setPendingLeadPreviousId(previous); setPendingLead(lead); } else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) setPendingLead(null); }}>
+      <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) { setSelectedLead(pendingLeadPreviousId); setPendingLead(null); setPendingLeadPreviousId(""); } }}>
         <AlertDialogContent>
           <AlertDialogTitle>Replace recipient details?</AlertDialogTitle>
           <AlertDialogDescription>You already entered recipient information. Replace it with details from {pendingLead?.name}?</AlertDialogDescription>
           <div className="mt-5 flex gap-3">
-            <Button type="button" onClick={() => { if (pendingLead) { fillFromLead(pendingLead); setPendingLead(null); } }}>Replace details</Button>
-            <Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button>
+            <Button type="button" onClick={() => { if (pendingLead) { fillFromLead(pendingLead); setPendingLead(null); setPendingLeadPreviousId(""); } }}>Replace details</Button>
+            <Button type="button" variant="secondary" onClick={() => { setSelectedLead(pendingLeadPreviousId); setPendingLead(null); setPendingLeadPreviousId(""); }}>Keep my edits</Button>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -462,10 +502,14 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           <input value={recipientWhatsApp} onChange={e => setRecipientWhatsApp(e.target.value)} className={inputClass} />
         </label>
         <label className="grid gap-2 text-sm font-bold">
+          Provider date
+          <DashboardDatePicker value={issueDate ? new Date(`${issueDate}T00:00:00`) : undefined} onChange={date => setIssueDate(date ? formatDateOnly(date) : "")} className={inputClass} />
+        </label>
+        <label className="grid gap-2 text-sm font-bold">
           Expiry / review date
           <DashboardDatePicker
             value={expiryDate ? new Date(expiryDate) : undefined}
-            onChange={date => setExpiryDate(date ? date.toISOString().split("T")[0] : "")}
+            onChange={date => setExpiryDate(date ? formatDateOnly(date) : "")}
             className={inputClass}
           />
         </label>
