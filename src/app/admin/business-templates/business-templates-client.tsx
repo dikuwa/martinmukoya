@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Plus, ExternalLink, FileText, ChevronDown, ChevronRight, Copy, Archive, RotateCcw, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
+import { LiveSearchInput } from "@/components/admin/live-search-input";
 
 const categoryLabels: Record<string, string> = {
   PROPOSAL: "Proposals",
@@ -118,7 +119,7 @@ export function BusinessTemplatesClient({ templates, search, category, status }:
       />
 
       <form method="get" className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]">
-        <input name="search" defaultValue={search} placeholder="Search templates…" aria-label="Search templates" className="h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm" />
+        <LiveSearchInput name="search" defaultValue={search} placeholder="Search templates…" aria-label="Search templates" className="h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm" />
         <DashboardSelect name="category" defaultValue={category || "all"} aria-label="Template category" options={[{ value: "all", label: "All categories" }, ...Object.entries(categoryLabels).filter(([value], index, values) => values.findIndex(([key]) => categoryLabels[key] === categoryLabels[value]) === index).map(([value, label]) => ({ value, label }))]} />
         <DashboardSelect name="status" defaultValue={status || "all"} aria-label="Template status" options={[{ value: "all", label: "All templates" }, { value: "active", label: "Active" }, { value: "archived", label: "Archived" }]} />
         <Button type="submit">Filter</Button>

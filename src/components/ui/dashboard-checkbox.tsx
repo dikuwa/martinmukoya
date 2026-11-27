@@ -66,13 +66,14 @@ export function DashboardCheckbox({
             "peer-hover:border-[color:var(--primary)]/40",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "peer-checked:bg-[color:var(--primary)] peer-checked:border-[color:var(--primary)]",
+            "peer-checked:[&>svg]:opacity-100",
             className
           )}
           aria-hidden="true"
         >
           <Check
             size={12}
-            className="text-white stroke-2 transition-opacity opacity-0 peer-checked:opacity-100"
+            className="text-white stroke-2 transition-opacity opacity-0"
             strokeWidth={3}
             aria-hidden="true"
           />

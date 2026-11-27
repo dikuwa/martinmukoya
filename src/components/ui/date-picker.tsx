@@ -37,7 +37,7 @@ export function DashboardDatePicker({
   const selectedValue = value === undefined ? internalValue : value;
 
   const formattedValue = selectedValue
-    ? selectedValue.toLocaleDateString("en-US", {
+    ? selectedValue.toLocaleDateString("en-GB", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -57,7 +57,7 @@ export function DashboardDatePicker({
             className
           )}
           disabled={disabled}
-          aria-label={placeholder}
+          aria-label={selectedValue ? `Date: ${formattedValue}` : placeholder}
         >
           <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-[color:var(--text-muted)]" aria-hidden="true" />
           {formattedValue || placeholder}

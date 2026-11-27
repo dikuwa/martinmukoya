@@ -183,10 +183,10 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
               maxHeight: position.maxHeight,
               zIndex: 10000,
             }}
-            className="flex flex-col gap-1 overflow-hidden rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]"
+            className="flex flex-col gap-1 overflow-hidden rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--surface)] p-1 shadow-[var(--shadow-sm)]"
           >
             {searchable && (
-              <div className="flex shrink-0 items-center gap-2 rounded-sm border border-[color:var(--border-subtle)] px-2">
+              <div className="flex shrink-0 items-center gap-2 rounded-[6px] border border-[color:var(--border-subtle)] px-2 transition focus-within:border-[color:var(--primary)] focus-within:ring-2 focus-within:ring-[color:var(--primary)]/30 focus-within:ring-inset">
                 <Search size={15} className="text-[color:var(--text-muted)]" />
                 <input
                   ref={searchRef}
@@ -195,7 +195,7 @@ export const DashboardSelect = forwardRef<HTMLSelectElement, DashboardSelectProp
                   onChange={event => setSearch(event.target.value)}
                   placeholder="Search options..."
                   aria-label="Search options"
-                  className="h-9 w-full min-w-0 bg-transparent text-sm font-normal outline-none"
+                  className="h-9 w-full min-w-0 rounded-[4px] bg-transparent text-sm font-normal outline-none"
                 />
               </div>
             )}

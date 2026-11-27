@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Loader2, Save } from "lucide-react";
 import { BlogEditor } from "@/components/admin/blog-editor";
@@ -51,6 +51,10 @@ const docTypes = [
 ];
 
 import { inputClass } from "@/components/ui/input";
+
+function formatDateOnly(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 type FinancialDoc = { id: string; number: string | null; type: string; total: unknown; customerName: string; siteId?: string | null };
 
@@ -159,6 +163,12 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [signatureRequired, setSignatureRequired] = useState(initial?.signatureRequired ?? false);
   const [senderName, setSenderName] = useState(initial?.senderName || "");
   const [senderRole, setSenderRole] = useState(initial?.senderRole || "");
+  const autoSender = useRef({ name: initial?.senderName || "", role: initial?.senderRole || "" });
+  useEffect(() => {
+    if (!senderName || senderName === autoSender.current.name) setSenderName(selectedCurrentUser.name);
+    if (!senderRole || senderRole === autoSender.current.role) setSenderRole(selectedCurrentUser.roleTitle);
+    autoSender.current = { name: selectedCurrentUser.name, role: selectedCurrentUser.roleTitle };
+  }, [selectedCurrentUser.name, selectedCurrentUser.roleTitle, senderName, senderRole]);
   const [tone, setTone] = useState(initial?.aiTone || "Professional");
   const [style, setStyle] = useState(initial?.aiStyle || "Structured");
   const [docLength, setDocLength] = useState(initial?.aiLength || "Medium");
@@ -484,7 +494,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           Expiry / review date
           <DashboardDatePicker
             value={expiryDate ? new Date(expiryDate) : undefined}
-            onChange={date => setExpiryDate(date ? date.toISOString().split("T")[0] : "")}
+            onChange={date => setExpiryDate(date ? formatDateOnly(date) : "")}
             className={inputClass}
           />
         </label>

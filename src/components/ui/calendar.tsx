@@ -54,7 +54,7 @@ export function Calendar({
   );
 
   const isDateDisabled = (date: Date) => {
-    if (fromToday && isBefore(date, new Date())) return true;
+    if (fromToday && isBefore(date, startOfDay(new Date()))) return true;
     if (minDate && isBefore(date, startOfDay(minDate))) return true;
     if (maxDate && isAfter(date, endOfDay(maxDate))) return true;
     return disabled.some((d) => isSameDay(d, date));
@@ -246,7 +246,7 @@ export function Calendar({
                             "dashboard-calendar-day w-full h-9 rounded-[6px] text-sm font-medium transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
                             !isCurrentMonth && "text-[color:var(--text-faint)]",
-                            isToday(day) && "bg-[color:var(--primary)]/10 font-bold text-[color:var(--primary)]",
+                            isToday(day) && "font-bold text-[color:var(--primary)] ring-1 ring-inset ring-[color:var(--primary)]/60",
                             isSelectedDay && "bg-[color:var(--primary)] text-white hover:bg-[color:var(--primary-light)]",
                             isInRange && "bg-[color:var(--primary)]/10 text-[color:var(--primary)]",
                             disabled && "opacity-50 cursor-not-allowed",

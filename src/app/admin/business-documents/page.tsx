@@ -9,6 +9,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { Card } from "@/components/ui/card";
 import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { DashboardDatePicker } from "@/components/ui/date-picker";
+import { LiveSearchInput } from "@/components/admin/live-search-input";
 import { requireAdmin } from "@/lib/auth-guard";
 
 type Props = { searchParams: Promise<{ type?: string; status?: string; search?: string; site?: string; from?: string; to?: string; dateField?: string; page?: string; pageSize?: string }> };
@@ -119,7 +120,7 @@ export default async function BusinessDocumentsPage({ searchParams }: Props) {
       />
 
       <Card as="form" method="get" padding="sm" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(16rem,1fr)_repeat(5,minmax(9rem,auto))_auto_auto]">
-        <input name="search" defaultValue={search} placeholder="Search by title, number, recipient…" className={`${filterClass} min-w-64 flex-1`} />
+        <LiveSearchInput name="search" defaultValue={search} placeholder="Search by title, number, recipient…" className={`${filterClass} min-w-64 flex-1`} />
         <DashboardSelect name="site" defaultValue={site || "all"} options={[{ value: "all", label: "All identities" }, ...sites.map((item) => ({ value: item.id, label: item.name }))]} className={filterClass} />
         <DashboardSelect name="type" defaultValue={type || "all"} options={[{ value: "all", label: "All types" }, ...Object.entries(docTypeLabels).map(([value, label]) => ({ value, label }))]} className={filterClass} />
         <DashboardSelect name="status" defaultValue={status || "all"} options={[{ value: "all", label: "All statuses" }, ...Object.entries(readableStatus).map(([value, label]) => ({ value, label }))]} className={filterClass} />

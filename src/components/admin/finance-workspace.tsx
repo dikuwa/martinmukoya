@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatNad } from "@/lib/financial";
 
-type Source = { key: string; kind: "booking" | "lead"; id: string; label: string; site: string; name: string; email: string; phone: string; company: string; description: string; amount?: string; address?: string };
+type Source = { key: string; kind: "booking" | "lead" | "customer" | "one-time"; id: string; label: string; site: string; siteId?: string; contactId?: string; name: string; email: string; phone: string; company: string; description: string; amount?: string; address?: string };
 type Invoice = { id: string; label: string; balance: number };
 type Line = { description: string; category: string; quantity: string; unitPrice: string };
 const input = "h-10 min-w-0 w-full max-w-full rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--background)] px-3 text-sm font-normal outline-none transition-colors focus:border-[color:var(--primary)]";
@@ -34,7 +34,7 @@ const categoryOptions = [
   { value: "other", label: "Other" }
 ];
 
-export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { sources: Source[]; initialBooking?: string; initialLead?: string }) {
+export function CreateDocumentPanel({ sources, initialBooking, initialLead, defaultSiteId }: { sources: Source[]; initialBooking?: string; initialLead?: string; defaultSiteId?: string }) {
   const router = useRouter();
   const initialKey = initialBooking ? `booking:${initialBooking}` : initialLead ? `lead:${initialLead}` : sources[0]?.key || "";
   const initialSource = sources.find(item => item.key === initialKey);
@@ -45,7 +45,9 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
     quantity: "1", unitPrice: initialSource?.amount || "0",
   }]);
   const [saving, setSaving] = useState(false);
-  const source = useMemo(() => sources.find(item => item.key === sourceKey), [sources, sourceKey]);
+  const source = useMemo<Source | undefined>(() => sourceKey === "one-time"
+    ? { key: "one-time", kind: "one-time", id: "", siteId: defaultSiteId, label: "One-time quotation", site: "", name: "", email: "", phone: "", company: "", description: "One-time quotation" }
+    : sources.find(item => item.key === sourceKey), [defaultSiteId, sources, sourceKey]);
 
   function updateLine(index: number, key: keyof Line, value: string) {
     setLines(current => current.map((line, i) => i === index ? { ...line, [key]: value } : line));
@@ -62,6 +64,16 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
       const converted = await conversion.json();
       if (!conversion.ok) { setSaving(false); return toast.error(converted.error || "Lead could not be converted"); }
       bookingId = converted.id;
+    }
+    if (source.kind === "customer" || source.kind === "one-time") {
+      const bookingResponse = await fetch("/api/admin/bookings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+        siteId: source.siteId, contactId: source.contactId || null, customerName: String(form.get("customerName")), customerEmail: String(form.get("customerEmail") || "") || null,
+        customerPhone: String(form.get("customerPhone") || "") || null, company: String(form.get("customerCompany") || "") || null,
+        projectDescription: String(form.get("notes") || "One-time quotation"), budgetRange: null, contractAmount: null, source: "walk-in",
+      }) });
+      const booking = await bookingResponse.json();
+      if (!bookingResponse.ok) { setSaving(false); return toast.error(booking.error || "Customer source could not be prepared"); }
+      bookingId = booking.id;
     }
     const body = {
       bookingId, type, customerName: String(form.get("customerName")),
@@ -91,20 +103,20 @@ export function CreateDocumentPanel({ sources, initialBooking, initialLead }: { 
     <Card as="form" padding="sm" className="grid min-w-0 gap-6 sm:p-5 lg:p-6" id="new-document" onSubmit={submit}>
       <div>
         <h2 className="font-display text-xl font-black">Create document</h2>
-        <p className="text-sm text-[color:var(--text-muted)]">Find a lead or booking, then confirm the scope and price. Search to switch sources.</p>
+        <p className="text-sm text-[color:var(--text-muted)]">Choose an existing source or start a one-time quotation without leaving this form.</p>
       </div>
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <label className={field}>Source
           <DashboardSelect
             value={sourceKey}
             searchable
-            aria-label="Choose a lead or booking"
+            aria-label="Choose a customer, lead or booking"
             onChange={e => {
               setSourceKey(e.target.value);
               const next = sources.find(item => item.key === e.target.value);
               if (next) setLines([{ description: next.description || "Services", category: "service", quantity: "1", unitPrice: next.amount || "0" }]);
             }}
-            options={sources.map(item => ({ label: item.label, value: item.key }))}
+            options={[{ label: "One-time quotation", value: "one-time" }, ...sources.map(item => ({ label: item.label, value: item.key }))]}
             className={input}
           />
         </label>
