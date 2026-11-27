@@ -39,6 +39,10 @@ export async function GET(request: Request, context: Context) {
         issuerDetails={issuer.companyDetails}
         issuerPhone={issuer.phone}
         issuerEmail={issuer.email}
+        issuerSignatureMode={issuer.signatureMode}
+        issuerSignatureImage={issuer.signatureImage}
+        issuerShowSignature={issuer.showSignature}
+        issuerSignerName={issuer.signerName}
       />
     );
 

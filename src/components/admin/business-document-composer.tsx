@@ -117,6 +117,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
   const [leads, setLeads] = useState(initialLeads);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [pendingLead, setPendingLead] = useState<Lead | null>(null);
+  const [pendingLeadPreviousId, setPendingLeadPreviousId] = useState("");
   const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
   const [unresolvedForSave, setUnresolvedForSave] = useState<string[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState(false);
@@ -393,7 +394,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           Link to lead <span className="text-[color:var(--text-faint)] font-normal">(auto-fills details)</span>
           <DashboardSelect
             value={selectedLead}
-            onChange={e => { setSelectedLead(e.target.value); const ld = leads.find((l) => l.id === e.target.value); if (ld) { if (recipientHasValues) setPendingLead(ld); else fillFromLead(ld); } }}
+            onChange={e => { const next = e.target.value; const previous = selectedLead; setSelectedLead(next); const ld = leads.find((l) => l.id === next); if (ld) { if (recipientHasValues) { setPendingLeadPreviousId(previous); setPendingLead(ld); } else fillFromLead(ld); } }}
             options={[{ label: "None selected", value: "" }, ...availableLeads.map((ld) => ({ label: `${ld.name}${ld.company ? ` · ${ld.company}` : ""} — ${ld.email || ld.phone || ld.whatsAppNumber || "No contact"}${ld.source ? ` · ${ld.source}` : ""}`, value: ld.id }))]}
             className={inputClass}
           />
@@ -438,7 +439,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           <DialogHeader>
             <DialogTitle>Create new lead</DialogTitle>
           </DialogHeader>
-          <ManualLeadForm sites={sites.filter(site => site.id === selectedIdentity).map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); setSelectedLead(lead.id); if (recipientHasValues) setPendingLead(lead); else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
+          <ManualLeadForm sites={sites.filter(site => site.id === selectedIdentity).map(site => ({value:site.id,label:site.name}))} projects={projects.map(project => ({value:project.id,label:project.title}))} onCancel={() => setShowLeadForm(false)} onCreated={lead => { setLeads(current => [lead, ...current.filter(item => item.id !== lead.id)]); const previous = selectedLead; setSelectedLead(lead.id); if (recipientHasValues) { setPendingLeadPreviousId(previous); setPendingLead(lead); } else fillFromLead(lead); setShowLeadForm(false); toast.success("Lead created and selected"); }}/>
         </DialogContent>
       </Dialog>
       <AlertDialog open={!!pendingLead} onOpenChange={(open) => { if (!open) setPendingLead(null); }}>
@@ -446,8 +447,8 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
           <AlertDialogTitle>Replace recipient details?</AlertDialogTitle>
           <AlertDialogDescription>You already entered recipient information. Replace it with details from {pendingLead?.name}?</AlertDialogDescription>
           <div className="mt-5 flex gap-3">
-            <Button type="button" onClick={() => { if (pendingLead) { fillFromLead(pendingLead); setPendingLead(null); } }}>Replace details</Button>
-            <Button type="button" variant="secondary" onClick={() => setPendingLead(null)}>Keep my edits</Button>
+            <Button type="button" onClick={() => { if (pendingLead) { fillFromLead(pendingLead); setPendingLead(null); setPendingLeadPreviousId(""); } }}>Replace details</Button>
+            <Button type="button" variant="secondary" onClick={() => { setSelectedLead(pendingLeadPreviousId); setPendingLead(null); setPendingLeadPreviousId(""); }}>Keep my edits</Button>
           </div>
         </AlertDialogContent>
       </AlertDialog>
