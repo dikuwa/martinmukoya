@@ -26,6 +26,7 @@ type Template = {
 type Lead = LeadOption & { phoneIsWhatsApp?: boolean; siteId?: string | null; };
 type Project = { id: string; title: string; slug: string; summary?: string; description?: string; outcome?: string | null; };
 type Site = { id: string; name: string };
+type Contact = { id: string; name: string; email?: string | null; phone?: string | null; company?: string | null };
 
 const docTypes = [
   { value: "PROPOSAL", label: "Project proposal" },
@@ -97,6 +98,7 @@ type Props = {
   projects: Project[];
   financialDocuments: FinancialDoc[];
   sites: Site[];
+  contacts: Contact[];
   initial?: InitialDoc | null;
   business: { name: string; email: string; phone: string; address: string };
   currentUser: { name: string; roleTitle: string };
@@ -104,7 +106,7 @@ type Props = {
   generatedIssueDate: string;
 };
 
-export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, financialDocuments, sites, initial, business, currentUser, identities, generatedIssueDate }: Props) {
+export function BusinessDocumentComposer({ templates, leads: initialLeads, projects, financialDocuments, sites, contacts, initial, business, currentUser, identities, generatedIssueDate }: Props) {
   const router = useRouter();
   const isEdit = !!initial?.id;
   const [saving, setSaving] = useState(false);
@@ -141,6 +143,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     [templates, documentType]
   );
   const [selectedLead, setSelectedLead] = useState(initial?.leadId || "");
+  const [selectedContact, setSelectedContact] = useState(initial?.contactId || "");
   const [selectedProject, setSelectedProject] = useState(initial?.projectId || "");
   const [selectedFinancialDocument, setSelectedFinancialDocument] = useState(initial?.financialDocumentId || "");
   const [companyName, setCompanyName] = useState(initial?.companyName || "");
@@ -227,6 +230,12 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     setRecipientWhatsApp(ld.whatsAppNumber || "");
     setCompanyName(ld.company || "");
   }, []);
+  const fillFromContact = useCallback((contact: Contact) => {
+    setRecipientName(contact.name);
+    setRecipientEmail(contact.email || "");
+    setRecipientPhone(contact.phone || "");
+    setCompanyName(contact.company || "");
+  }, []);
   const recipientHasValues = Boolean(recipientName || recipientEmail || recipientPhone || recipientWhatsApp || companyName);
 
   const handleSave = useCallback(async ({ allowUnresolved = false, navigate = true }: { allowUnresolved?: boolean; navigate?: boolean } = {}) => {
@@ -241,6 +250,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
         title: title.trim(),
         subject: subject.trim() || undefined,
         templateId: selectedTemplate || null,
+        contactId: selectedContact || null,
         leadId: selectedLead || null,
         projectId: selectedProject || null,
         financialDocumentId: selectedFinancialDocument || null,
@@ -280,7 +290,7 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
     } finally {
       setSaving(false);
     }
-  }, [title, subject, documentType, selectedIdentity, selectedTemplate, selectedLead, selectedProject, selectedFinancialDocument, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
+  }, [title, subject, documentType, selectedIdentity, selectedTemplate, selectedContact, selectedLead, selectedProject, selectedFinancialDocument, companyName, recipientName, recipientEmail, recipientPhone, recipientWhatsApp, contentMarkdown, internalNotes, issueDate, expiryDate, reviewDate, signatureRequired, senderName, senderRole, tone, style, docLength, isEdit, initial, router]);
 
   return (
     <Card padding="lg" className="grid gap-6">
@@ -360,6 +370,15 @@ export function BusinessDocumentComposer({ templates, leads: initialLeads, proje
 
       {/* Client info from lead */}
       <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
+        <div className="grid gap-2 text-sm font-bold">
+          Existing customer <span className="text-[color:var(--text-faint)] font-normal">(optional; manual details are also supported)</span>
+          <DashboardSelect
+            value={selectedContact}
+            onChange={e => { setSelectedContact(e.target.value); const contact = contacts.find(item => item.id === e.target.value); if (contact) fillFromContact(contact); }}
+            options={[{ label: "None selected", value: "" }, ...contacts.map((contact) => ({ label: `${contact.name}${contact.company ? ` · ${contact.company}` : ""}${contact.email ? ` — ${contact.email}` : ""}`, value: contact.id }))]}
+            className={inputClass}
+          />
+        </div>
         <div className="grid gap-2 text-sm font-bold">
           Link to lead <span className="text-[color:var(--text-faint)] font-normal">(auto-fills details)</span>
           <DashboardSelect

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { Plus, ExternalLink, FileText, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, ExternalLink, FileText, ChevronDown, ChevronRight, Copy, Archive, RotateCcw, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
 
 const categoryLabels: Record<string, string> = {
   PROPOSAL: "Proposals",
@@ -44,9 +46,14 @@ type Template = {
   defaultTone: string;
   defaultStyle: string;
   defaultLength: string;
+  defaultBodyMarkdown: string;
+  updatedAt: string;
 };
 
-export function BusinessTemplatesClient({ templates }: { templates: Template[] }) {
+export function BusinessTemplatesClient({ templates, search, category, status }: { templates: Template[]; search: string; category: string; status: string }) {
+  const router = useRouter();
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   // Group templates by category label
   const grouped = new Map<string, Template[]>();
   for (const tpl of templates) {
@@ -80,6 +87,24 @@ export function BusinessTemplatesClient({ templates }: { templates: Template[] }
     }
   }
 
+  async function updateTemplate(id: string, body: Record<string, unknown>) {
+    setBusyId(id);
+    try {
+      const response = await fetch(`/api/admin/business-templates/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error("Template update failed");
+      router.refresh();
+    } finally { setBusyId(null); }
+  }
+
+  async function duplicateTemplate(id: string) {
+    setBusyId(id);
+    try {
+      const response = await fetch(`/api/admin/business-templates/${id}/duplicate`, { method: "POST" });
+      if (!response.ok) throw new Error("Template duplication failed");
+      router.refresh();
+    } finally { setBusyId(null); }
+  }
+
   return (
     <div className="grid gap-8">
       <PageHeader
@@ -91,6 +116,13 @@ export function BusinessTemplatesClient({ templates }: { templates: Template[] }
           </Button>
         }
       />
+
+      <form method="get" className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]">
+        <input name="search" defaultValue={search} placeholder="Search templates…" aria-label="Search templates" className="h-10 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface)] px-3 text-sm" />
+        <DashboardSelect name="category" defaultValue={category || "all"} aria-label="Template category" options={[{ value: "all", label: "All categories" }, ...Object.entries(categoryLabels).filter(([value], index, values) => values.findIndex(([key]) => categoryLabels[key] === categoryLabels[value]) === index).map(([value, label]) => ({ value, label }))]} />
+        <DashboardSelect name="status" defaultValue={status || "all"} aria-label="Template status" options={[{ value: "all", label: "All templates" }, { value: "active", label: "Active" }, { value: "archived", label: "Archived" }]} />
+        <Button type="submit">Filter</Button>
+      </form>
 
       {/* Sticky category chip row */}
       <div className="sticky top-20 z-10 flex flex-wrap gap-2 px-3 pb-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[color:var(--background)] to-transparent">
@@ -125,20 +157,26 @@ export function BusinessTemplatesClient({ templates }: { templates: Template[] }
             {!isCollapsed && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {groupTemplates.map((tpl) => (
-                  <Card as={Link} padding="md" className="group transition hover:bg-[color:var(--surface-soft)]" key={tpl.id}
-                    href={`/admin/business-templates/${tpl.id}/edit`}>
+                  <Card padding="md" className="group transition hover:bg-[color:var(--surface-soft)]" key={tpl.id}>
                     <div className="flex items-start justify-between">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(107,38,217,0.1)]">
                         <FileText size={16} className="text-[color:var(--primary)]" />
                       </div>
-                      <ExternalLink size={15} className="text-[color:var(--text-faint)] opacity-0 transition group-hover:opacity-100" />
+                      <Link href={`/admin/business-templates/${tpl.id}/edit`} aria-label={`Edit ${tpl.name}`} title="Edit template"><ExternalLink size={15} className="text-[color:var(--text-faint)] transition group-hover:text-[color:var(--primary)]" /></Link>
                     </div>
-                    <h3 className="mt-3 font-bold">{tpl.name}</h3>
+                    <Link href={`/admin/business-templates/${tpl.id}/edit`} className="mt-3 block font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]">{tpl.name}</Link>
                     <p className="mt-1 text-xs text-[color:var(--text-muted)]">
                       {tpl.documentCategory.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
                       {tpl.active ? "" : " · Inactive"}
                     </p>
                     <p className="mt-3 text-xs text-[color:var(--text-faint)]">Tone: {tpl.defaultTone} · Style: {tpl.defaultStyle} · Length: {tpl.defaultLength}</p>
+                    <p className="mt-1 text-xs text-[color:var(--text-faint)]">Version updated {new Date(tpl.updatedAt).toLocaleDateString("en-GB")}{tpl.active ? "" : " · Archived"}</p>
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[color:var(--border-subtle)] pt-3">
+                      <button type="button" onClick={() => setPreviewId(previewId === tpl.id ? null : tpl.id)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold hover:bg-[color:var(--surface-soft)]"><Eye size={13} /> Preview</button>
+                      <button type="button" disabled={busyId === tpl.id} onClick={() => void duplicateTemplate(tpl.id)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold hover:bg-[color:var(--surface-soft)]"><Copy size={13} /> Duplicate</button>
+                      <button type="button" disabled={busyId === tpl.id} onClick={() => void updateTemplate(tpl.id, { active: !tpl.active })} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold hover:bg-[color:var(--surface-soft)]">{tpl.active ? <><Archive size={13} /> Archive</> : <><RotateCcw size={13} /> Restore</>}</button>
+                    </div>
+                    {previewId === tpl.id && <div className="mt-3 rounded-lg bg-[color:var(--surface-soft)] p-3 text-xs leading-5 text-[color:var(--text-muted)]"><p className="mb-1 font-semibold text-[color:var(--text-strong)]">Template preview</p><p className="whitespace-pre-wrap">{tpl.defaultBodyMarkdown || "No default content yet."}</p></div>}
                   </Card>
                 ))}
               </div>

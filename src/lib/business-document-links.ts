@@ -4,6 +4,7 @@ import { Prisma, type BusinessDocumentType } from "@/generated/prisma/client";
 type Links = {
   documentType: BusinessDocumentType;
   siteId?: string | null;
+  contactId?: string | null;
   leadId?: string | null;
   projectId?: string | null;
   financialDocumentId?: string | null;
@@ -15,14 +16,16 @@ export class InvalidDocumentLinks extends Error {}
 // An omitted PATCH field retains its link. An explicit null removes it.
 export async function resolveBusinessDocumentLinks(input: Partial<Links>, existing?: Links) {
   const links = { ...existing, ...input };
-  const [site, lead, project, financial, template] = await Promise.all([
+  const [site, contact, lead, project, financial, template] = await Promise.all([
     links.siteId ? db.site.findFirst({ where: { OR: [{ id: links.siteId }, { slug: links.siteId }] }, select: { id: true } }) : null,
+    links.contactId ? db.contact.findUnique({ where: { id: links.contactId }, select: { id: true } }) : null,
     links.leadId ? db.lead.findUnique({ where: { id: links.leadId }, select: { siteId: true } }) : null,
     links.projectId ? db.project.findUnique({ where: { id: links.projectId }, select: { sites: { select: { id: true } } } }) : null,
     links.financialDocumentId ? db.financialDocument.findUnique({ where: { id: links.financialDocumentId }, select: { siteId: true } }) : null,
     links.templateId ? db.businessDocumentTemplate.findUnique({ where: { id: links.templateId } }) : null,
   ]);
   if (links.siteId && !site) throw new InvalidDocumentLinks("The selected document identity no longer exists.");
+  if (links.contactId && !contact) throw new InvalidDocumentLinks("The selected customer no longer exists.");
   if (links.leadId && !lead) throw new InvalidDocumentLinks("The selected lead no longer exists.");
   if (links.projectId && !project) throw new InvalidDocumentLinks("The selected project no longer exists.");
   if (links.financialDocumentId && !financial) throw new InvalidDocumentLinks("The selected financial document no longer exists.");
