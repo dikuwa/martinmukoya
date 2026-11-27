@@ -133,10 +133,10 @@ export function BusinessDocumentPdf({
         <View style={s.between}>
           <View>
             {issuerLogo && (
+              // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt prop
               <Image
                 src={issuerLogo.startsWith("http") ? issuerLogo : `${baseUrl}${issuerLogo}`}
                 style={{ width: 130, height: 45, objectFit: "contain" }}
-                alt={issuerName || "Business logo"}
               />
             )}
             {!issuerLogo && issuerName && <Text style={{ fontSize: 14, fontWeight: 700 }}>{issuerName}</Text>}
@@ -188,7 +188,10 @@ export function BusinessDocumentPdf({
         {issuerShowSignature && senderName && (
           <View style={{ marginTop: 24, borderTop: "1 solid #ded9cf", paddingTop: 10 }}>
             <View style={s.signatureWrap}>
-              {issuerSignatureMode === "image" && issuerSignatureImage ? <Image src={issuerSignatureImage.startsWith("http") ? issuerSignatureImage : `${baseUrl}${issuerSignatureImage}`} style={s.signatureImage} alt={`${issuerSignerName || senderName} signature`} /> : <Text style={s.signature}>{senderName || issuerSignerName}</Text>}
+              {issuerSignatureMode === "image" && issuerSignatureImage ? (
+                // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt prop
+                <Image src={issuerSignatureImage.startsWith("http") ? issuerSignatureImage : `${baseUrl}${issuerSignatureImage}`} style={s.signatureImage} />
+              ) : <Text style={s.signature}>{senderName || issuerSignerName}</Text>}
             </View>
             <Text style={[{ textAlign: "right", fontWeight: 700, fontSize: 8 }]}>{senderName}</Text>
             {senderRole && <Text style={[s.muted, { textAlign: "right" }]}>{senderRole}</Text>}
