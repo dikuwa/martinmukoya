@@ -47,6 +47,68 @@ for (const { host, slug } of sites) {
       }]);
     });
 
+    test("project communication method uses the themed selector and submits the selected value", async ({ page }) => {
+      const submissions: unknown[] = [];
+      await page.route("**/api/leads", async (route) => {
+        submissions.push(route.request().postDataJSON());
+        await route.fulfill({ status: 201, json: { id: "synthetic-lead" } });
+      });
+
+      await page.goto("/start-project");
+      const form = page.locator("form").filter({ has: page.getByRole("heading", { name: "Choose your services" }) });
+      await form.getByRole("button", { name: /^Other\b/ }).click();
+      await form.getByPlaceholder("Describe the custom work or integration you need...").fill("Synthetic communication selector test");
+      await form.getByRole("button", { name: "Next", exact: true }).click();
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+
+      const selector = page.getByRole("button", { name: "Preferred contact method" });
+      await selector.click();
+      await expect(page.getByRole("listbox", { name: "Preferred contact method" })).toBeVisible();
+      await expect(page.getByRole("option", { name: "Email" })).toHaveAttribute("aria-selected", "true");
+      await page.getByRole("option", { name: "WhatsApp" }).click();
+      await expect(selector).toContainText("WhatsApp");
+
+      await page.getByPlaceholder("Your Name").fill(enquiry.name);
+      await page.getByPlaceholder("Your Email").fill(enquiry.email);
+      await page.getByPlaceholder("Tell me more about the project...").fill(enquiry.message);
+      await page.locator("label").filter({ hasText: "Schedule is flexible" }).click();
+      await page.getByRole("button", { name: "Submit Request" }).click();
+      await expect(page.getByText("Request received", { exact: true })).toBeVisible();
+      expect(submissions).toMatchObject([{ preferredContact: "WHATSAPP", siteSlug: slug }]);
+    });
+
+    test("mobile navigation keeps active labels visible and switches themes", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto("/");
+
+      const mobileNav = page.locator(".public-mobile-nav");
+      await expect(mobileNav).toBeVisible();
+      await expect(mobileNav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+      await expect(mobileNav.getByRole("link", { name: "Home" })).toContainText("Home");
+      await expect(mobileNav.getByRole("link", { name: "Start" })).toContainText("Start");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(380);
+
+      const whatsapp = page.getByRole("link", { name: "Chat on WhatsApp" });
+      await expect(whatsapp).toBeVisible();
+      await expect(whatsapp.locator("svg")).toBeVisible();
+
+      const cookieAccept = page.getByRole("button", { name: "Accept", exact: true });
+      if (await cookieAccept.isVisible()) await cookieAccept.click();
+
+      const chatbot = page.getByRole("button", { name: "Open chat" });
+      await chatbot.click();
+      const chatClose = page.getByRole("button", { name: "Close chat" }).first();
+      await expect(chatClose).toBeVisible();
+      await chatClose.click();
+      await expect(chatbot).toBeVisible();
+
+      const toggle = page.getByRole("button", { name: "Toggle theme" });
+      await toggle.click();
+      await expect(page.locator("html")).toHaveClass(/dark/);
+      await toggle.click();
+      await expect(page.locator("html")).toHaveClass(/light/);
+    });
+
     test("project requires a timeline, sends a site-specific POST, and restarts at step one", async ({ page }) => {
       const submissions: unknown[] = [];
       await page.route("**/api/leads", async (route) => {

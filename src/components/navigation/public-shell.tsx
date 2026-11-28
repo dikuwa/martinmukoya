@@ -119,12 +119,7 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
             href={site.contact.whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-full border transition",
-              isFlexTech
-                ? "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
-                : "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
-            )}
+            className={cn("public-whatsapp-link grid h-8 w-8 place-items-center rounded-full border transition", isFlexTech && "public-whatsapp-link-flextech")}
           >
             <MessageCircle size={14} />
           </TrackedAnchor>
@@ -365,7 +360,7 @@ function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 rounded-[24px] border border-[color:var(--border-subtle)] bg-[color:var(--background-elevated)]/92 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl lg:hidden">
+    <nav className="public-mobile-nav fixed inset-x-3 bottom-3 z-50 rounded-[24px] border border-[color:var(--border-subtle)] shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl lg:hidden">
       <div className="grid grid-cols-5 gap-1">
         {mobileItems.map((item) => {
           const Icon = item.icon;
@@ -376,10 +371,11 @@ function MobileBottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
+              data-active={active ? "true" : undefined}
+              data-start={item.href === "/start-project" ? "true" : undefined}
               className={cn(
-                "grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--primary)]/12 hover:text-[color:var(--primary)]",
-                active && "bg-[color:var(--primary)]/12 !text-[color:var(--primary)]",
-                item.href === "/start-project" && "bg-[#22C55E] !text-white hover:bg-[#16A34A] hover:!text-white"
+                "public-mobile-nav-link grid place-items-center gap-1 rounded-[16px] px-2 py-2 text-[11px] font-semibold text-[color:var(--text-muted)] transition",
+                item.href === "/start-project" && "font-bold"
               )}
             >
               <Icon size={18} />
