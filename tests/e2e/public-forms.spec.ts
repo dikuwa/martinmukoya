@@ -47,6 +47,36 @@ for (const { host, slug } of sites) {
       }]);
     });
 
+    test("project communication method uses the themed selector and submits the selected value", async ({ page }) => {
+      const submissions: unknown[] = [];
+      await page.route("**/api/leads", async (route) => {
+        submissions.push(route.request().postDataJSON());
+        await route.fulfill({ status: 201, json: { id: "synthetic-lead" } });
+      });
+
+      await page.goto("/start-project");
+      const form = page.locator("form").filter({ has: page.getByRole("heading", { name: "Choose your services" }) });
+      await form.getByRole("button", { name: /^Other\b/ }).click();
+      await form.getByPlaceholder("Describe the custom work or integration you need...").fill("Synthetic communication selector test");
+      await form.getByRole("button", { name: "Next", exact: true }).click();
+      await page.getByRole("button", { name: "Next", exact: true }).click();
+
+      const selector = page.getByRole("button", { name: "Preferred contact method" });
+      await selector.click();
+      await expect(page.getByRole("listbox", { name: "Preferred contact method" })).toBeVisible();
+      await expect(page.getByRole("option", { name: "Email" })).toHaveAttribute("aria-selected", "true");
+      await page.getByRole("option", { name: "WhatsApp" }).click();
+      await expect(selector).toContainText("WhatsApp");
+
+      await page.getByPlaceholder("Your Name").fill(enquiry.name);
+      await page.getByPlaceholder("Your Email").fill(enquiry.email);
+      await page.getByPlaceholder("Tell me more about the project...").fill(enquiry.message);
+      await page.locator("label").filter({ hasText: "Schedule is flexible" }).click();
+      await page.getByRole("button", { name: "Submit Request" }).click();
+      await expect(page.getByText("Request received", { exact: true })).toBeVisible();
+      expect(submissions).toMatchObject([{ preferredContact: "WHATSAPP", siteSlug: slug }]);
+    });
+
     test("project requires a timeline, sends a site-specific POST, and restarts at step one", async ({ page }) => {
       const submissions: unknown[] = [];
       await page.route("**/api/leads", async (route) => {

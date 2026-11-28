@@ -2,6 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DashboardSelect } from "@/components/ui/dashboard-select";
 import { trackEvent } from "@/lib/analytics-client";
 import type { PublicSiteConfig } from "@/lib/public-site-config";
 import { cn } from "@/lib/utils";
@@ -165,6 +166,7 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
   const selectedBudget = useWatch({ control: form.control, name: "budgetRange" });
   const selectedTimeline = useWatch({ control: form.control, name: "timeline" });
   const timelineFlexible = useWatch({ control: form.control, name: "timelineFlexible" });
+  const preferredContact = useWatch({ control: form.control, name: "preferredContact" });
   const otherSelected = selectedServices.includes("other");
 
   useEffect(() => {
@@ -522,14 +524,18 @@ export function StartProjectWizard({ site }: { site: PublicSiteConfig }) {
                   autoComplete="tel"
                   {...form.register("phone")}
                 />
-                <select
-                  className="h-14 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 text-[color:var(--text-strong)] outline-none transition focus:border-[color:var(--primary)]"
-                  {...form.register("preferredContact")}
-                >
-                  <option value="EMAIL">Email</option>
-                  <option value="PHONE">Phone</option>
-                  <option value="WHATSAPP">WhatsApp</option>
-                </select>
+                <DashboardSelect
+                  aria-label="Preferred contact method"
+                  name="preferredContact"
+                  value={preferredContact}
+                  options={[
+                    { label: "Email", value: "EMAIL" },
+                    { label: "Phone", value: "PHONE" },
+                    { label: "WhatsApp", value: "WHATSAPP" },
+                  ]}
+                  className="h-14 rounded-[16px] px-5"
+                  onChange={(event) => form.setValue("preferredContact", event.target.value as WizardInput["preferredContact"], { shouldDirty: true, shouldValidate: true })}
+                />
               </div>
               <textarea
                 className="min-h-44 resize-y rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-soft)] px-5 py-4 text-[color:var(--text-strong)] outline-none transition placeholder:text-[color:var(--text-faint)] focus:border-[color:var(--primary)]"
