@@ -77,6 +77,24 @@ for (const { host, slug } of sites) {
       expect(submissions).toMatchObject([{ preferredContact: "WHATSAPP", siteSlug: slug }]);
     });
 
+    test("mobile navigation keeps active labels visible and switches themes", async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto("/");
+
+      const mobileNav = page.locator(".public-mobile-nav");
+      await expect(mobileNav).toBeVisible();
+      await expect(mobileNav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+      await expect(mobileNav.getByRole("link", { name: "Home" })).toContainText("Home");
+      await expect(mobileNav.getByRole("link", { name: "Start" })).toContainText("Start");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(380);
+
+      const toggle = page.getByRole("button", { name: "Toggle theme" });
+      await toggle.click();
+      await expect(page.locator("html")).toHaveClass(/dark/);
+      await toggle.click();
+      await expect(page.locator("html")).toHaveClass(/light/);
+    });
+
     test("project requires a timeline, sends a site-specific POST, and restarts at step one", async ({ page }) => {
       const submissions: unknown[] = [];
       await page.route("**/api/leads", async (route) => {

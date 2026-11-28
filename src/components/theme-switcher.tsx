@@ -7,9 +7,9 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export function ThemeSwitcher() {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const isLight = mounted && resolvedTheme === "light";
+  const isLight = mounted && theme !== "dark";
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setMounted(true));
@@ -19,13 +19,12 @@ export function ThemeSwitcher() {
   return (
     <Button
       aria-label="Toggle theme"
+      aria-pressed={mounted && !isLight}
+      type="button"
       size="icon"
       variant="secondary"
       className={cn(
-        "h-10 w-10 rounded-full p-0 border transition duration-200",
-        isLight
-          ? "bg-[#f7f3ff] text-[#6b26d9] border-[#e6d8ff] hover:bg-[#ece1ff] shadow-[0_10px_30px_rgba(107,38,217,0.12)]"
-          : "bg-[#1a1033] text-white border-[#3f2a64] hover:bg-[#271a48] shadow-[0_12px_32px_rgba(107,38,217,0.18)]"
+        "theme-switcher h-10 w-10 rounded-full border p-0 transition duration-200"
       )}
       onClick={() => setTheme(isLight ? "dark" : "light")}
     >
