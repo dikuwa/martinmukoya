@@ -92,10 +92,14 @@ for (const { host, slug } of sites) {
       await expect(whatsapp).toBeVisible();
       await expect(whatsapp.locator("svg")).toBeVisible();
 
+      const cookieAccept = page.getByRole("button", { name: "Accept", exact: true });
+      if (await cookieAccept.isVisible()) await cookieAccept.click();
+
       const chatbot = page.getByRole("button", { name: "Open chat" });
       await chatbot.click();
-      await expect(page.getByRole("button", { name: "Close chat" })).toBeVisible();
-      await page.getByRole("button", { name: "Close chat" }).click();
+      const chatClose = page.getByRole("button", { name: "Close chat" }).first();
+      await expect(chatClose).toBeVisible();
+      await chatClose.click();
       await expect(chatbot).toBeVisible();
 
       const toggle = page.getByRole("button", { name: "Toggle theme" });
