@@ -48,6 +48,7 @@
   --primary: #6b26d9;
   --primary-light: #8852e0;
   --primary-soft: rgba(107, 38, 217, 0.12);
+  --primary-soft-hover: rgba(107, 38, 217, 0.18);
   --accent: #8852e0;
   --accent-light: #b68dff;
   --radius: 1rem;
@@ -133,6 +134,7 @@
   --primary: #6b26d9;
   --primary-light: #8852e0;
   --primary-soft: rgba(107, 38, 217, 0.12);
+  --primary-soft-hover: rgba(107, 38, 217, 0.18);
   --accent: #8852e0;
   --accent-light: #b68dff;
   --foreground: #15082b;
@@ -534,6 +536,18 @@ option:checked {
 .public-mobile-nav-link[data-start="true"]:focus-visible {
   background: #22c55e;
   color: #ffffff;
+}
+
+.public-whatsapp-link {
+  background: var(--primary-soft);
+  border-color: var(--border-subtle);
+  color: var(--primary);
+}
+
+.public-whatsapp-link:hover,
+.public-whatsapp-link:focus-visible {
+  background: var(--primary-soft-hover);
+  border-color: var(--primary);
 }
 
 .theme-switcher {

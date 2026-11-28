@@ -88,6 +88,16 @@ for (const { host, slug } of sites) {
       await expect(mobileNav.getByRole("link", { name: "Start" })).toContainText("Start");
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(380);
 
+      const whatsapp = page.getByRole("link", { name: "Chat on WhatsApp" });
+      await expect(whatsapp).toBeVisible();
+      await expect(whatsapp.locator("svg")).toBeVisible();
+
+      const chatbot = page.getByRole("button", { name: "Open chat" });
+      await chatbot.click();
+      await expect(page.getByRole("button", { name: "Close chat" })).toBeVisible();
+      await page.getByRole("button", { name: "Close chat" }).click();
+      await expect(chatbot).toBeVisible();
+
       const toggle = page.getByRole("button", { name: "Toggle theme" });
       await toggle.click();
       await expect(page.locator("html")).toHaveClass(/dark/);

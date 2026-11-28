@@ -119,12 +119,7 @@ function TopBar({ site }: { site: PublicSiteConfig }) {
             href={site.contact.whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-full border transition",
-              isFlexTech
-                ? "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
-                : "border-[color:var(--primary)]/25 bg-[color:var(--primary)]/10 text-[color:var(--primary)] hover:border-[color:var(--primary)] hover:bg-[color:var(--primary)]/20"
-            )}
+            className={cn("public-whatsapp-link grid h-8 w-8 place-items-center rounded-full border transition", isFlexTech && "public-whatsapp-link-flextech")}
           >
             <MessageCircle size={14} />
           </TrackedAnchor>
